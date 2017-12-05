@@ -3,8 +3,8 @@ import java.net.InetAddress;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.raw.NetworkAddress;
-import org.gmagnotta.bitcoin.raw.serializer.BitcoinVersionMessageSerializer;
+import org.gmagnotta.bitcoin.wire.NetworkAddress;
+import org.gmagnotta.bitcoin.wire.serializer.BitcoinVersionMessageSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;

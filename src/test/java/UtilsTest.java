@@ -1,6 +1,6 @@
 import java.math.BigInteger;
 
-import org.gmagnotta.bitcoin.raw.Utils;
+import org.gmagnotta.bitcoin.wire.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,5 +1,5 @@
-import org.gmagnotta.bitcoin.raw.BitcoinFrame;
-import org.gmagnotta.bitcoin.raw.serializer.BitcoinFrameSerializer;
+import org.gmagnotta.bitcoin.wire.BitcoinFrame;
+import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;

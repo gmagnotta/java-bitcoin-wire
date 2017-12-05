@@ -2,7 +2,7 @@ package org.gmagnotta.bitcoin.message;
 
 import java.math.BigInteger;
 
-import org.gmagnotta.bitcoin.raw.BitcoinCommand;
+import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
 /**
  * This class represents Bitcoin Ping Message

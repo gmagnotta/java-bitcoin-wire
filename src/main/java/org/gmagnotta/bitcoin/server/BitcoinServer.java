@@ -1,4 +1,4 @@
-package org.gmagnotta.bitcoin;
+package org.gmagnotta.bitcoin.server;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,37 +11,35 @@ import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame.BitcoinFrameBuilder;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 
-public class BitcoinClient {
-
-	private String host;
-	private int port;
-	private Socket clientSocket;
+public class BitcoinServer implements ServerContext {
+	
+	private ServerState serverState;
+	private Socket socket;
 	private InputStream inputStream;
 	private OutputStream outputStream;
 	private BitcoinFrameParserStream parser;
 
-	public BitcoinClient(String host, int port) {
-		this.host = host;
-		this.port = port;
+	public BitcoinServer(Socket socket) {
+		this.socket = socket;
 	}
 
-	public void connect() throws Exception {
+	public void start() throws Exception {
 
-		clientSocket = new Socket(host, port);
+		outputStream = socket.getOutputStream();
 
-		outputStream = clientSocket.getOutputStream();
-
-		inputStream = clientSocket.getInputStream();
+		inputStream = socket.getInputStream();
 
 		this.parser = new BitcoinFrameParserStream(inputStream);
-
-	}
-
-	public BitcoinMessage getMessage() throws Exception {
-
-		BitcoinFrame frame = parser.getFrame();
 		
-		return frame.getPayload();
+		serverState = new VersionState(this, outputStream);
+		
+		while (true) {
+			
+			BitcoinFrame frame = parser.getFrame();
+			
+			serverState.receiveFrame(frame);
+			
+		}
 
 	}
 
@@ -55,10 +53,15 @@ public class BitcoinClient {
 
 	}
 	
-	public void disconnect() throws Exception {
+	public void close() throws Exception {
 		
-		clientSocket.close();
+		socket.close();
 		
+	}
+
+	@Override
+	public void setNextState(ServerState serverState) {
+		this.serverState = serverState;
 	}
 
 }

@@ -1,6 +1,6 @@
 package org.gmagnotta.bitcoin.message;
 
-import org.gmagnotta.bitcoin.raw.BitcoinCommand;
+import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
 /**
  * This class represents Bitcoin Verack Message

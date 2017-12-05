@@ -11,8 +11,8 @@ import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.raw.BitcoinCommand;
-import org.gmagnotta.bitcoin.raw.NetworkAddress;
+import org.gmagnotta.bitcoin.message.NetworkAddress;
+import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -23,36 +23,50 @@ public class Main {
 	
 	public static void main(String[] args) throws Exception {
 		
-		BitcoinClient bitcoinClient = new BitcoinClient("52.225.217.168", 19000);
+		new Thread(new ServerRunnable()).start();
+		
+		BitcoinClient bitcoinClient = new BitcoinClient("127.0.0.1", 19000);
 		
 		bitcoinClient.connect();
 
 		NetworkAddress receiving = new NetworkAddress(0, new BigInteger("0"), InetAddress.getLocalHost(), 0);
 
-		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(70000L, new BigInteger("0"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, receiving, new BigInteger("123"), "PeppeLibrary", 0, false);
+		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(70001L, new BigInteger("0"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, receiving, new BigInteger("123"), "PeppeLibrary", 0, false);
 		
 		bitcoinClient.writeMessage(versionMessage);
 		
 		BitcoinMessage message = bitcoinClient.getMessage();
 		
-		System.out.println("Read: " + message);
-		
-		message = bitcoinClient.getMessage();
-		
-		System.out.println("Read: " + message);
-		
-		message = bitcoinClient.getMessage();
-		
-		System.out.println("Read: " + message);
-		
-		if (message.getCommand().equals(BitcoinCommand.PING)) {
+		if (!message.getCommand().equals(BitcoinCommand.VERSION)) {
 			
-			BigInteger nonce = ((BitcoinPingMessage) message).getNonce();
+			throw new Exception("Unexpected response!");
 			
-			BitcoinPongMessage pong = new BitcoinPongMessage(nonce);
-			
-			bitcoinClient.writeMessage(pong);
 		}
+
+		BitcoinVersionMessage version = (BitcoinVersionMessage) message;
+		
+		if (version.getVersion() < 70001L) {
+			throw new Exception("Unsupported version!");
+		}
+		
+		System.out.println("Read: " + message);
+		
+		message = bitcoinClient.getMessage();
+		
+		System.out.println("Read: " + message);
+		
+//		message = bitcoinClient.getMessage();
+//		
+//		System.out.println("Read: " + message);
+		
+//		if (message.getCommand().equals(BitcoinCommand.PING)) {
+//			
+//			BigInteger nonce = ((BitcoinPingMessage) message).getNonce();
+//			
+//			BitcoinPongMessage pong = new BitcoinPongMessage(nonce);
+//			
+//			bitcoinClient.writeMessage(pong);
+//		}
 		
 		BitcoinPingMessage ping = new BitcoinPingMessage(new BigInteger("1234"));
 		
