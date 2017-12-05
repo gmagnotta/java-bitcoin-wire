@@ -3,6 +3,7 @@ package org.gmagnotta.bitcoin.user;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -10,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.BitcoinPongMessage;
+import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
+import org.gmagnotta.bitcoin.message.NetworkAddress;
 import org.gmagnotta.bitcoin.parser.BitcoinFrameParserStream;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
@@ -48,6 +51,35 @@ public class BitcoinClient {
 		parser = new BitcoinFrameParserStream(inputStream);
 		
 		new Thread(new ReaderRunnable(parser, queue)).start();
+		
+		NetworkAddress receiving = new NetworkAddress(0, new BigInteger("0"), InetAddress.getLocalHost(), 0);
+
+		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(7001L, new BigInteger("0"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, receiving, new BigInteger("123"), "PeppeLibrary", 0, false);
+		
+		// SEND VERSION
+		writeMessage(versionMessage);
+		
+		BitcoinMessage message = getMessage();
+		
+		if (!message.getCommand().equals(BitcoinCommand.VERSION)) {
+			
+			throw new Exception("Unexpected response!");
+			
+		}
+
+		BitcoinVersionMessage version = (BitcoinVersionMessage) message;
+		
+		if (version.getVersion() < 70001L) {
+			throw new Exception("Unsupported version!");
+		}
+		
+		message = getMessage();
+		
+		if (!message.getCommand().equals(BitcoinCommand.VERACK)) {
+			
+			throw new Exception("Unexpected response!");
+			
+		}
 
 	}
 

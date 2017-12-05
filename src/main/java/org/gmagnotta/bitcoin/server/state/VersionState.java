@@ -2,6 +2,7 @@ package org.gmagnotta.bitcoin.server.state;
 import java.math.BigInteger;
 import java.net.InetAddress;
 
+import org.gmagnotta.bitcoin.message.BitcoinRejectMessage;
 import org.gmagnotta.bitcoin.message.BitcoinVerackMessage;
 import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
 import org.gmagnotta.bitcoin.message.NetworkAddress;
@@ -26,13 +27,26 @@ public class VersionState implements ServerState {
 		
 		// if we receive something different than VERSION, throw exception
 		if (!frame.getCommand().equals(BitcoinCommand.VERSION)) {
+			
+			BitcoinRejectMessage rejectMessage = new BitcoinRejectMessage(frame.getCommand().getCommand(), (byte) 0x10, "Unexpected frame", null);
+			
+			serverContext.writeMessage(rejectMessage);
+			
 			throw new Exception("Unexpected frame!");
+			
+			
 		}
 		
 		BitcoinVersionMessage version = (BitcoinVersionMessage) frame.getPayload();
 		
 		if (version.getVersion() < 70001L) {
+			
+			BitcoinRejectMessage rejectMessage = new BitcoinRejectMessage(frame.getCommand().getCommand(), (byte) 0x10, "Unsupported version", null);
+			
+			serverContext.writeMessage(rejectMessage);
+			
 			throw new Exception("Unknown version!");
+			
 		}
 		
 		// Send our version

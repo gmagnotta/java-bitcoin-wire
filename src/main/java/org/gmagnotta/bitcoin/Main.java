@@ -24,43 +24,19 @@ public class Main {
 	
 	public static void main(String[] args) throws Exception {
 		
-//		new Thread(new ServerRunnable()).start();
+		new Thread(new ServerRunnable()).start();
 		
-		BitcoinClient bitcoinClient = new BitcoinClient(MagicVersion.TESTNET, "52.167.211.151", 19000);
+//		BitcoinClient bitcoinClient = new BitcoinClient(MagicVersion.TESTNET, "52.167.211.151", 19000);
+		
+		BitcoinClient bitcoinClient = new BitcoinClient(MagicVersion.TESTNET, "127.0.0.1", 19000);
 		
 		bitcoinClient.connect();
 
-		NetworkAddress receiving = new NetworkAddress(0, new BigInteger("0"), InetAddress.getLocalHost(), 0);
-
-		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(70001L, new BigInteger("0"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, receiving, new BigInteger("123"), "PeppeLibrary", 0, false);
-		
-		bitcoinClient.writeMessage(versionMessage);
-		
-		BitcoinMessage message = bitcoinClient.getMessage();
-		
-		if (!message.getCommand().equals(BitcoinCommand.VERSION)) {
-			
-			throw new Exception("Unexpected response!");
-			
-		}
-
-		BitcoinVersionMessage version = (BitcoinVersionMessage) message;
-		
-		if (version.getVersion() < 70001L) {
-			throw new Exception("Unsupported version!");
-		}
-		
-		System.out.println("Read: " + message);
-		
-		message = bitcoinClient.getMessage();
-		
-		System.out.println("Read: " + message);
-		
 		BitcoinPingMessage ping = new BitcoinPingMessage(new BigInteger("1234"));
 		
 		bitcoinClient.writeMessage(ping);
 		
-		message = bitcoinClient.getMessage();
+		BitcoinMessage message = bitcoinClient.getMessage();
 		
 		List<Sha256Hash> h = new ArrayList<Sha256Hash>();
 		

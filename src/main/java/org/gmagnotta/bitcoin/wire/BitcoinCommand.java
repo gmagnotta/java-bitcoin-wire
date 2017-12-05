@@ -11,6 +11,7 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinHeadersMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinPingMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinPongMessageSerializer;
+import org.gmagnotta.bitcoin.wire.serializer.BitcoinRejectMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinVerackMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinVersionMessageSerializer;
 
@@ -33,7 +34,9 @@ public enum BitcoinCommand {
 	
 	PONG("pong", new BitcoinPongMessageSerializer()),
 	
-	HEADERS("headers", new BitcoinHeadersMessageSerializer());
+	HEADERS("headers", new BitcoinHeadersMessageSerializer()),
+	
+	REJECT("reject", new BitcoinRejectMessageSerializer());
 
 	private BitcoinCommand(String command, BitcoinMessageSerializer bitcoinMessageSerializer) {
 		this.command = command;
