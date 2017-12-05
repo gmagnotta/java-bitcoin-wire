@@ -117,7 +117,7 @@ public class BitcoinFrame {
 			
 			long len = serialized.length;
 			
-			return new BitcoinFrame(MagicVersion.TESTNET, bitcoinMessage.getCommand(), len, Utils.readUint32BE(hash.getBytes(), 0), bitcoinMessage);
+			return new BitcoinFrame(magicVersion, bitcoinMessage.getCommand(), len, Utils.readUint32BE(hash.getBytes(), 0), bitcoinMessage);
 			
 		}
 		

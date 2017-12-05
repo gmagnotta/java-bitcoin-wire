@@ -13,6 +13,7 @@ import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
 import org.gmagnotta.bitcoin.message.NetworkAddress;
 import org.gmagnotta.bitcoin.user.BitcoinClient;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
+import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -25,7 +26,7 @@ public class Main {
 		
 //		new Thread(new ServerRunnable()).start();
 		
-		BitcoinClient bitcoinClient = new BitcoinClient("52.167.211.151", 19000);
+		BitcoinClient bitcoinClient = new BitcoinClient(MagicVersion.TESTNET, "52.167.211.151", 19000);
 		
 		bitcoinClient.connect();
 

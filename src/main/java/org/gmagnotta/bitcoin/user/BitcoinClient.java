@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.BitcoinPingMessage;
@@ -25,10 +26,12 @@ public class BitcoinClient {
 	private OutputStream outputStream;
 	private BitcoinFrameParserStream parser;
 	private ReaderRunnable readerRunnable;
+	private MagicVersion magicVersion;
 	
 	private LinkedBlockingQueue<BitcoinMessage> queue;
 
-	public BitcoinClient(String host, int port) {
+	public BitcoinClient(MagicVersion magicVersion, String host, int port) {
+		this.magicVersion = magicVersion;
 		this.host = host;
 		this.port = port;
 		this.queue = new LinkedBlockingQueue<BitcoinMessage>();
@@ -53,12 +56,18 @@ public class BitcoinClient {
 		return queue.take();
 
 	}
+	
+	public BitcoinMessage getMessage(long timeout, TimeUnit unit) throws Exception {
+		
+		return queue.poll(timeout, unit);
+
+	}
 
 	public void writeMessage(BitcoinMessage bitcoinMessage) throws Exception {
 
 		BitcoinFrameBuilder builder = new BitcoinFrameBuilder();
 
-		BitcoinFrame frame = builder.setMagicVersion(MagicVersion.TESTNET).setBitcoinMessage(bitcoinMessage).build();
+		BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(bitcoinMessage).build();
 
 		outputStream.write(new BitcoinFrameSerializer().serialize(frame));
 
