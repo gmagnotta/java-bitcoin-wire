@@ -23,9 +23,9 @@ public class Main {
 	
 	public static void main(String[] args) throws Exception {
 		
-		new Thread(new ServerRunnable()).start();
+//		new Thread(new ServerRunnable()).start();
 		
-		BitcoinClient bitcoinClient = new BitcoinClient("127.0.0.1", 19000);
+		BitcoinClient bitcoinClient = new BitcoinClient("52.167.211.151", 19000);
 		
 		bitcoinClient.connect();
 
@@ -54,19 +54,6 @@ public class Main {
 		message = bitcoinClient.getMessage();
 		
 		System.out.println("Read: " + message);
-		
-//		message = bitcoinClient.getMessage();
-//		
-//		System.out.println("Read: " + message);
-		
-//		if (message.getCommand().equals(BitcoinCommand.PING)) {
-//			
-//			BigInteger nonce = ((BitcoinPingMessage) message).getNonce();
-//			
-//			BitcoinPongMessage pong = new BitcoinPongMessage(nonce);
-//			
-//			bitcoinClient.writeMessage(pong);
-//		}
 		
 		BitcoinPingMessage ping = new BitcoinPingMessage(new BigInteger("1234"));
 		
