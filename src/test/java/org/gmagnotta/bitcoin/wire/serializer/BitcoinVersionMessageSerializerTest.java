@@ -1,15 +1,15 @@
+package org.gmagnotta.bitcoin.wire.serializer;
 import java.math.BigInteger;
 import java.net.InetAddress;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.wire.NetworkAddress;
-import org.gmagnotta.bitcoin.wire.serializer.BitcoinVersionMessageSerializer;
+import org.gmagnotta.bitcoin.message.NetworkAddress;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-public class BitcoinGetHeadersMessageSerializerTest {
+public class BitcoinVersionMessageSerializerTest {
 	
 	private static byte[] message;
 	

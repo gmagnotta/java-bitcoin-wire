@@ -1,3 +1,4 @@
+package org.gmagnotta.bitcoin.wire.serializer;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 import org.junit.Assert;

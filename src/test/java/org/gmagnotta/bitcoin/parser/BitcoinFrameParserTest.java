@@ -1,3 +1,4 @@
+package org.gmagnotta.bitcoin.parser;
 import org.spongycastle.util.encoders.Hex;
 
 public class BitcoinFrameParserTest {
