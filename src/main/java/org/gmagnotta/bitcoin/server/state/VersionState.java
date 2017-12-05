@@ -1,16 +1,14 @@
-package org.gmagnotta.bitcoin.server;
-import java.io.OutputStream;
+package org.gmagnotta.bitcoin.server.state;
 import java.math.BigInteger;
 import java.net.InetAddress;
 
 import org.gmagnotta.bitcoin.message.BitcoinVerackMessage;
 import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
 import org.gmagnotta.bitcoin.message.NetworkAddress;
+import org.gmagnotta.bitcoin.server.ServerContext;
+import org.gmagnotta.bitcoin.server.ServerState;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
-import org.gmagnotta.bitcoin.wire.MagicVersion;
-import org.gmagnotta.bitcoin.wire.BitcoinFrame.BitcoinFrameBuilder;
-import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 
 /**
  * Here we expect to receive a version from the peer 
@@ -18,11 +16,9 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 public class VersionState implements ServerState {
 	
 	private ServerContext serverContext;
-	private OutputStream outputStream;
 	
-	public VersionState(ServerContext serverContext, OutputStream outputStream) {
+	public VersionState(ServerContext serverContext) {
 		this.serverContext = serverContext;
-		this.outputStream = outputStream;
 	}
 
 	@Override
@@ -44,23 +40,17 @@ public class VersionState implements ServerState {
 
 		BitcoinVersionMessage myVersion = new BitcoinVersionMessage(70001L, new BigInteger("0"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, receiving, new BigInteger("123"), "PeppeLibrary", 0, false);
 		
-		BitcoinFrameBuilder builder = new BitcoinFrameBuilder();
+		serverContext.writeMessage(myVersion);
 
-		BitcoinFrame outFrame = builder.setMagicVersion(MagicVersion.TESTNET).setBitcoinMessage(myVersion).build();
-
-		outputStream.write(new BitcoinFrameSerializer().serialize(outFrame));
-		
 		// send ACK
 		
 		BitcoinVerackMessage bitcoinVerackMessage = new BitcoinVerackMessage();
 		
-		builder = new BitcoinFrameBuilder();
-
-		outFrame = builder.setMagicVersion(MagicVersion.TESTNET).setBitcoinMessage(bitcoinVerackMessage).build();
+		serverContext.writeMessage(bitcoinVerackMessage);
 		
-		outputStream.write(new BitcoinFrameSerializer().serialize(outFrame));
+		// Now jump to ready state
 		
-		ReadyState readyState = new ReadyState(serverContext, outputStream);
+		ReadyState readyState = new ReadyState(serverContext);
 		serverContext.setNextState(readyState);
 	}
 

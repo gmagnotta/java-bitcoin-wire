@@ -6,9 +6,10 @@ import java.net.Socket;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.parser.BitcoinFrameParserStream;
+import org.gmagnotta.bitcoin.server.state.VersionState;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
-import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame.BitcoinFrameBuilder;
+import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 
 public class BitcoinServer implements ServerContext {
@@ -21,6 +22,7 @@ public class BitcoinServer implements ServerContext {
 
 	public BitcoinServer(Socket socket) {
 		this.socket = socket;
+		this.serverState = new VersionState(this);
 	}
 
 	public void start() throws Exception {
@@ -30,8 +32,6 @@ public class BitcoinServer implements ServerContext {
 		inputStream = socket.getInputStream();
 
 		this.parser = new BitcoinFrameParserStream(inputStream);
-		
-		serverState = new VersionState(this, outputStream);
 		
 		while (true) {
 			
@@ -43,6 +43,7 @@ public class BitcoinServer implements ServerContext {
 
 	}
 
+	@Override
 	public void writeMessage(BitcoinMessage bitcoinMessage) throws Exception {
 
 		BitcoinFrameBuilder builder = new BitcoinFrameBuilder();

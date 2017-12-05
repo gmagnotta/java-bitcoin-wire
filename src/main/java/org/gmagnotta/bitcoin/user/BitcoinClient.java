@@ -1,4 +1,4 @@
-package org.gmagnotta.bitcoin;
+package org.gmagnotta.bitcoin.user;
 
 import java.io.InputStream;
 import java.io.OutputStream;
