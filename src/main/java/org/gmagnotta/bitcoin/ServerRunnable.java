@@ -4,6 +4,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import org.gmagnotta.bitcoin.server.BitcoinServer;
+import org.gmagnotta.bitcoin.wire.MagicVersion;
 
 public class ServerRunnable implements Runnable {
 
@@ -13,11 +14,11 @@ public class ServerRunnable implements Runnable {
 		try {
 
 			// Start server
-			ServerSocket serverSocket = new ServerSocket(19000);
+			ServerSocket serverSocket = new ServerSocket(18333);
 			
 			Socket clientSocket = serverSocket.accept();
 			
-			BitcoinServer server = new BitcoinServer(clientSocket);
+			BitcoinServer server = new BitcoinServer(MagicVersion.TESTNET3, clientSocket);
 			
 			server.start();
 

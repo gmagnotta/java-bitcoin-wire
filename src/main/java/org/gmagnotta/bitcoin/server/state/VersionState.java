@@ -39,7 +39,7 @@ public class VersionState implements ServerState {
 		
 		BitcoinVersionMessage version = (BitcoinVersionMessage) frame.getPayload();
 		
-		if (version.getVersion() < 70001L) {
+		if (version.getVersion() < 70012L) {
 			
 			BitcoinRejectMessage rejectMessage = new BitcoinRejectMessage(frame.getCommand().getCommand(), (byte) 0x10, "Unsupported version", null);
 			
@@ -52,7 +52,7 @@ public class VersionState implements ServerState {
 		// Send our version
 		NetworkAddress receiving = new NetworkAddress(0, new BigInteger("0"), InetAddress.getLocalHost(), 0);
 
-		BitcoinVersionMessage myVersion = new BitcoinVersionMessage(70001L, new BigInteger("0"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, receiving, new BigInteger("123"), "PeppeLibrary", 0, false);
+		BitcoinVersionMessage myVersion = new BitcoinVersionMessage(70012L, new BigInteger("0"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, receiving, new BigInteger("123"), "/BitcoinPeppe:0.0.1/", 0, false);
 		
 		serverContext.writeMessage(myVersion);
 

@@ -14,13 +14,15 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 
 public class BitcoinServer implements ServerContext {
 	
+	private MagicVersion magicVersion;
 	private ServerState serverState;
 	private Socket socket;
 	private InputStream inputStream;
 	private OutputStream outputStream;
 	private BitcoinFrameParserStream parser;
 
-	public BitcoinServer(Socket socket) {
+	public BitcoinServer(MagicVersion magicVersion, Socket socket) {
+		this.magicVersion = magicVersion;
 		this.socket = socket;
 		this.serverState = new VersionState(this);
 	}
@@ -31,7 +33,7 @@ public class BitcoinServer implements ServerContext {
 
 		inputStream = socket.getInputStream();
 
-		this.parser = new BitcoinFrameParserStream(inputStream);
+		this.parser = new BitcoinFrameParserStream(magicVersion, inputStream);
 		
 		while (true) {
 			
@@ -48,7 +50,7 @@ public class BitcoinServer implements ServerContext {
 
 		BitcoinFrameBuilder builder = new BitcoinFrameBuilder();
 
-		BitcoinFrame frame = builder.setMagicVersion(MagicVersion.TESTNET).setBitcoinMessage(bitcoinMessage).build();
+		BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(bitcoinMessage).build();
 
 		outputStream.write(new BitcoinFrameSerializer().serialize(frame));
 
