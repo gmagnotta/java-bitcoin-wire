@@ -1,12 +1,15 @@
 package org.gmagnotta.bitcoin.parser;
 
+import org.gmagnotta.bitcoin.wire.MagicVersion;
+
 public class MagicState implements MessageState {
 
 	private Context context;
-	private byte[] magic = { (byte) 0xFA, (byte) 0xBF, (byte) 0xB5, (byte) 0xDA };
+	private byte[] magic;
 	private int expected = 0;
 	
-	public MagicState(Context context) {
+	public MagicState(MagicVersion magicVersion, Context context) {
+		this.magic = magicVersion.getBytes();
 		this.context = context;
 	}
 	

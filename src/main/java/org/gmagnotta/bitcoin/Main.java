@@ -1,7 +1,6 @@
 package org.gmagnotta.bitcoin;
 
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,10 +8,7 @@ import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.message.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.BitcoinPingMessage;
-import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.message.NetworkAddress;
 import org.gmagnotta.bitcoin.user.BitcoinClient;
-import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,9 +22,7 @@ public class Main {
 		
 		new Thread(new ServerRunnable()).start();
 		
-//		BitcoinClient bitcoinClient = new BitcoinClient(MagicVersion.TESTNET, "52.167.211.151", 19000);
-		
-		BitcoinClient bitcoinClient = new BitcoinClient(MagicVersion.TESTNET, "127.0.0.1", 19000);
+		BitcoinClient bitcoinClient = new BitcoinClient(MagicVersion.TESTNET3, "13.229.23.149", 18333);
 		
 		bitcoinClient.connect();
 
@@ -43,7 +37,7 @@ public class Main {
 		Sha256Hash last = Sha256Hash.of(Hex.decode("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 		
 		h.add(last);
-		BitcoinGetHeadersMessage get = new BitcoinGetHeadersMessage(70000, h);
+		BitcoinGetHeadersMessage get = new BitcoinGetHeadersMessage(70012L, h);
 		
 //		BitcoinGetBlocksMessage get = new BitcoinGetBlocksMessage(70000, h);
 		

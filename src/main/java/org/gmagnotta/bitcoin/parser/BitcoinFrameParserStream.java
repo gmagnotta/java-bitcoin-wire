@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
+import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.bitcoin.wire.Utils;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 
@@ -17,20 +18,22 @@ public class BitcoinFrameParserStream implements Context {
 	private byte[] payload;
 	private boolean isComplete;
 	private InputStream inputStream;
+	private MagicVersion magicVersion;
 	
+	public BitcoinFrameParserStream(MagicVersion magicVersion, InputStream inputStream) {
+		this.magicVersion = magicVersion;
+		this.inputStream = inputStream;
+		reset();
+	}
+
 	private void reset() {
-		this.messageState = new MagicState(this);
+		this.messageState = new MagicState(magicVersion, this);
 		this.magic = null;
 		this.command = null;
 		this.length = null;
 		this.checksum = null;
 		this.payload = null;
 		this.isComplete = false;
-	}
-	
-	public BitcoinFrameParserStream(InputStream inputStream) {
-		this.inputStream = inputStream;
-		reset();
 	}
 
 	@Override

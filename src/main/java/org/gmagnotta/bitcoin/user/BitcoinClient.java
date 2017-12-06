@@ -48,13 +48,15 @@ public class BitcoinClient {
 
 		inputStream = clientSocket.getInputStream();
 
-		parser = new BitcoinFrameParserStream(inputStream);
+		parser = new BitcoinFrameParserStream(magicVersion, inputStream);
 		
 		new Thread(new ReaderRunnable(parser, queue)).start();
 		
-		NetworkAddress receiving = new NetworkAddress(0, new BigInteger("0"), InetAddress.getLocalHost(), 0);
+		NetworkAddress emitting = new NetworkAddress(0, new BigInteger("1"), InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), clientSocket.getLocalPort());
+		
+		NetworkAddress receiving = new NetworkAddress(0, new BigInteger("1"), InetAddress.getByName(host), port);
 
-		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(7001L, new BigInteger("0"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, receiving, new BigInteger("123"), "PeppeLibrary", 0, false);
+		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(70012L, new BigInteger("1"), new BigInteger("" + System.currentTimeMillis() / 1000), receiving, emitting, new BigInteger("123"), "/BitcoinPeppe:0.0.1/", 0, false);
 		
 		// SEND VERSION
 		writeMessage(versionMessage);
@@ -69,7 +71,7 @@ public class BitcoinClient {
 
 		BitcoinVersionMessage version = (BitcoinVersionMessage) message;
 		
-		if (version.getVersion() < 70001L) {
+		if (version.getVersion() < 70012L) {
 			throw new Exception("Unsupported version!");
 		}
 		
