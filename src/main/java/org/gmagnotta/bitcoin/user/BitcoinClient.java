@@ -5,13 +5,18 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.message.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
+import org.gmagnotta.bitcoin.message.BlockHeaders;
 import org.gmagnotta.bitcoin.message.NetworkAddress;
 import org.gmagnotta.bitcoin.parser.BitcoinFrameParserStream;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
@@ -19,8 +24,13 @@ import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame.BitcoinFrameBuilder;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 public class BitcoinClient {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(BitcoinClient.class);
 
 	private String host;
 	private int port;
@@ -28,16 +38,24 @@ public class BitcoinClient {
 	private InputStream inputStream;
 	private OutputStream outputStream;
 	private BitcoinFrameParserStream parser;
-	private ReaderRunnable readerRunnable;
 	private MagicVersion magicVersion;
+	private boolean waitForResponse;
 	
-	private LinkedBlockingQueue<BitcoinMessage> queue;
+	private Object sync;
+	
+	private final LinkedBlockingQueue<BitcoinMessage> inputQueue;
+	private final LinkedBlockingQueue<BitcoinMessage> outputQueue;
+	private final LinkedBlockingQueue<BitcoinMessage> responseQueue;
 
 	public BitcoinClient(MagicVersion magicVersion, String host, int port) {
 		this.magicVersion = magicVersion;
 		this.host = host;
 		this.port = port;
-		this.queue = new LinkedBlockingQueue<BitcoinMessage>();
+		this.inputQueue = new LinkedBlockingQueue<BitcoinMessage>();
+		this.outputQueue = new LinkedBlockingQueue<BitcoinMessage>();
+		this.responseQueue = new LinkedBlockingQueue<BitcoinMessage>();
+		this.waitForResponse = false;
+		this.sync = new Object();
 	}
 
 	public void connect() throws Exception {
@@ -50,7 +68,11 @@ public class BitcoinClient {
 
 		parser = new BitcoinFrameParserStream(magicVersion, inputStream);
 		
-		new Thread(new ReaderRunnable(parser, queue)).start();
+		new Thread(new ReaderRunnable(parser)).start();
+		
+		new Thread(new WriterRunnable()).start();
+		
+		new Thread(new MessageRunnable()).start();
 		
 		NetworkAddress emitting = new NetworkAddress(0, new BigInteger("1"), InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), clientSocket.getLocalPort());
 		
@@ -63,20 +85,6 @@ public class BitcoinClient {
 		
 		BitcoinMessage message = getMessage();
 		
-		if (!message.getCommand().equals(BitcoinCommand.VERSION)) {
-			
-			throw new Exception("Unexpected response!");
-			
-		}
-
-		BitcoinVersionMessage version = (BitcoinVersionMessage) message;
-		
-		if (version.getVersion() < 70012L) {
-			throw new Exception("Unsupported version!");
-		}
-		
-		message = getMessage();
-		
 		if (!message.getCommand().equals(BitcoinCommand.VERACK)) {
 			
 			throw new Exception("Unexpected response!");
@@ -87,23 +95,45 @@ public class BitcoinClient {
 
 	public BitcoinMessage getMessage() throws Exception {
 		
-		return queue.take();
+		try {
+		
+			return responseQueue.take();
+		
+		} finally {
+			
+			synchronized (sync) {
+				waitForResponse = false;
+			}
+		
+		}
 
 	}
 	
 	public BitcoinMessage getMessage(long timeout, TimeUnit unit) throws Exception {
 		
-		return queue.poll(timeout, unit);
+		try {
+		
+			return responseQueue.poll(timeout, unit);
+		
+		} finally {
+			
+			synchronized (sync) {
+				waitForResponse = false;
+			}
+			
+		}
 
 	}
 
 	public void writeMessage(BitcoinMessage bitcoinMessage) throws Exception {
 
-		BitcoinFrameBuilder builder = new BitcoinFrameBuilder();
-
-		BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(bitcoinMessage).build();
-
-		outputStream.write(new BitcoinFrameSerializer().serialize(frame));
+		outputQueue.put(bitcoinMessage);
+			
+		synchronized (sync) {
+			
+			waitForResponse = true;
+			
+		}
 
 	}
 	
@@ -116,11 +146,9 @@ public class BitcoinClient {
 	private class ReaderRunnable implements Runnable {
 
 		private BitcoinFrameParserStream bitcoinFrameParserStream;
-		private LinkedBlockingQueue<BitcoinMessage> queue;
 		
-		public ReaderRunnable(BitcoinFrameParserStream bitcoinFrameParserStream, LinkedBlockingQueue<BitcoinMessage> queue) {
+		public ReaderRunnable(BitcoinFrameParserStream bitcoinFrameParserStream) {
 			this.bitcoinFrameParserStream = bitcoinFrameParserStream;
-			this.queue = queue;
 		}
 		
 		@Override
@@ -128,31 +156,123 @@ public class BitcoinClient {
 
 			try {
 				
-				while (true) {
+				while (!Thread.currentThread().isInterrupted()) {
 					
 					BitcoinFrame frame = bitcoinFrameParserStream.getFrame();
 					
-					if (frame.getCommand().equals(BitcoinCommand.PING)) {
+					inputQueue.put(frame.getPayload());
 						
-						BitcoinPingMessage ping = (BitcoinPingMessage) frame.getPayload();
-						
-						BigInteger nonce = ping.getNonce();
-						
-						BitcoinPongMessage pong = new BitcoinPongMessage(nonce);
-						
-						writeMessage(pong);
-						
-					} else {
-					
-						queue.put(frame.getPayload());
-					
-					}
+				}
+			
+			} catch (Exception ex) {
+				
+				LOGGER.error("Exception", ex);
+				
+			}
+			
+		}
+		
+	}
+	
+	private class WriterRunnable implements Runnable {
+		
+		private BitcoinFrameBuilder builder;
+		
+		public WriterRunnable() {
+			
+			this.builder = new BitcoinFrameBuilder();
+			
+		}
+
+		@Override
+		public void run() {
+
+			try {
+				
+				while (!Thread.currentThread().isInterrupted()) {
+				
+					BitcoinMessage outputMessage = outputQueue.take();
+
+					BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(outputMessage).build();
+
+					outputStream.write(new BitcoinFrameSerializer().serialize(frame));
 					
 				}
 			
 			} catch (Exception ex) {
 				
-				ex.printStackTrace();
+				LOGGER.error("Exception", ex);
+				
+			}
+			
+		}
+		
+	}
+	
+	private class MessageRunnable implements Runnable {
+
+		@Override
+		public void run() {
+
+			try {
+				
+				while (!Thread.currentThread().isInterrupted()) {
+					
+						BitcoinMessage message = inputQueue.take();
+						
+						if (message.getCommand().equals(BitcoinCommand.VERSION)) {
+							
+							// mange peer version
+							LOGGER.info("RECEIVED VERSION");
+							
+						} else if (message.getCommand().equals(BitcoinCommand.PING)) {
+							
+							LOGGER.info("RECEIVED PING");
+							
+							BitcoinPingMessage ping = (BitcoinPingMessage) message;
+							
+							BigInteger nonce = ping.getNonce();
+							
+							BitcoinPongMessage pong = new BitcoinPongMessage(nonce);
+							
+							writeMessage(pong);
+							
+						} else if (message.getCommand().equals(BitcoinCommand.GETHEADERS)) {
+							
+							// MANAGE HEADERS
+							
+							List<BlockHeaders> h = new ArrayList<BlockHeaders>();
+//							
+							BitcoinHeadersMessage headersMessage = new BitcoinHeadersMessage(h);
+							
+							writeMessage(headersMessage);
+							
+							LOGGER.info("RECEIVED GETHEADERS");
+							
+						} else {
+						
+							synchronized (sync) {
+								
+								if (waitForResponse) {
+									
+									responseQueue.put(message);
+									
+								} else {
+									
+									LOGGER.info("RECEIVED " + message.getCommand());
+									
+								}
+								
+							}
+							
+						}
+						
+					
+				}
+			
+			} catch (Exception ex) {
+				
+				LOGGER.error("Exception", ex);
 				
 			}
 			

@@ -44,19 +44,19 @@ public class BitcoinHeadersMessageSerializer implements BitcoinMessageSerializer
 	@Override
 	public byte[] serialize(BitcoinMessage messageToSerialize) {
 		
-		BitcoinGetHeadersMessage message = ((BitcoinGetHeadersMessage) messageToSerialize);
+		BitcoinHeadersMessage message = ((BitcoinHeadersMessage) messageToSerialize);
 		
-		VarInt v = new VarInt(message.getHash().size());
+		VarInt v = new VarInt(message.getHeaders().size());
 		
-		ByteBuffer buffer = ByteBuffer.allocate(4 + v.getSizeInBytes() + (32 * message.getHash().size()) + 32);
-		
-		buffer.put(Utils.writeInt32LE((int) message.getVersion()));
+		ByteBuffer buffer = ByteBuffer.allocate(4 + v.getSizeInBytes() + 81 * message.getHeaders().size() + 81);
 		
 		buffer.put(v.encode());
-
-		for (Sha256Hash hash : message.getHash()) {
+		
+		BlockHeadersSerializer blockHeadersSerializer = new BlockHeadersSerializer();
+		
+		for (BlockHeaders header : message.getHeaders()) {
 			
-			buffer.put(hash.getReversedBytes());
+			buffer.put(blockHeadersSerializer.serialize(header));
 			
 		}
 		

@@ -59,40 +59,42 @@ public class BlockHeadersSerializer {
 
 	}
 
-	public byte[] serialize(NetworkAddress networkAddress) {
+	public byte[] serialize(BlockHeaders networkAddress) {
 
-		ByteBuffer buffer;
+//		ByteBuffer buffer;
+//		
+//		if (serializeTime) {
+//
+//			buffer = ByteBuffer.allocate(4 + 8 + 16 + 2);
+//
+//			buffer.put(Utils.writeInt32LE(networkAddress.getTime()));
+//
+//		} else {
+//
+//			buffer = ByteBuffer.allocate(8 + 16 + 2);
+//			
+//		}
+//
+//		buffer.put(Utils.writeInt64LE(networkAddress.getServices().longValue()));
+//
+//		if (networkAddress.getInetAddress() instanceof Inet6Address) {
+//
+//			buffer.put(networkAddress.getInetAddress().getAddress());
+//
+//		} else {
+//
+//			buffer.put(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xFF,
+//					(byte) 0xFF });
+//
+//			buffer.put(networkAddress.getInetAddress().getAddress());
+//
+//		}
+//
+//		buffer.put(Utils.writeInt16BE(networkAddress.getPort()));
+//
+//		return buffer.array();
 		
-		if (serializeTime) {
-
-			buffer = ByteBuffer.allocate(4 + 8 + 16 + 2);
-
-			buffer.put(Utils.writeInt32LE(networkAddress.getTime()));
-
-		} else {
-
-			buffer = ByteBuffer.allocate(8 + 16 + 2);
-			
-		}
-
-		buffer.put(Utils.writeInt64LE(networkAddress.getServices().longValue()));
-
-		if (networkAddress.getInetAddress() instanceof Inet6Address) {
-
-			buffer.put(networkAddress.getInetAddress().getAddress());
-
-		} else {
-
-			buffer.put(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xFF,
-					(byte) 0xFF });
-
-			buffer.put(networkAddress.getInetAddress().getAddress());
-
-		}
-
-		buffer.put(Utils.writeInt16BE(networkAddress.getPort()));
-
-		return buffer.array();
+		return null;
 
 	}
 
