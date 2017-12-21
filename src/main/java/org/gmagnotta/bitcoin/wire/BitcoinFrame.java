@@ -119,7 +119,7 @@ public class BitcoinFrame {
 		
 		} catch (Exception ex) {
 			
-			throw new BitcoinFrameBuilderException("Exception", ex);
+			throw new BitcoinFrameBuilderException("Exception while deserializing frame", ex);
 			
 		}
 	}

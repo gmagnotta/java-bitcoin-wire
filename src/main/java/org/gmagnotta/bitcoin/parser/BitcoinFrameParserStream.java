@@ -103,7 +103,7 @@ public class BitcoinFrameParserStream implements Context {
 		
 		} catch (Exception ex) {
 			
-			throw new Exception("Exception", ex);
+			throw new Exception("Exception while constructing BitcoinFrame", ex);
 			
 		} finally {
 			
