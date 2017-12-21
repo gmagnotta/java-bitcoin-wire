@@ -15,6 +15,7 @@ import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinHeadersMessageSerialize
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinPingMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinPongMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinRejectMessageSerializer;
+import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinSendHeadersMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinVerackMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinVersionMessageSerializer;
 
@@ -39,7 +40,9 @@ public enum BitcoinCommand {
 	
 	HEADERS("headers", new BitcoinHeadersMessageSerializer()),
 	
-	REJECT("reject", new BitcoinRejectMessageSerializer());
+	REJECT("reject", new BitcoinRejectMessageSerializer()),
+	
+	SENDHEADERS("sendheaders", new BitcoinSendHeadersMessageSerializer());
 	
 	/* map that contains all commands to fast lookup */
 	private static HashMap<String, BitcoinCommand> COMMAND_MAP = new HashMap<String, BitcoinCommand>();

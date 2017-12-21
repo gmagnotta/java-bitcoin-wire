@@ -250,6 +250,12 @@ public class BitcoinClient {
 							writeMessage(headersMessage);
 							
 							
+						} else if (message.getCommand().equals(BitcoinCommand.SENDHEADERS)) {
+							
+							LOGGER.info("RECEIVED SENDHEADERS");
+							
+							// DO NOTHING
+							
 						} else {
 						
 							synchronized (sync) {
