@@ -14,7 +14,7 @@ public class ChecksumState implements MessageState {
 	}
 
 	@Override
-	public void read(byte buffer) {
+	public void process(byte buffer) {
 		
 		checksum[index] = buffer;
 

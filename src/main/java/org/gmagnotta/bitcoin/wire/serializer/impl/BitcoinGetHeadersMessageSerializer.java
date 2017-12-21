@@ -1,4 +1,4 @@
-package org.gmagnotta.bitcoin.wire.serializer;
+package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -7,16 +7,18 @@ import java.util.List;
 
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.VarInt;
-import org.gmagnotta.bitcoin.message.BitcoinGetBlocksMessage;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.wire.Utils;
+import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
+import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 
 import com.subgraph.orchid.encoders.Hex;
 
-public class BitcoinGetBlocksMessageSerializer implements BitcoinMessageSerializer {
+public class BitcoinGetHeadersMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws Exception {
+	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
 		
 		// nonce
 		long version = Utils.readUint32LE(payload, 0);
@@ -39,13 +41,13 @@ public class BitcoinGetBlocksMessageSerializer implements BitcoinMessageSerializ
 		}
 		
 		// return assembled message
-		return new BitcoinGetBlocksMessage(version, hashes);
+		return new BitcoinGetHeadersMessage(version, hashes);
 	}
 
 	@Override
 	public byte[] serialize(BitcoinMessage messageToSerialize) {
 		
-		BitcoinGetBlocksMessage message = ((BitcoinGetBlocksMessage) messageToSerialize);
+		BitcoinGetHeadersMessage message = ((BitcoinGetHeadersMessage) messageToSerialize);
 		
 		VarInt v = new VarInt(message.getHash().size());
 		

@@ -1,9 +1,9 @@
 package org.gmagnotta.bitcoin.server.state;
 import java.math.BigInteger;
 
-import org.gmagnotta.bitcoin.message.BitcoinPingMessage;
-import org.gmagnotta.bitcoin.message.BitcoinPongMessage;
-import org.gmagnotta.bitcoin.message.BitcoinRejectMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinRejectMessage;
 import org.gmagnotta.bitcoin.server.ServerContext;
 import org.gmagnotta.bitcoin.server.ServerState;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;

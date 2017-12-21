@@ -2,10 +2,10 @@ package org.gmagnotta.bitcoin.server.state;
 import java.math.BigInteger;
 import java.net.InetAddress;
 
-import org.gmagnotta.bitcoin.message.BitcoinRejectMessage;
-import org.gmagnotta.bitcoin.message.BitcoinVerackMessage;
-import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.message.NetworkAddress;
+import org.gmagnotta.bitcoin.message.impl.BitcoinRejectMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinVerackMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinVersionMessage;
+import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.server.ServerContext;
 import org.gmagnotta.bitcoin.server.ServerState;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;

@@ -1,4 +1,4 @@
-package org.gmagnotta.bitcoin.wire.serializer;
+package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.math.BigInteger;
 import java.net.Inet6Address;
@@ -8,8 +8,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.bitcoinj.core.Sha256Hash;
-import org.gmagnotta.bitcoin.message.BlockHeaders;
-import org.gmagnotta.bitcoin.message.NetworkAddress;
+import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
+import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.wire.Utils;
 
 public class BlockHeadersSerializer {

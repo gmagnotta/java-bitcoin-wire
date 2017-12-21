@@ -10,23 +10,21 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.bitcoinj.core.Sha256Hash;
-import org.gmagnotta.bitcoin.message.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.BitcoinPingMessage;
-import org.gmagnotta.bitcoin.message.BitcoinPongMessage;
-import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.message.BlockHeaders;
-import org.gmagnotta.bitcoin.message.NetworkAddress;
+import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinVerackMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinVersionMessage;
+import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
+import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.parser.BitcoinFrameParserStream;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame.BitcoinFrameBuilder;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
-import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 public class BitcoinClient {
 	
@@ -153,22 +151,22 @@ public class BitcoinClient {
 		
 		@Override
 		public void run() {
-
-			try {
 				
 				while (!Thread.currentThread().isInterrupted()) {
+
+					try {
 					
-					BitcoinFrame frame = bitcoinFrameParserStream.getFrame();
+						BitcoinFrame frame = bitcoinFrameParserStream.getBitcoinFrame();
 					
-					inputQueue.put(frame.getPayload());
+						inputQueue.put(frame.getPayload());
+						
+					} catch (Exception ex) {
+						
+						LOGGER.error("Exception", ex);
+						
+					}
 						
 				}
-			
-			} catch (Exception ex) {
-				
-				LOGGER.error("Exception", ex);
-				
-			}
 			
 		}
 		
@@ -186,24 +184,24 @@ public class BitcoinClient {
 
 		@Override
 		public void run() {
-
-			try {
 				
 				while (!Thread.currentThread().isInterrupted()) {
+
+					try {
 				
-					BitcoinMessage outputMessage = outputQueue.take();
-
-					BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(outputMessage).build();
-
-					outputStream.write(new BitcoinFrameSerializer().serialize(frame));
+						BitcoinMessage outputMessage = outputQueue.take();
+	
+						BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(outputMessage).build();
+	
+						outputStream.write(BitcoinFrame.serialize(frame));
 					
+					} catch (Exception ex) {
+						
+						LOGGER.error("Exception", ex);
+						
+					}
+
 				}
-			
-			} catch (Exception ex) {
-				
-				LOGGER.error("Exception", ex);
-				
-			}
 			
 		}
 		
@@ -225,6 +223,10 @@ public class BitcoinClient {
 							// mange peer version
 							LOGGER.info("RECEIVED VERSION");
 							
+							BitcoinVerackMessage verack = new BitcoinVerackMessage();
+							
+							writeMessage(verack);
+							
 						} else if (message.getCommand().equals(BitcoinCommand.PING)) {
 							
 							LOGGER.info("RECEIVED PING");
@@ -239,15 +241,14 @@ public class BitcoinClient {
 							
 						} else if (message.getCommand().equals(BitcoinCommand.GETHEADERS)) {
 							
-							// MANAGE HEADERS
+							LOGGER.info("RECEIVED GETHEADERS");
 							
 							List<BlockHeaders> h = new ArrayList<BlockHeaders>();
-//							
+							
 							BitcoinHeadersMessage headersMessage = new BitcoinHeadersMessage(h);
 							
 							writeMessage(headersMessage);
 							
-							LOGGER.info("RECEIVED GETHEADERS");
 							
 						} else {
 						

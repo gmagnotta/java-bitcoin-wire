@@ -1,7 +1,8 @@
-package org.gmagnotta.bitcoin.message;
+package org.gmagnotta.bitcoin.message.impl;
 
 import java.math.BigInteger;
 
+import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
 /**
@@ -11,11 +12,11 @@ import org.gmagnotta.bitcoin.wire.BitcoinCommand;
  * is presumed to be a closed connection and the address is removed as a current peer
  * @author giuseppe
  */
-public class BitcoinPongMessage implements BitcoinMessage {
+public class BitcoinPingMessage implements BitcoinMessage {
 
 	private BigInteger nonce;
 
-	public BitcoinPongMessage(BigInteger nonce) {
+	public BitcoinPingMessage(BigInteger nonce) {
 
 		this.nonce = nonce;
 
@@ -27,13 +28,13 @@ public class BitcoinPongMessage implements BitcoinMessage {
 
 	@Override
 	public BitcoinCommand getCommand() {
-		return BitcoinCommand.PONG;
+		return BitcoinCommand.PING;
 	}
 	
 	@Override
 	public String toString() {
 		return String.format("%s: nonce %s",
-				BitcoinCommand.PONG, nonce);
+				BitcoinCommand.PING, nonce);
 	}
 
 }

@@ -1,6 +1,5 @@
 package org.gmagnotta.bitcoin.wire.serializer;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
-import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -19,9 +18,9 @@ public class BitcoinFrameSerializerTest {
 	@Test
 	public void testFromBytes() throws Exception {
 		
-		BitcoinFrame frame = new BitcoinFrameSerializer().deserialize(message);
+		BitcoinFrame frame = BitcoinFrame.deserialize(message);
 		
-		Assert.assertArrayEquals(message, new BitcoinFrameSerializer().serialize(frame));
+		Assert.assertArrayEquals(message, BitcoinFrame.serialize(frame));
 		
 //		BitcoinFrame frame2 = new BitcoinFrameSerializer().deserialize(inv);
 //		

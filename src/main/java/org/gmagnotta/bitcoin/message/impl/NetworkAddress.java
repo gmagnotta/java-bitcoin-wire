@@ -1,4 +1,4 @@
-package org.gmagnotta.bitcoin.message;
+package org.gmagnotta.bitcoin.message.impl;
 
 import java.math.BigInteger;
 import java.net.InetAddress;

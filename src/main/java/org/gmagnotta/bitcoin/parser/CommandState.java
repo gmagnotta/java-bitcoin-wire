@@ -13,7 +13,7 @@ public class CommandState implements MessageState {
 	}
 	
 	@Override
-	public void read(byte buffer) {
+	public void process(byte buffer) {
 		
 		command[index] = buffer;
 

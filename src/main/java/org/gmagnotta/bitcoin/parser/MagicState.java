@@ -14,7 +14,7 @@ public class MagicState implements MessageState {
 	}
 	
 	@Override
-	public void read(byte buffer) {
+	public void process(byte buffer) {
 		
 		// convert byte to unsigned int
 		if (buffer == magic[expected]) {

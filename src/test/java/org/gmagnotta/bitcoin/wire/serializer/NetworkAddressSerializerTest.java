@@ -3,7 +3,8 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.gmagnotta.bitcoin.message.NetworkAddress;
+import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
+import org.gmagnotta.bitcoin.wire.serializer.impl.NetworkAddressSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 

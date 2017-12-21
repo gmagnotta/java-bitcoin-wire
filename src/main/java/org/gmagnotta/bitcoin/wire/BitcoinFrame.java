@@ -1,27 +1,37 @@
 package org.gmagnotta.bitcoin.wire;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Objects;
 
 import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.Utils;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
+import org.gmagnotta.bitcoin.wire.exception.BitcoinFrameBuilderException;
 
 /**
  * This class represents a Bitcoin Frame: the low level message that transport higher level application messages.
  */
 public class BitcoinFrame {
 	
-	// Magic value indicating message origin network, and used to seek to next message when stream state is unknown
+	/* Magic value indicating message origin network, and used to seek to next message when stream state is unknown */
 	private MagicVersion magic;
-	// 	ASCII string identifying the packet content, NULL padded (non-NULL padding results in packet rejected)
+	/* ASCII string identifying the packet content, NULL padded (non-NULL padding results in packet rejected) */
 	private BitcoinCommand command;
-	// Length of payload in number of bytes
+	/* Length of payload in number of bytes */
 	private long lenght;
-	// First 4 bytes of sha256(sha256(payload))
+	/* First 4 bytes of sha256(sha256(payload)) */
 	private long checksum;
-	// The actual data
+	/* The actual data */
 	private BitcoinMessage payload;
 	
+	/**
+	 * 
+	 * @param magic
+	 * @param command
+	 * @param length
+	 * @param checksum
+	 * @param payload
+	 */
 	public BitcoinFrame(MagicVersion magic, BitcoinCommand command, long length, long checksum, BitcoinMessage payload) {
 		this.magic = magic;
 		this.command = command;
@@ -83,6 +93,67 @@ public class BitcoinFrame {
 		
 	}
 	
+	public static BitcoinFrame deserialize(byte[] payload) throws BitcoinFrameBuilderException {
+		
+		try {
+			
+			MagicVersion magicVersion = MagicVersion.fromByteArray(payload, 0);
+			
+			BitcoinCommand bitcoinCommand = BitcoinCommand.fromByteArray(payload, 4);
+			
+			long len = Utils.readUint32LE(payload, 16);
+			
+			long checksum =  Utils.readUint32BE(payload, 20);
+			
+			byte[] messagepart = Arrays.copyOfRange(payload, 24, (int) (24 + len));
+			
+			Sha256Hash hash = Sha256Hash.twiceOf(messagepart);
+			
+			long cksum2 = Utils.readUint32BE(hash.getBytes(), 0);
+			
+			if (checksum != cksum2) {
+				throw new Exception("Invalid checksum");
+			}
+			
+			return new BitcoinFrame(magicVersion, bitcoinCommand, len, checksum, bitcoinCommand.deserialize(messagepart));
+		
+		} catch (Exception ex) {
+			
+			throw new BitcoinFrameBuilderException("Exception", ex);
+			
+		}
+	}
+	
+	public static byte[] serialize(BitcoinFrame bitcoinFrame) throws BitcoinFrameBuilderException {
+		
+		try {
+			
+			BitcoinCommand command = bitcoinFrame.getPayload().getCommand();
+			
+			byte[] messageSerialized = command.serialize(bitcoinFrame.getPayload());
+			
+			ByteBuffer buffer = ByteBuffer.allocate(4 + 12 + 4 + 4 + messageSerialized.length);
+			
+			buffer.put(bitcoinFrame.getMagic().getBytes());
+			
+			buffer.put(bitcoinFrame.getCommand().serialize());
+			
+			buffer.put(Utils.writeInt32LE(messageSerialized.length));
+			
+			buffer.put(Arrays.copyOfRange(Sha256Hash.twiceOf(messageSerialized).getBytes(), 0, 4));
+			
+			buffer.put(messageSerialized);
+			
+			return buffer.array();
+			
+		} catch (Exception ex) {
+			
+			throw new BitcoinFrameBuilderException("Exception", ex);
+			
+		}
+		
+	}
+	
 	public static class BitcoinFrameBuilder {
 		
 		private MagicVersion magicVersion;
@@ -109,15 +180,23 @@ public class BitcoinFrame {
 			return this;
 		}
 		
-		public BitcoinFrame build() {
+		public BitcoinFrame build() throws BitcoinFrameBuilderException {
 			
-			byte[] serialized = bitcoinMessage.getCommand().getBitcoinMessageSerializer().serialize(bitcoinMessage);
+			try {
+				
+				byte[] serialized = bitcoinMessage.getCommand().getBitcoinMessageSerializer().serialize(bitcoinMessage);
+				
+				Sha256Hash hash = Sha256Hash.twiceOf(serialized);
+				
+				long len = serialized.length;
+				
+				return new BitcoinFrame(magicVersion, bitcoinMessage.getCommand(), len, Utils.readUint32BE(hash.getBytes(), 0), bitcoinMessage);
 			
-			Sha256Hash hash = Sha256Hash.twiceOf(serialized);
-			
-			long len = serialized.length;
-			
-			return new BitcoinFrame(magicVersion, bitcoinMessage.getCommand(), len, Utils.readUint32BE(hash.getBytes(), 0), bitcoinMessage);
+			} catch (Exception ex) {
+				
+				throw new BitcoinFrameBuilderException("Exception", ex);
+				
+			}
 			
 		}
 		

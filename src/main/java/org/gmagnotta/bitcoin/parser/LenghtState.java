@@ -12,7 +12,7 @@ public class LenghtState implements MessageState {
 	}
 
 	@Override
-	public void read(byte buffer) {
+	public void process(byte buffer) {
 		
 		lenght[index] = buffer;
 

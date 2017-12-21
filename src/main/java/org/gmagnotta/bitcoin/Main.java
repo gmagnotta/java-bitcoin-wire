@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bitcoinj.core.Sha256Hash;
-import org.gmagnotta.bitcoin.message.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.user.BitcoinClient;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
+import org.gmagnotta.log.LogLevel;
+import org.gmagnotta.log.impl.system.ConsoleLogEventWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -17,6 +19,10 @@ public class Main {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Main.class.getName());
 	
 	public static void main(String[] args) throws Exception {
+		
+		org.gmagnotta.log.LogEventCollector.getInstance().setLogLevelThreshold(LogLevel.INFO);
+		
+		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
 //		new Thread(new ServerRunnable()).start();
 		
@@ -32,7 +38,7 @@ public class Main {
 //		
 		List<Sha256Hash> h = new ArrayList<Sha256Hash>();
 		
-		Sha256Hash last = Sha256Hash.of(Hex.decode("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+		Sha256Hash last = Sha256Hash.of(Hex.decode("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
 		
 		h.add(last);
 		BitcoinGetHeadersMessage get = new BitcoinGetHeadersMessage(70012L, h);

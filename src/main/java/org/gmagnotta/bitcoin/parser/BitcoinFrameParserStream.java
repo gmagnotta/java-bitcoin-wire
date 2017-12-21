@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.bitcoin.wire.Utils;
-import org.gmagnotta.bitcoin.wire.serializer.BitcoinFrameSerializer;
 
 public class BitcoinFrameParserStream implements Context {
 	
@@ -76,32 +75,42 @@ public class BitcoinFrameParserStream implements Context {
 		isComplete = true;
 	}
 	
-	public BitcoinFrame getFrame() throws Exception {
+	public BitcoinFrame getBitcoinFrame() throws Exception {
 		
-		while (!isComplete) {
+		try {
 			
-			int input = inputStream.read();
+			while (!isComplete) {
+				
+				int input = inputStream.read();
+				
+				messageState.process((byte) input);
+				
+			}
 			
-			messageState.read((byte) input);
+			long len = Utils.readUint32LE(length, 0);
+			
+			ByteBuffer buffer = ByteBuffer.allocate((int) (4 + 12 + 4 + 4 + len));
+			
+			buffer.put(magic);
+			buffer.put(command);
+			buffer.put(length);
+			buffer.put(checksum);
+			buffer.put(payload);
+			
+			BitcoinFrame frame = BitcoinFrame.deserialize(buffer.array());
+		
+			return frame;
+		
+		} catch (Exception ex) {
+			
+			throw new Exception("Exception", ex);
+			
+		} finally {
+			
+			// reset status
+			reset();
 			
 		}
-		
-		long len = Utils.readUint32LE(length, 0);
-		
-		ByteBuffer buffer = ByteBuffer.allocate((int) (4 + 12 + 4 + 4 + len));
-		
-		buffer.put(magic);
-		buffer.put(command);
-		buffer.put(length);
-		buffer.put(checksum);
-		buffer.put(payload);
-		
-		BitcoinFrame frame = new BitcoinFrameSerializer().deserialize(buffer.array());
-		
-		// reset status
-		reset();
-		
-		return frame;
 		
 	}
 	

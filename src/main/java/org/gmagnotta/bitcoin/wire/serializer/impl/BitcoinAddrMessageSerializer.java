@@ -1,37 +1,44 @@
-package org.gmagnotta.bitcoin.wire.serializer;
+package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.bitcoinj.core.VarInt;
-import org.gmagnotta.bitcoin.message.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.message.NetworkAddress;
+import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinVersionMessage;
+import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.wire.Utils;
+import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
+import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 
 public class BitcoinAddrMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws Exception {
+	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
 		
-		// read varint
-		VarInt varint = new VarInt(payload, 0);
-		
-		// how many bytes represents the value?
-		int len = varint.getSizeInBytes();
-		
-		byte[] array = Arrays.copyOfRange(payload, len, payload.length);
-		
-		// deserialize networkaddress
-		NetworkAddress networkAddress = new NetworkAddressSerializer().deserialize(array);
-
-		// return assembled message
-		return new BitcoinAddrMessage(varint.value, networkAddress);
+		try {
+			// read varint
+			VarInt varint = new VarInt(payload, 0);
+			
+			// how many bytes represents the value?
+			int len = varint.getSizeInBytes();
+			
+			byte[] array = Arrays.copyOfRange(payload, len, payload.length);
+			
+			// deserialize networkaddress
+			NetworkAddress networkAddress = new NetworkAddressSerializer().deserialize(array);
+	
+			// return assembled message
+			return new BitcoinAddrMessage(varint.value, networkAddress);
+			
+		} catch (Exception ex) {
+			throw new BitcoinMessageSerializerException("Exception", ex);
+		}
 	}
 
 	@Override
-	public byte[] serialize(BitcoinMessage messageToSerialize) {
+	public byte[] serialize(BitcoinMessage messageToSerialize) throws BitcoinMessageSerializerException {
 		
 		BitcoinVersionMessage message = ((BitcoinVersionMessage) messageToSerialize);
 		

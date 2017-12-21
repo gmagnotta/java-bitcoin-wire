@@ -1,7 +1,8 @@
-package org.gmagnotta.bitcoin.message;
+package org.gmagnotta.bitcoin.message.impl;
 
 import java.util.List;
 
+import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
 /**

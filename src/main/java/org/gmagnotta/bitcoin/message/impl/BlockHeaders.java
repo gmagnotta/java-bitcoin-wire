@@ -1,4 +1,4 @@
-package org.gmagnotta.bitcoin.message;
+package org.gmagnotta.bitcoin.message.impl;
 
 import java.util.Objects;
 

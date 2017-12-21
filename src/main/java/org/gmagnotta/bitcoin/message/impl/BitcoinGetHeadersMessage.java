@@ -1,8 +1,9 @@
-package org.gmagnotta.bitcoin.message;
+package org.gmagnotta.bitcoin.message.impl;
 
 import java.util.List;
 
 import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
 /**
@@ -12,12 +13,12 @@ import org.gmagnotta.bitcoin.wire.BitcoinCommand;
  * is presumed to be a closed connection and the address is removed as a current peer
  * @author giuseppe
  */
-public class BitcoinGetBlocksMessage implements BitcoinMessage {
+public class BitcoinGetHeadersMessage implements BitcoinMessage {
 
 	private long version;
 	private List<Sha256Hash> hashes;
 
-	public BitcoinGetBlocksMessage(long version, List<Sha256Hash> hashes) {
+	public BitcoinGetHeadersMessage(long version, List<Sha256Hash> hashes) {
 
 		this.version = version;
 		this.hashes = hashes;
@@ -34,13 +35,13 @@ public class BitcoinGetBlocksMessage implements BitcoinMessage {
 
 	@Override
 	public BitcoinCommand getCommand() {
-		return BitcoinCommand.GETBLOCKS;
+		return BitcoinCommand.GETHEADERS;
 	}
 	
 	@Override
 	public String toString() {
 		return String.format("%s: nonce %s",
-				BitcoinCommand.GETBLOCKS, version);
+				BitcoinCommand.GETHEADERS, version);
 	}
 
 }
