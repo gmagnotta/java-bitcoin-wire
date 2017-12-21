@@ -42,4 +42,35 @@
 
 	</dependencies>
 
+<build>
+                <plugins>
+                        <plugin>
+                                <groupId>org.codehaus.mojo</groupId>
+                                <artifactId>exec-maven-plugin</artifactId>
+                                <version>1.2</version>
+                                <configuration>
+                                        <executable>java</executable>
+                                        <arguments>
+                                                <argument>-cp</argument>
+                                                <classpath />
+                                                <argument>org.gmagnotta.bitcoin.Main</argument>
+                                        </arguments>
+                                </configuration>
+                        </plugin>
+                        <plugin>
+                                <artifactId>maven-assembly-plugin</artifactId>
+                                <configuration>
+                                        <archive>
+                                                <manifest>
+                                                        <mainClass>org.gmagnotta.bitcoin.Main</mainClass>
+                                                </manifest>
+                                        </archive>
+                                        <descriptorRefs>
+                                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                                        </descriptorRefs>
+                                </configuration>
+                        </plugin>
+                </plugins>
+        </build>
+
 </project>

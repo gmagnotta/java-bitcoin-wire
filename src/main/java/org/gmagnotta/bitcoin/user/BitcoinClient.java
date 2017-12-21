@@ -5,21 +5,13 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinVerackMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.parser.BitcoinFrameParserStream;
-import org.gmagnotta.bitcoin.wire.BitcoinCommand;
+import org.gmagnotta.bitcoin.user.state.ConnectingState;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame.BitcoinFrameBuilder;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -37,23 +29,34 @@ public class BitcoinClient {
 	private OutputStream outputStream;
 	private BitcoinFrameParserStream parser;
 	private MagicVersion magicVersion;
-	private boolean waitForResponse;
-	
-	private Object sync;
+	private ClientState clientState;
+	private Thread reader, writer, message;
 	
 	private final LinkedBlockingQueue<BitcoinMessage> inputQueue;
 	private final LinkedBlockingQueue<BitcoinMessage> outputQueue;
-	private final LinkedBlockingQueue<BitcoinMessage> responseQueue;
 
 	public BitcoinClient(MagicVersion magicVersion, String host, int port) {
+		
 		this.magicVersion = magicVersion;
 		this.host = host;
 		this.port = port;
 		this.inputQueue = new LinkedBlockingQueue<BitcoinMessage>();
 		this.outputQueue = new LinkedBlockingQueue<BitcoinMessage>();
-		this.responseQueue = new LinkedBlockingQueue<BitcoinMessage>();
-		this.waitForResponse = false;
-		this.sync = new Object();
+		this.clientState = new ConnectingState(new ClientContext() {
+			
+			@Override
+			public void writeMessage(BitcoinMessage bitcoinMessage) throws Exception {
+				BitcoinClient.this.writeMessage(bitcoinMessage);
+				
+			}
+			
+			@Override
+			public void setNextState(ClientState clientState) {
+				BitcoinClient.this.setNextState(clientState);
+				
+			}
+		});
+
 	}
 
 	public void connect() throws Exception {
@@ -66,11 +69,17 @@ public class BitcoinClient {
 
 		parser = new BitcoinFrameParserStream(magicVersion, inputStream);
 		
-		new Thread(new ReaderRunnable(parser)).start();
+		reader = new Thread(new ReaderRunnable(parser), "reader");
 		
-		new Thread(new WriterRunnable()).start();
+		reader.start();
 		
-		new Thread(new MessageRunnable()).start();
+		writer = new Thread(new WriterRunnable(), "writer");
+		
+		writer.start();
+		
+		message = new Thread(new MessageRunnable(), "message");
+		
+		message.start();
 		
 		NetworkAddress emitting = new NetworkAddress(0, new BigInteger("1"), InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), clientSocket.getLocalPort());
 		
@@ -81,66 +90,29 @@ public class BitcoinClient {
 		// SEND VERSION
 		writeMessage(versionMessage);
 		
-		BitcoinMessage message = getMessage();
-		
-		if (!message.getCommand().equals(BitcoinCommand.VERACK)) {
-			
-			throw new Exception("Unexpected response!");
-			
-		}
-
 	}
 
-	public BitcoinMessage getMessage() throws Exception {
-		
-		try {
-		
-			return responseQueue.take();
-		
-		} finally {
-			
-			synchronized (sync) {
-				waitForResponse = false;
-			}
-		
-		}
-
-	}
-	
-	public BitcoinMessage getMessage(long timeout, TimeUnit unit) throws Exception {
-		
-		try {
-		
-			return responseQueue.poll(timeout, unit);
-		
-		} finally {
-			
-			synchronized (sync) {
-				waitForResponse = false;
-			}
-			
-		}
-
-	}
-
-	public void writeMessage(BitcoinMessage bitcoinMessage) throws Exception {
+	private void writeMessage(BitcoinMessage bitcoinMessage) throws Exception {
 
 		outputQueue.put(bitcoinMessage);
 			
-		synchronized (sync) {
-			
-			waitForResponse = true;
-			
-		}
-
 	}
 	
 	public void disconnect() throws Exception {
+		
+		reader.interrupt();
+		
+		writer.interrupt();
+		
+		message.interrupt();
 		
 		clientSocket.close();
 		
 	}
 	
+	/**
+	 * This runnable read a frame form inputstream and put it into the input queue
+	 */
 	private class ReaderRunnable implements Runnable {
 
 		private BitcoinFrameParserStream bitcoinFrameParserStream;
@@ -152,26 +124,35 @@ public class BitcoinClient {
 		@Override
 		public void run() {
 				
-				while (!Thread.currentThread().isInterrupted()) {
+			while (!Thread.currentThread().isInterrupted()) {
 
-					try {
+				try {
+				
+					BitcoinFrame frame = bitcoinFrameParserStream.getBitcoinFrame();
+				
+					inputQueue.put(frame.getPayload());
 					
-						BitcoinFrame frame = bitcoinFrameParserStream.getBitcoinFrame();
+				} catch (InterruptedException ex) {
 					
-						inputQueue.put(frame.getPayload());
-						
-					} catch (Exception ex) {
-						
-						LOGGER.error("Exception", ex);
-						
-					}
-						
+					LOGGER.info("Interrupting...");
+					
+					break;
+					
+				}  catch (Exception ex) {
+					
+					LOGGER.error("Exception", ex);
+					
 				}
+					
+			}
 			
 		}
 		
 	}
 	
+	/**
+	 * This runnable will read from the output queue bitcoinmessages, then wrap into a frame and send to outputstream
+	 */
 	private class WriterRunnable implements Runnable {
 		
 		private BitcoinFrameBuilder builder;
@@ -184,24 +165,30 @@ public class BitcoinClient {
 
 		@Override
 		public void run() {
-				
-				while (!Thread.currentThread().isInterrupted()) {
+			
+			while (!Thread.currentThread().isInterrupted()) {
 
-					try {
+				try {
+			
+					BitcoinMessage outputMessage = outputQueue.take();
+
+					BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(outputMessage).build();
+
+					outputStream.write(BitcoinFrame.serialize(frame));
 				
-						BitcoinMessage outputMessage = outputQueue.take();
-	
-						BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(outputMessage).build();
-	
-						outputStream.write(BitcoinFrame.serialize(frame));
+				} catch (InterruptedException ex) {
 					
-					} catch (Exception ex) {
-						
-						LOGGER.error("Exception", ex);
-						
-					}
-
+					LOGGER.info("Interrupting...");
+					
+					break;
+					
+				} catch (Exception ex) {
+					
+					LOGGER.error("Exception", ex);
+					
 				}
+
+			}
 			
 		}
 		
@@ -212,79 +199,38 @@ public class BitcoinClient {
 		@Override
 		public void run() {
 
-			try {
-				
-				while (!Thread.currentThread().isInterrupted()) {
+			while (!Thread.currentThread().isInterrupted()) {
+
+				try {
+
+					BitcoinMessage bitcoinMessage = inputQueue.take();
 					
-						BitcoinMessage message = inputQueue.take();
-						
-						if (message.getCommand().equals(BitcoinCommand.VERSION)) {
-							
-							// mange peer version
-							LOGGER.info("RECEIVED VERSION");
-							
-							BitcoinVerackMessage verack = new BitcoinVerackMessage();
-							
-							writeMessage(verack);
-							
-						} else if (message.getCommand().equals(BitcoinCommand.PING)) {
-							
-							LOGGER.info("RECEIVED PING");
-							
-							BitcoinPingMessage ping = (BitcoinPingMessage) message;
-							
-							BigInteger nonce = ping.getNonce();
-							
-							BitcoinPongMessage pong = new BitcoinPongMessage(nonce);
-							
-							writeMessage(pong);
-							
-						} else if (message.getCommand().equals(BitcoinCommand.GETHEADERS)) {
-							
-							LOGGER.info("RECEIVED GETHEADERS");
-							
-							List<BlockHeaders> h = new ArrayList<BlockHeaders>();
-							
-							BitcoinHeadersMessage headersMessage = new BitcoinHeadersMessage(h);
-							
-							writeMessage(headersMessage);
-							
-							
-						} else if (message.getCommand().equals(BitcoinCommand.SENDHEADERS)) {
-							
-							LOGGER.info("RECEIVED SENDHEADERS");
-							
-							// DO NOTHING
-							
-						} else {
-						
-							synchronized (sync) {
-								
-								if (waitForResponse) {
-									
-									responseQueue.put(message);
-									
-								} else {
-									
-									LOGGER.info("RECEIVED " + message.getCommand());
-									
-								}
-								
-							}
-							
-						}
-						
+					getCurrentState().onMessageReceived(bitcoinMessage);
+					
+				} catch (InterruptedException ex) {
+					
+					LOGGER.info("Interrupting...");
+					
+					break;
+					
+				} catch (Exception ex) {
+					
+					LOGGER.error("Exception", ex);
 					
 				}
 			
-			} catch (Exception ex) {
-				
-				LOGGER.error("Exception", ex);
-				
 			}
 			
 		}
 		
+	}
+
+	public synchronized void setNextState(ClientState clientState) {
+		this.clientState = clientState;
+	}
+	
+	private synchronized ClientState getCurrentState() {
+		return clientState;
 	}
 
 }
