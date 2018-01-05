@@ -66,52 +66,42 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 			sendMessage(versionMessage);
 
-			boolean handShakeCompleted = false;
+			BitcoinFrame receivedFrame = bitcoinFrameParserStream.getBitcoinFrame();
 
-			while (!handShakeCompleted) {
+			if (!receivedFrame.getCommand().equals(BitcoinCommand.VERSION)) {
 
-				BitcoinFrame receivedFrame = bitcoinFrameParserStream.getBitcoinFrame();
-
-				BitcoinMessage message = receivedFrame.getPayload();
-
-				if (message.getCommand().equals(BitcoinCommand.VERACK)) {
-
-					// Start receiving thread
-					receiver = new Thread(new ReaderRunnable(bitcoinFrameParserStream), "receiver");
-
-					receiver.start();
-
-					handShakeCompleted = true;
-
-				} else if (message.getCommand().equals(BitcoinCommand.VERSION)) {
-
-					// update peer data
-					BitcoinVersionMessage bitcoinVersionMessage = (BitcoinVersionMessage) message;
-
-					// initialize node info
-					nodeServices = bitcoinVersionMessage.getServices();
-					userAgent = bitcoinVersionMessage.getUserAgent();
-					startHeight = bitcoinVersionMessage.getStartHeight();
-					
-					BitcoinVerackMessage verack = new BitcoinVerackMessage();
-
-					try {
-
-						sendMessage(verack);
-
-					} catch (Exception ex) {
-
-						LOGGER.error("Exception", ex);
-
-					}
-
-				} else if (message.getCommand().equals(BitcoinCommand.REJECT)) {
-
-					throw new Exception("Received a reject!");
-
-				}
+				throw new Exception("Unexpected response!");
 
 			}
+
+			// Verify that version is compatible to our!
+
+			// update peer data
+			BitcoinVersionMessage bitcoinVersionMessage = (BitcoinVersionMessage) receivedFrame.getPayload();
+
+			// initialize node info
+			nodeServices = bitcoinVersionMessage.getServices();
+			userAgent = bitcoinVersionMessage.getUserAgent();
+			startHeight = bitcoinVersionMessage.getStartHeight();
+
+			BitcoinVerackMessage verack = new BitcoinVerackMessage();
+
+			sendMessage(verack);
+
+			receivedFrame = bitcoinFrameParserStream.getBitcoinFrame();
+
+			if (!receivedFrame.getCommand().equals(BitcoinCommand.VERACK)) {
+
+				throw new Exception("Unexpected response!");
+
+			}
+
+			// handshake complete!
+
+			// Start receiving thread
+			receiver = new Thread(new ReaderRunnable(bitcoinFrameParserStream), "receiver");
+
+			receiver.start();
 
 		}
 
@@ -149,7 +139,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	}
 
 	@Override
-	public BigInteger getNodeServices() {
+	public BigInteger getPeerServices() {
 		
 		return nodeServices;
 		
