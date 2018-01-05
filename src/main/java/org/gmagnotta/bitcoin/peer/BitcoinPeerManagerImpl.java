@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
@@ -37,15 +38,20 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			BitcoinPongMessage pong = new BitcoinPongMessage(nonce);
 			
-			LOGGER.info("SENDING PONG");
-			
 			try {
 				
 				bitcoinPeer.sendPong(pong);
 				
 			} catch (Exception e) {
+				
 				LOGGER.error("Exception", e);
+				
 			}
+
+		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.GETHEADERS)) {
+			
+//			BitcoinHeadersMessage headers = new BitcoinHeadersMessage(headers);
+			
 		}
 	}
 

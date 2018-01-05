@@ -12,7 +12,7 @@ public interface BitcoinPeer {
 	 * Returns Peer services
 	 * @return
 	 */
-	public BigInteger getNodeServices();
+	public BigInteger getPeerServices();
 	
 	/**
 	 * Returns Peers user agent

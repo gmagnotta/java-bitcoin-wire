@@ -33,19 +33,21 @@ public class Main {
 			}
 		}).start();
 		
-		//bitcoinPeerManager.connect("13.125.54.76", 18333);
+//		bitcoinPeerManager.connect("52.167.211.151", 19000);
 		
-		bitcoinPeerManager.connect("127.0.0.1", 4000);
+		bitcoinPeerManager.connect("13.125.54.76", 18333);
 		
-		long nonce = System.currentTimeMillis();
-		
-		BitcoinPingMessage bitcoinPingMessage = new BitcoinPingMessage(new BigInteger("" + nonce));
-		
-		for (BitcoinPeer p : bitcoinPeerManager.getConnectedPeers()) {
-			
-			BitcoinPongMessage pong = p.sendPing(bitcoinPingMessage);
-			
-		}
+//		bitcoinPeerManager.connect("127.0.0.1", 4000);
+//		
+//		for (BitcoinPeer p : bitcoinPeerManager.getConnectedPeers()) {
+//
+//			long nonce = System.currentTimeMillis();
+//			
+//			BitcoinPingMessage bitcoinPingMessage = new BitcoinPingMessage(new BigInteger("" + nonce));
+//			
+//			BitcoinPongMessage pong = p.sendPing(bitcoinPingMessage);
+//			
+//		}
 		
 		System.in.read();
 		

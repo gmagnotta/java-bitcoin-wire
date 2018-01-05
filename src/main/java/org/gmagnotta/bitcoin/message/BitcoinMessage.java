@@ -3,7 +3,7 @@ package org.gmagnotta.bitcoin.message;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
 /**
- * Represents a BitCoin message.
+ * Represents a Bitcoin message.
  */
 public interface BitcoinMessage {
 	
