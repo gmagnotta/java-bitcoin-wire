@@ -1,29 +1,53 @@
 package org.gmagnotta.bitcoin;
 
-import org.gmagnotta.bitcoin.user.BitcoinClient;
+import java.math.BigInteger;
+
+import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
+import org.gmagnotta.bitcoin.peer.BitcoinPeer;
+import org.gmagnotta.bitcoin.peer.BitcoinPeerManager;
+import org.gmagnotta.bitcoin.peer.BitcoinPeerManagerImpl;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.log.LogLevel;
 import org.gmagnotta.log.impl.system.ConsoleLogEventWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Main {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Main.class.getName());
-	
 	public static void main(String[] args) throws Exception {
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().setLogLevelThreshold(LogLevel.INFO);
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
-		BitcoinClient bitcoinClient = new BitcoinClient(MagicVersion.TESTNET3, "13.125.54.76", 18333);
+		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(MagicVersion.TESTNET3);
 		
-		bitcoinClient.connect();
-
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					bitcoinPeerManager.listen(4000);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
+		
+		//bitcoinPeerManager.connect("13.125.54.76", 18333);
+		
+		bitcoinPeerManager.connect("127.0.0.1", 4000);
+		
+		long nonce = System.currentTimeMillis();
+		
+		BitcoinPingMessage bitcoinPingMessage = new BitcoinPingMessage(new BigInteger("" + nonce));
+		
+		for (BitcoinPeer p : bitcoinPeerManager.getConnectedPeers()) {
+			
+			BitcoinPongMessage pong = p.sendPing(bitcoinPingMessage);
+			
+		}
+		
 		System.in.read();
-		
-		bitcoinClient.disconnect();
 		
 	}
 	
