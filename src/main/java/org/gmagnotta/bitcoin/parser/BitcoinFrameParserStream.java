@@ -83,6 +83,11 @@ public class BitcoinFrameParserStream implements Context {
 				
 				int input = inputStream.read();
 				
+				if (input == -1) {
+					//End of Stream
+					throw new Exception("End of Stream!");
+				}
+				
 				messageState.process((byte) input);
 				
 			}
