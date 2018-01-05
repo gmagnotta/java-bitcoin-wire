@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
+import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
@@ -52,6 +54,16 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 //			BitcoinHeadersMessage headers = new BitcoinHeadersMessage(headers);
 			
+		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.ADDR)) {
+			
+			if (peers.size() < 11) {
+				
+				LOGGER.info("Opening connection with {} ", bitcoinMessage);
+				
+				openConnection((BitcoinAddrMessage) bitcoinMessage, this);
+				
+			}
+			
 		}
 	}
 
@@ -91,6 +103,36 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			peers.add(bitcoinClient);
 		
 		}
+		
+	}
+	
+	private void openConnection(final BitcoinAddrMessage message, BitcoinPeerCallback callback) {
+		
+		Thread t = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				
+				try {
+				
+					NetworkAddress na = message.getNetworkAddress();
+					
+					Socket socket = new Socket(na.getInetAddress(), na.getPort());
+					
+					BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, callback);
+					
+					peers.add(bitcoinClient);
+				
+				} catch (Exception e) {
+					
+					LOGGER.error("Error", e);
+					
+				}
+				
+			}
+		});
+		
+		t.start();
 		
 	}
 
