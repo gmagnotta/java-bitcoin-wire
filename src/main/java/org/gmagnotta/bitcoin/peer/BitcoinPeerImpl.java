@@ -233,7 +233,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		@Override
 		public void run() {
 
-			while (!Thread.currentThread().isInterrupted()) {
+			while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
 
 				try {
 
@@ -255,6 +255,10 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 				}
 
+			}
+			
+			if (socket.isClosed()) {
+				bitcoinPeerManagerCallbacks.onConnectionClosed(BitcoinPeerImpl.this);
 			}
 
 		}

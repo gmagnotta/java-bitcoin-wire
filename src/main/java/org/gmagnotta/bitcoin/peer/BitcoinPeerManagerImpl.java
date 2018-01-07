@@ -21,7 +21,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BitcoinPeerManagerImpl.class);
 	
-	private static final int MAX_PEERS_CONNECTED =  5;
+	private static final int MAX_PEERS_CONNECTED =  3;
 	
 	private MagicVersion magicVersion;
 	private List<BitcoinPeer> peers;
@@ -60,11 +60,15 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			BitcoinAddrMessage addrMessage = (BitcoinAddrMessage) bitcoinMessage;
 			
-			if (peers.size() < MAX_PEERS_CONNECTED && !isConnected(peers, addrMessage.getNetworkAddress().getInetAddress())) {
+			for (NetworkAddress networkAddress : addrMessage.getNetworkAddress()) {
 				
-				LOGGER.info("Opening connection with {} ", bitcoinMessage);
-				
-				openConnection((BitcoinAddrMessage) bitcoinMessage, this);
+				if (peers.size() < MAX_PEERS_CONNECTED && !isConnected(peers, networkAddress.getInetAddress())) {
+					
+					LOGGER.info("Opening connection with {} ", bitcoinMessage);
+					
+					openConnection(networkAddress, this);
+					
+				}
 				
 			}
 			
@@ -110,7 +114,14 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 	}
 	
-	private void openConnection(final BitcoinAddrMessage message, final BitcoinPeerCallback callback) {
+	@Override
+	public void onConnectionClosed(BitcoinPeer bitcoinPeer) {
+		
+		peers.remove(bitcoinPeer);
+		
+	}
+	
+	private void openConnection(final NetworkAddress networkAddress, final BitcoinPeerCallback callback) {
 		
 		Thread t = new Thread(new Runnable() {
 			
@@ -119,9 +130,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 				try {
 				
-					NetworkAddress na = message.getNetworkAddress();
-					
-					Socket socket = new Socket(na.getInetAddress(), na.getPort());
+					Socket socket = new Socket(networkAddress.getInetAddress(), networkAddress.getPort());
 					
 					BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, callback);
 					
