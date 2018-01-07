@@ -1,6 +1,7 @@
 package org.gmagnotta.bitcoin.peer;
 
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -8,7 +9,6 @@ import java.util.List;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerManager {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BitcoinPeerManagerImpl.class);
+	
+	private static final int MAX_PEERS_CONNECTED =  5;
 	
 	private MagicVersion magicVersion;
 	private List<BitcoinPeer> peers;
@@ -56,7 +58,9 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.ADDR)) {
 			
-			if (peers.size() < 11) {
+			BitcoinAddrMessage addrMessage = (BitcoinAddrMessage) bitcoinMessage;
+			
+			if (peers.size() < MAX_PEERS_CONNECTED && !isConnected(peers, addrMessage.getNetworkAddress().getInetAddress())) {
 				
 				LOGGER.info("Opening connection with {} ", bitcoinMessage);
 				
@@ -106,7 +110,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 	}
 	
-	private void openConnection(final BitcoinAddrMessage message, BitcoinPeerCallback callback) {
+	private void openConnection(final BitcoinAddrMessage message, final BitcoinPeerCallback callback) {
 		
 		Thread t = new Thread(new Runnable() {
 			
@@ -133,6 +137,18 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		});
 		
 		t.start();
+		
+	}
+	
+	private static boolean isConnected(List<BitcoinPeer> peers , InetAddress inetaddress) {
+
+		for (BitcoinPeer peer : peers) {
+			if (peer.getInetAddress().equals(inetaddress)) {
+				return true;
+			}
+		}
+		
+		return false;
 		
 	}
 
