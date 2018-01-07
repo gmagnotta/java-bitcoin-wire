@@ -1,7 +1,9 @@
 package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -24,13 +26,24 @@ public class BitcoinAddrMessageSerializer implements BitcoinMessageSerializer {
 			// how many bytes represents the value?
 			int len = varint.getSizeInBytes();
 			
-			byte[] array = Arrays.copyOfRange(payload, len, payload.length);
+			// how many items?
+			long count = varint.value;
 			
-			// deserialize networkaddress
-			NetworkAddress networkAddress = new NetworkAddressSerializer().deserialize(array);
+			List<NetworkAddress> networkAddresses = new ArrayList<NetworkAddress>();
+			
+			for (int i = 0; i < count; i ++) {
+			
+				byte[] array = Arrays.copyOfRange(payload, 30 * i + len, 30 * i + 30 + len);
+				
+				// deserialize networkaddress
+				NetworkAddress networkAddress = new NetworkAddressSerializer().deserialize(array);
+				
+				networkAddresses.add(networkAddress);
+
+			}
 	
 			// return assembled message
-			return new BitcoinAddrMessage(varint.value, networkAddress);
+			return new BitcoinAddrMessage(networkAddresses);
 			
 		} catch (Exception ex) {
 			throw new BitcoinMessageSerializerException("Exception", ex);

@@ -1,5 +1,7 @@
 package org.gmagnotta.bitcoin.message.impl;
 
+import java.util.List;
+
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
@@ -9,18 +11,16 @@ import org.gmagnotta.bitcoin.wire.BitcoinCommand;
  */
 public class BitcoinAddrMessage implements BitcoinMessage {
 
-	private long count;
-	private NetworkAddress networkAddress;
+	private List<NetworkAddress> networkAddresses;
 
-	public BitcoinAddrMessage(long count, NetworkAddress networkAddress) {
+	public BitcoinAddrMessage(List<NetworkAddress> networkAddresses) {
 
-		this.count = count;
-		this.networkAddress = networkAddress;
+		this.networkAddresses = networkAddresses;
 
 	}
 	
-	public NetworkAddress getNetworkAddress() {
-		return networkAddress;
+	public List<NetworkAddress> getNetworkAddress() {
+		return networkAddresses;
 	}
 
 	@Override
@@ -31,7 +31,7 @@ public class BitcoinAddrMessage implements BitcoinMessage {
 	@Override
 	public String toString() {
 		return String.format("%s: count %s; address %s",
-				BitcoinCommand.ADDR, count, networkAddress);
+				BitcoinCommand.ADDR, networkAddresses.size(), networkAddresses);
 	}
 
 }
