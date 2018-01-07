@@ -7,6 +7,7 @@ import java.net.Socket;
 
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinVerackMessage;
@@ -137,6 +138,14 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		sendMessage(bitcoinPongMessage);
 		
 	}
+	
+	@Override
+	public BitcoinAddrMessage sendGetAddrMessage(BitcoinGetAddrMessage bitcoinGetAddrMessage) throws Exception {
+
+		sendMessage(bitcoinGetAddrMessage);
+		
+		return (BitcoinAddrMessage) waitResponse(BitcoinCommand.ADDR, 10000);
+	}
 
 	@Override
 	public BigInteger getPeerServices() {
@@ -250,6 +259,11 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		}
 
+	}
+
+	@Override
+	public InetAddress getInetAddress() {
+		return socket.getInetAddress();
 	}
 
 }

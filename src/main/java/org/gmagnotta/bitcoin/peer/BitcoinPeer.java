@@ -1,12 +1,21 @@
 package org.gmagnotta.bitcoin.peer;
 
 import java.math.BigInteger;
+import java.net.InetAddress;
 
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 
 public interface BitcoinPeer {
+	
+	/**
+	 * Return inetaddress of remote peer
+	 * 
+	 * @return
+	 */
+	public InetAddress getInetAddress();
 	
 	/**
 	 * Returns Peer services
@@ -32,6 +41,15 @@ public interface BitcoinPeer {
 	 * @throws Exception 
 	 */
 	public void sendAddrMessage(BitcoinAddrMessage bitcoinAddrMessage) throws Exception;
+	
+	/**
+	 * Send getaddr Message to Peer
+	 * 
+	 * @param bitcoinGetAddrMessage
+	 * @return
+	 * @throws Exception
+	 */
+	public BitcoinAddrMessage sendGetAddrMessage(BitcoinGetAddrMessage bitcoinGetAddrMessage) throws Exception;
 	
 	/**
 	 * Send a Ping to Peer
