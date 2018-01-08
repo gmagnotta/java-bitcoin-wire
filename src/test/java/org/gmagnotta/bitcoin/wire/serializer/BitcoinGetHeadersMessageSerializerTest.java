@@ -1,11 +1,6 @@
 package org.gmagnotta.bitcoin.wire.serializer;
-import java.math.BigInteger;
-import java.net.InetAddress;
-
-import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
-import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinVersionMessageSerializer;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
+import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinGetHeadersMessageSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -15,39 +10,22 @@ public class BitcoinGetHeadersMessageSerializerTest {
 	private static byte[] message;
 	
 	static {
-		message = Hex.decode("7c1101000500000000000000ddf3ed5900000000010000000000000000000000000000000000ffff970d1bdae19a050000000000000000000000000000000000ffff000000004a385502c949e5e88d92102f5361746f7368693a302e31322e312fe915000001");
+		message = Hex.decode("7c110100209eee702068ec517cde60510e39c0ce9f9d9c7158bebe627d320200000000000055d76b065b7c0fea7b28b1632a236414313be58cc6fc55dbfb16530000000000cdc7027247c497201f6188b93252b9cc04287b791584cfa6ed0000000000000007da7dd26ad9d356f496a0aa6112aa00cd5e2e0c7773ada9de89c800000000004f1570b24244fb8fc632dd7889a61af712ea9c0f353783f42205000000000000e9c5dae29e7c03c7c1d1b5b726825cd4a333728af7c44fff8f02000000000000f5d2fe9c1eee7f70f69d92e910c0ebaf015c625608eb67ee51010000000000005ec69abb9cc51a5111e0a62369946001e1e09a3421e5c04af9030000000000004ee2555cd8793bc99da445956c742b790d0ca48c9ea71ac5c104000000000000af16ef4f9267df4d470064493b5fcbc7fadcf5c449fffe76972b71000000000024db45e3df7d4cb95d3f22c37a90b21046c87231834b4ddbbd4d370000000000ab32adb3a7cd87968f633d9734fb8f5b0e51acbec5280b774504000000000000c1bb933f941a0cb7cff1f01efdd66562d04f974dab08530e6905e100000000000db6352c1860fc34f7bdbb8b18b49ec5177b6ddcba5906f24202000000000000d88a94444c24f461adab0234a444f62fbd3ffca188c7bdb39b06000000000000107f8ffb53079524db9e405e670eb880ceae66ea16403321fe02000000000000b8a9550ca697f3996f1f30d28c4ee9d7fcea5fa3fb877fd69207000000000000857587c6ae93426a7a256cd6e67cedc9eb9b6b93b44d93f024daa0000000000053955fba91f49082f0c1ac8a204638d42f610f9edbd187d13700000000000000820b02085a474b86c052fb26fa90b8fe30b689e08f057f911407000000000000b7b90b91ac014ee4285b8114b001b49b1c1b5fb04789c7d95d66cfc6000000006b4e46a356b0619dbc98edf7b9195cefff8bf34ee2f0d2f6e0640500000000006e89bb50be8bec1b10887f6418b188cbd0955e237443f490740b000000000000e05e5fc0629dfb6a6520b3c6ff96613a4508e7eff4cce22098d900000000000002824fe0810a2d40c31dab370014ea06c2ff7934d9926a378e271a0000000000b251b71a5a41d6a6434847e39520489aac730d761e4d29eedd0a000000000000375cbb2638c75ad898ddb2e3c9b90d546dd405a22896b1adc42a100000000000a566f0a5a62c62496a41dbd6d19498d7cf60ede6d269da6b19915f0e00000000a99a3251761bf22a43cd7e24a0bdf9ee3e0e0040aaaf704e6a6c760000000000f018cb4c1beb21e83142e558b1cd9eaefbe96bf7e37d521abc9f3200000000009ed6ea4dc2bc9a6bf6b82d5fb676705b8953e44540a4c0d0768801000000000043497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea3309000000000000000000000000000000000000000000000000000000000000000000000000");
 	}
 
 	@Test
 	public void testDeserialize() throws Exception {
 		
-		BitcoinVersionMessage versionMessage = (BitcoinVersionMessage) new BitcoinVersionMessageSerializer().deserialize(message);
+		BitcoinGetHeadersMessage getHeadersMessage = (BitcoinGetHeadersMessage) new BitcoinGetHeadersMessageSerializer().deserialize(message);
 		
-		Assert.assertEquals(70012, versionMessage.getVersion());
-		Assert.assertEquals(new BigInteger("5"), versionMessage.getServices());
-		Assert.assertEquals(new BigInteger("1508766685"), versionMessage.getTimestamp());
-		Assert.assertEquals(new BigInteger("10560352772736746069"), versionMessage.getNonce());
-		Assert.assertEquals("/Satoshi:0.12.1/", versionMessage.getUserAgent());
-		Assert.assertEquals(5609, versionMessage.getStartHeight());
-		Assert.assertEquals(true, versionMessage.getRelay());
+		Assert.assertEquals(70012, getHeadersMessage.getVersion());
+		Assert.assertEquals(33, getHeadersMessage.getHash().size());
 		
-		NetworkAddress receiver = new NetworkAddress(0, new BigInteger("1"), InetAddress.getByAddress(new byte[] { (byte) 0x97, (byte) 0xd, (byte) 0x1b, (byte) 0xda }), 57754);
-		
-		Assert.assertEquals(receiver, versionMessage.getAddressReceiving());
-		
-		NetworkAddress emitter = new NetworkAddress(0, new BigInteger("5"), InetAddress.getByAddress(new byte[] { (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0 }), 19000);
-		
-		Assert.assertEquals(emitter, versionMessage.getAddressEmitting());
 	}
 
-	@Test
+//	@Test
 	public void testSerialize() throws Exception {
 		
-		BitcoinMessage versionMessage = new BitcoinVersionMessageSerializer().deserialize(message);
-		
-		byte[] serialized = new BitcoinVersionMessageSerializer().serialize(versionMessage);
-		
-		Assert.assertArrayEquals(message, serialized);
 	}
 
 }

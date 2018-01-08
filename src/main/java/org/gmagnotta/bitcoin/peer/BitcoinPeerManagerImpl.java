@@ -7,10 +7,13 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
+import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -25,10 +28,12 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	private MagicVersion magicVersion;
 	private List<BitcoinPeer> peers;
+	private BlockChain blockChain;
 	
-	public BitcoinPeerManagerImpl(MagicVersion magicVersion) {
+	public BitcoinPeerManagerImpl(MagicVersion magicVersion, BlockChain blockChain) {
 		this.magicVersion = magicVersion;
 		this.peers = new ArrayList<BitcoinPeer>();
+		this.blockChain = blockChain;
 	}
 
 	@Override
@@ -54,7 +59,24 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.GETHEADERS)) {
 			
-//			BitcoinHeadersMessage headers = new BitcoinHeadersMessage(headers);
+			// Send our block list
+			BitcoinHeadersMessage headers = new BitcoinHeadersMessage(blockChain.getBlockHeaders());
+			
+			try {
+				
+				bitcoinPeer.sendHeaders(headers);
+				
+			} catch (Exception e) {
+				
+				LOGGER.error("Exception", e);
+				
+			}
+			
+			// we can use the one provided by the peer to check if he has something better than us (or maybe a new
+			// fork appeared)
+			
+			
+			
 			
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.ADDR)) {
 			
@@ -80,7 +102,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 		Socket socket = new Socket(address, port);
 		
-		BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this);
+		BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this, blockChain);
 		
 		peers.add(bitcoinClient);
 		
@@ -106,7 +128,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			Socket socket = serverSocket.accept();
 			
-			BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this);
+			BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this, blockChain);
 			
 			peers.add(bitcoinClient);
 		
@@ -143,7 +165,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 					Socket socket = new Socket(networkAddress.getInetAddress(), networkAddress.getPort());
 					
-					BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, callback);
+					BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, callback, blockChain);
 					
 					peers.add(bitcoinClient);
 				

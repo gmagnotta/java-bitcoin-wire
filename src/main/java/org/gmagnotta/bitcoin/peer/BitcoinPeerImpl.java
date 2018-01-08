@@ -5,9 +5,11 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
 
+import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinVerackMessage;
@@ -38,8 +40,10 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	private BigInteger nodeServices;
 	private String userAgent;
 	private long startHeight;
+	private BlockChain blockChain;
 	
-	public BitcoinPeerImpl(MagicVersion magicVersion, Socket socket, BitcoinPeerCallback bitcoinPeerManagerCallbacks)
+	public BitcoinPeerImpl(MagicVersion magicVersion, Socket socket, BitcoinPeerCallback bitcoinPeerManagerCallbacks,
+			BlockChain blockChain)
 			throws Exception {
 
 		this.magicVersion = magicVersion;
@@ -47,6 +51,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		this.bitcoinFrameParserStream = new BitcoinFrameParserStream(magicVersion, socket.getInputStream());
 		this.bitcoinPeerManagerCallbacks = bitcoinPeerManagerCallbacks;
 		this.syncObj = new Object();
+		this.blockChain = blockChain;
 
 		connect();
 
@@ -62,7 +67,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(70012L, new BigInteger("1"),
 				new BigInteger("" + System.currentTimeMillis() / 1000), receiving, emitting, new BigInteger("123"),
-				"/BitcoinPeppe:0.0.1/", 0, false);
+				"/BitcoinPeppe:0.0.1/", blockChain.getBlockStartHeight(), false);
 
 		synchronized (syncObj) {
 
@@ -211,7 +216,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 	}
 	
-	private void sendMessage(BitcoinMessage bitcoinMessage) throws Exception {
+	private synchronized void sendMessage(BitcoinMessage bitcoinMessage) throws Exception {
 		
 		BitcoinFrameBuilder builder = new BitcoinFrameBuilder();
 
@@ -277,6 +282,13 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	@Override
 	public InetAddress getInetAddress() {
 		return socket.getInetAddress();
+	}
+
+	@Override
+	public void sendHeaders(BitcoinHeadersMessage bitcoinHeadersMessage) throws Exception {
+		
+		sendMessage(bitcoinHeadersMessage);
+		
 	}
 
 }

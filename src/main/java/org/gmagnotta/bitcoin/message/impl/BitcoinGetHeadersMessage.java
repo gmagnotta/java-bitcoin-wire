@@ -40,7 +40,7 @@ public class BitcoinGetHeadersMessage implements BitcoinMessage {
 	
 	@Override
 	public String toString() {
-		return String.format("%s: nonce %s",
+		return String.format("%s: version %s",
 				BitcoinCommand.GETHEADERS, version);
 	}
 
