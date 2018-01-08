@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.wire.Utils;
@@ -21,41 +22,22 @@ public class BlockHeadersSerializer {
 	
 	public BlockHeaders deserialize(byte[] payload) throws UnknownHostException {
 
-		BlockHeaders blockHeaders = null;
-
 		long version = Utils.readUint32LE(payload, 0);
 		
 		Sha256Hash prevBlock = Sha256Hash.wrapReversed(Arrays.copyOfRange(payload, 4, 32 + 4));
 
-		BigInteger services = Utils.readUint64LE(payload, 4);
+		Sha256Hash merkle = Sha256Hash.wrapReversed(Arrays.copyOfRange(payload, 32 + 4, 32 + 4 + 32));
+		
+		long timestamp = Utils.readUint32LE(payload, 32 + 4 + 32);
+		
+		long bits = Utils.readUint32LE(payload, 32 + 4 + 32 + 4);
+		
+		long nonce = Utils.readUint32LE(payload, 32 + 4 + 32 + 4 + 4);
+		
+		// read varint
+		VarInt varint = new VarInt(payload, 32 + 4 + 32 + 4 + 4 + 4);
 
-		InetAddress inetAddress = Inet6Address.getByAddress(Arrays.copyOfRange(payload, 12, 28));
-		// only
-		// ipv4
-		// for
-		// the
-		// moment
-
-		int port = Utils.readUint16BE(payload, 28);
-
-//		} else {
-//
-//			BigInteger services = Utils.readUint64LE(payload, 0);
-//
-//			InetAddress inetAddress = Inet6Address.getByAddress(Arrays.copyOfRange(payload, /* 8 */20, 24)); // take
-//																												// only
-//																												// ipv4
-//																												// for
-//																												// the
-//																												// moment
-//
-//			int port = Utils.readUint16BE(payload, 24);
-//
-//			blockHeaders = new NetworkAddress(0, services, inetAddress, port);
-//
-//		}
-
-		return blockHeaders;
+		return new BlockHeaders(version, prevBlock, merkle, timestamp, bits, nonce, varint.value);
 
 	}
 

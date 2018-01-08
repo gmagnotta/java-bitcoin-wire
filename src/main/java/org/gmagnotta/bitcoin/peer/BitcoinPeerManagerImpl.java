@@ -10,6 +10,7 @@ import java.util.List;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
@@ -75,9 +76,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			// we can use the one provided by the peer to check if he has something better than us (or maybe a new
 			// fork appeared)
 			
-			
-			
-			
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.ADDR)) {
 			
 			BitcoinAddrMessage addrMessage = (BitcoinAddrMessage) bitcoinMessage;
@@ -105,6 +103,18 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this, blockChain);
 		
 		peers.add(bitcoinClient);
+		
+		BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, blockChain.getHashList());
+		
+		BitcoinHeadersMessage bitcoinHeaders = bitcoinClient.sendGetHeaders(bitcoinGetHeadersMessage);
+		
+		LOGGER.info("Peer {} returned {} headers!", bitcoinClient, bitcoinHeaders.getHeaders().size());
+		
+		for (BlockHeaders b : bitcoinHeaders.getHeaders()) {
+			
+			LOGGER.info("Read {}", b.toString());
+			
+		}
 		
 	}
 	
@@ -168,6 +178,18 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, callback, blockChain);
 					
 					peers.add(bitcoinClient);
+					
+					BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, blockChain.getHashList());
+					
+					BitcoinHeadersMessage bitcoinHeaders = bitcoinClient.sendGetHeaders(bitcoinGetHeadersMessage);
+					
+					LOGGER.info("Peer {} returned {} headers!", bitcoinClient, bitcoinHeaders.getHeaders().size());
+					
+					for (BlockHeaders b : bitcoinHeaders.getHeaders()) {
+						
+						LOGGER.info("Read {}", b.toString());
+						
+					}
 				
 				} catch (Exception e) {
 					

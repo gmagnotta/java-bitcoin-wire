@@ -112,7 +112,7 @@ public class BlockHeaders {
 	@Override
 	public String toString() {
 		
-		return String.format("BlockHeaders: %d, %d, %s, %d");
+		return String.format("BlockHeaders: %d, %s, %s, %d, %d, %d, %d", version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount );
 		
 	}
 

@@ -33,8 +33,8 @@ public class BitcoinHeadersMessage implements BitcoinMessage {
 	
 	@Override
 	public String toString() {
-		return String.format("%s: nonce",
-				BitcoinCommand.HEADERS);
+		return String.format("%s: size %d",
+				BitcoinCommand.HEADERS, headers.size());
 	}
 
 }

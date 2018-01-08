@@ -9,6 +9,7 @@ import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
@@ -288,6 +289,15 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	public void sendHeaders(BitcoinHeadersMessage bitcoinHeadersMessage) throws Exception {
 		
 		sendMessage(bitcoinHeadersMessage);
+		
+	}
+
+	@Override
+	public BitcoinHeadersMessage sendGetHeaders(BitcoinGetHeadersMessage bitcoinGetHeadersMessage) throws Exception {
+
+		sendMessage(bitcoinGetHeadersMessage);
+		
+		return (BitcoinHeadersMessage) waitResponse(BitcoinCommand.HEADERS, 10000);
 		
 	}
 

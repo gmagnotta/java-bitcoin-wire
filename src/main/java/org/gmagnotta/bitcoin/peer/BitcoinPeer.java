@@ -5,6 +5,7 @@ import java.net.InetAddress;
 
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
@@ -72,6 +73,14 @@ public interface BitcoinPeer {
 	 * @throws Exception
 	 */
 	public void sendHeaders(BitcoinHeadersMessage bitcoinHeadersMessage) throws Exception;
+	
+	/**
+	 * Send get headers
+	 * @param bitcoinGetHeadersMessage
+	 * @return
+	 * @throws Exception
+	 */
+	public BitcoinHeadersMessage sendGetHeaders(BitcoinGetHeadersMessage bitcoinGetHeadersMessage) throws Exception;
 	
 	/**
 	 * Terminates connection with the peer
