@@ -1,10 +1,7 @@
 package org.gmagnotta.bitcoin;
 
-import java.math.BigInteger;
-
-import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
-import org.gmagnotta.bitcoin.peer.BitcoinPeer;
+import org.gmagnotta.bitcoin.blockchain.BlockChain;
+import org.gmagnotta.bitcoin.blockchain.BlockChainImpl;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManager;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManagerImpl;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -19,7 +16,9 @@ public class Main {
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
-		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(MagicVersion.TESTNET3);
+		BlockChain blockChain = new BlockChainImpl();
+		
+		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(MagicVersion.TESTNET3, blockChain);
 		
 		new Thread(new Runnable() {
 			
@@ -36,6 +35,8 @@ public class Main {
 //		bitcoinPeerManager.connect("52.167.211.151", 19000);
 		
 		bitcoinPeerManager.connect("13.125.54.76", 18333);
+		
+//		bitcoinPeerManager.connect("47.88.214.164", 18333);
 		
 //		bitcoinPeerManager.connect("127.0.0.1", 4000);
 //		
