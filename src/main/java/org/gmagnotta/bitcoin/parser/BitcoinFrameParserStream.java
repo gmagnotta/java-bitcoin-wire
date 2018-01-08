@@ -6,8 +6,12 @@ import java.nio.ByteBuffer;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.bitcoin.wire.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BitcoinFrameParserStream implements Context {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(BitcoinFrameParserStream.class);
 	
 	private MessageState messageState;
 	private byte[] magic;
@@ -85,7 +89,7 @@ public class BitcoinFrameParserStream implements Context {
 				
 				if (input == -1) {
 					//End of Stream
-					throw new Exception("End of Stream!");
+					throw new EndOfStreamException("End of Stream reached!");
 				}
 				
 				messageState.process((byte) input);
@@ -108,7 +112,7 @@ public class BitcoinFrameParserStream implements Context {
 		
 		} catch (Exception ex) {
 			
-			throw new Exception("Exception while constructing BitcoinFrame", ex);
+			throw ex;
 			
 		} finally {
 			

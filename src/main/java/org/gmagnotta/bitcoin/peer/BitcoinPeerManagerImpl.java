@@ -117,6 +117,17 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	@Override
 	public void onConnectionClosed(BitcoinPeer bitcoinPeer) {
 		
+		try {
+			
+			LOGGER.info("Disconnecting from {}", bitcoinPeer);
+			bitcoinPeer.disconnect();
+			
+		} catch (Exception ex) {
+			
+			LOGGER.error("Exception while disconnecting", ex);
+			
+		}
+		
 		peers.remove(bitcoinPeer);
 		
 	}

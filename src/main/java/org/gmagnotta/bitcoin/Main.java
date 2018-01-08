@@ -31,7 +31,7 @@ public class Main {
 					e.printStackTrace();
 				}
 			}
-		}).start();
+		}, "bitcoinPeerManagerListener").start();
 		
 //		bitcoinPeerManager.connect("52.167.211.151", 19000);
 		

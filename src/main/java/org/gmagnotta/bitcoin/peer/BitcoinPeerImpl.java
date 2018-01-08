@@ -14,6 +14,7 @@ import org.gmagnotta.bitcoin.message.impl.BitcoinVerackMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinVersionMessage;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.parser.BitcoinFrameParserStream;
+import org.gmagnotta.bitcoin.parser.EndOfStreamException;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame.BitcoinFrameBuilder;
@@ -100,7 +101,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 			// handshake complete!
 
 			// Start receiving thread
-			receiver = new Thread(new ReaderRunnable(bitcoinFrameParserStream), "receiver");
+			receiver = new Thread(new ReaderRunnable(bitcoinFrameParserStream), "receiver-" + socket.getInetAddress());
 
 			receiver.start();
 
@@ -111,9 +112,13 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	@Override
 	public void disconnect() throws Exception {
 
-		receiver.interrupt();
+		if (receiver.isAlive()) {
+			receiver.interrupt();
+		}
 		
-		socket.close();
+		if (!socket.isClosed()) {
+			socket.close();
+		}
 
 	}
 
@@ -249,18 +254,22 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 					break;
 
+				} catch (EndOfStreamException ex) {
+					
+					LOGGER.error("EndOfStreamException", ex);
+					
+					bitcoinPeerManagerCallbacks.onConnectionClosed(BitcoinPeerImpl.this);
+					
+					break;
+					
 				} catch (Exception ex) {
 
 					LOGGER.error("Exception", ex);
-
+					
 				}
 
 			}
 			
-			if (socket.isClosed()) {
-				bitcoinPeerManagerCallbacks.onConnectionClosed(BitcoinPeerImpl.this);
-			}
-
 		}
 
 	}
