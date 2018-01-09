@@ -1,8 +1,5 @@
 package org.gmagnotta.bitcoin.wire.serializer.impl;
 
-import java.math.BigInteger;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -10,15 +7,9 @@ import java.util.Arrays;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
-import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.wire.Utils;
 
 public class BlockHeadersSerializer {
-	
-	private boolean serializeTime;
-	
-	public BlockHeadersSerializer() {
-	}
 	
 	public BlockHeaders deserialize(byte[] payload) throws UnknownHostException {
 
@@ -41,43 +32,28 @@ public class BlockHeadersSerializer {
 
 	}
 
-	public byte[] serialize(BlockHeaders networkAddress) {
+	public byte[] serialize(BlockHeaders blockHeaders) {
 
-//		ByteBuffer buffer;
-//		
-//		if (serializeTime) {
-//
-//			buffer = ByteBuffer.allocate(4 + 8 + 16 + 2);
-//
-//			buffer.put(Utils.writeInt32LE(networkAddress.getTime()));
-//
-//		} else {
-//
-//			buffer = ByteBuffer.allocate(8 + 16 + 2);
-//			
-//		}
-//
-//		buffer.put(Utils.writeInt64LE(networkAddress.getServices().longValue()));
-//
-//		if (networkAddress.getInetAddress() instanceof Inet6Address) {
-//
-//			buffer.put(networkAddress.getInetAddress().getAddress());
-//
-//		} else {
-//
-//			buffer.put(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xFF,
-//					(byte) 0xFF });
-//
-//			buffer.put(networkAddress.getInetAddress().getAddress());
-//
-//		}
-//
-//		buffer.put(Utils.writeInt16BE(networkAddress.getPort()));
-//
-//		return buffer.array();
+		ByteBuffer buffer = ByteBuffer.allocate(4 + 32 + 32 + 4 + 4 + 4 + 1);
 		
-		return null;
+		buffer.put(Utils.writeInt32LE(blockHeaders.getVersion()));
+		
+		buffer.put(blockHeaders.getPrevBlock().getReversedBytes());
+		
+		buffer.put(blockHeaders.getMerkleRoot().getReversedBytes());
+		
+		buffer.put(Utils.writeInt32LE(blockHeaders.getTimestamp()));
+		
+		buffer.put(Utils.writeInt32LE(blockHeaders.getBits()));
+		
+		buffer.put(Utils.writeInt32LE(blockHeaders.getNonce()));
+		
+		VarInt varInt = new VarInt(blockHeaders.getTxnCount());
+		
+		buffer.put(varInt.encode());
 
+		return buffer.array();
+		
 	}
 
 }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
@@ -33,10 +34,13 @@ public class BitcoinHeadersMessageSerializer implements BitcoinMessageSerializer
 			for (int i = 0; i < (varint.value + 1); i++) {
 	
 				byte[] array = Arrays.copyOfRange(payload,  len + i * 81, len + i * 81 + 81);
-				
-				headers.add(blockHeadersSerializer.deserialize(array));
+
+				BlockHeaders header = blockHeadersSerializer.deserialize(array);
+
+				headers.add(header);
+
 			}
-			
+
 			// return assembled message
 			return new BitcoinHeadersMessage(headers);
 		
