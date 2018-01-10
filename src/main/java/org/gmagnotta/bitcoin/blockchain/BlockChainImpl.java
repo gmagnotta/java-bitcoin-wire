@@ -6,24 +6,26 @@ import java.util.List;
 import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
 
-import com.subgraph.orchid.encoders.Hex;
-
 public class BlockChainImpl implements BlockChain {
 	
-	private List<Block> blocks;
+	private List<BlockHeaders> blocks;
 	
 	public BlockChainImpl() {
 
-		blocks = new ArrayList<Block>();
+		blocks = new ArrayList<BlockHeaders>();
 
-		blocks.add(new Block() {
-
-			@Override
-			public Sha256Hash getHash() {
-				return Sha256Hash.wrap("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943");
-			}
-
-		});
+		blocks.add(
+				
+				/* GENESIS BLOCK */
+				new BlockHeaders(1,
+				Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000"),
+				Sha256Hash.wrap("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
+				1296688602,
+				486604799,
+				414098458,
+				1
+				
+		));
 		
 	}
 	
@@ -33,18 +35,17 @@ public class BlockChainImpl implements BlockChain {
 	}
 
 	@Override
-	public Block getBlock(int index) {
+	public BlockHeaders getBlock(int index) {
 		return blocks.get(index);
 	}
 
-	@Override
 	public List<Sha256Hash> getHashList() {
 		
 		List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
 		
-		for (Block b : blocks) {
+		for (BlockHeaders header : blocks) {
 			
-			hashes.add(b.getHash());
+			hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(header));
 			
 		}
 		

@@ -5,6 +5,12 @@ import java.util.List;
 import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
 
+/**
+ * Represent the blockchain known by the node
+ * 
+ * @author giuseppe
+ *
+ */
 public interface BlockChain {
 	
 	/**
@@ -20,7 +26,7 @@ public interface BlockChain {
 	 * @param index
 	 * @return
 	 */
-	public Block getBlock(int index);
+	public BlockHeaders getBlock(int index);
 	
 	/**
 	 * Returns a list of hashes

@@ -59,7 +59,7 @@ public class BitcoinGetHeadersMessageSerializer implements BitcoinMessageSeriali
 
 		for (Sha256Hash hash : message.getHash()) {
 			
-			buffer.put(hash.getReversedBytes());
+			buffer.put(hash.getBytes());
 			
 		}
 		
