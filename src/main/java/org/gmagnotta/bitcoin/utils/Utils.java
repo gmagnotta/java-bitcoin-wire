@@ -7,6 +7,8 @@ import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BlockHeadersSerializer;
 
+import com.subgraph.orchid.encoders.Hex;
+
 public class Utils {
 	
 	public static Sha256Hash computeBlockHeaderHash(BlockHeader blockHeader) {
@@ -31,7 +33,17 @@ public class Utils {
 
 	}
 	
+	public static boolean isShaMatchesTarget(Sha256Hash sha256, int target) {
+		
+		String string = new String(Hex.encode(sha256.getReversedBytes()));
+		
+		return isShaMatchesTarget(string, target);
+		
+	}
+	
 	public static boolean isShaMatchesTarget(String sha256, int target) {
+		
+		// see https://bitcoin.stackexchange.com/questions/23912/how-is-the-target-section-of-a-block-header-calculated
 		
 		double uncompact = uncompact(target);
 		
