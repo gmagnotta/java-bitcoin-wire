@@ -6,12 +6,12 @@ import java.util.Arrays;
 
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.VarInt;
-import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
+import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.wire.Utils;
 
 public class BlockHeadersSerializer {
 	
-	public BlockHeaders deserialize(byte[] payload) throws UnknownHostException {
+	public BlockHeader deserialize(byte[] payload) throws UnknownHostException {
 
 		long version = Utils.readUint32LE(payload, 0);
 		
@@ -28,11 +28,11 @@ public class BlockHeadersSerializer {
 		// read varint
 		VarInt varint = new VarInt(payload, 32 + 4 + 32 + 4 + 4 + 4);
 
-		return new BlockHeaders(version, prevBlock, merkle, timestamp, bits, nonce, varint.value);
+		return new BlockHeader(version, prevBlock, merkle, timestamp, bits, nonce, varint.value);
 
 	}
 
-	public byte[] serialize(BlockHeaders blockHeaders) {
+	public byte[] serialize(BlockHeader blockHeaders) {
 
 		ByteBuffer buffer = ByteBuffer.allocate(4 + 32 + 32 + 4 + 4 + 4 + 1);
 		

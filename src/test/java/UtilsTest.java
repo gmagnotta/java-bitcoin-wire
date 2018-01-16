@@ -101,5 +101,13 @@ public class UtilsTest {
 	public void testWriteInt64BE() {
 		Assert.assertArrayEquals(array64, Utils.writeInt64BE(new BigInteger("18446744073709551289").longValue()));
 	}
+	
+	public void testDifficulty() {
+		
+		Assert.assertTrue(org.gmagnotta.bitcoin.utils.Utils.isShaMatchesTarget("373a3da49309ba43cc521e8919b77bab1f9aed0f9f61e1", 0x177e578c));
+		
+		Assert.assertFalse(org.gmagnotta.bitcoin.utils.Utils.isShaMatchesTarget("373a3da49309ba43cc521e8919b77bab1f9aed0f9f61e1", 0x177e578c));
+		
+	}
 
 }

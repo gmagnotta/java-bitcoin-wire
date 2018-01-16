@@ -8,7 +8,7 @@ import java.util.List;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
-import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
+import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 
@@ -26,15 +26,15 @@ public class BitcoinHeadersMessageSerializer implements BitcoinMessageSerializer
 			// how many bytes represents the value?
 			int len = varint.getSizeInBytes();
 			
-			List<BlockHeaders> headers = new ArrayList<BlockHeaders>();
+			List<BlockHeader> headers = new ArrayList<BlockHeader>();
 			
 			BlockHeadersSerializer blockHeadersSerializer = new BlockHeadersSerializer();
 			
-			for (int i = 0; i < (varint.value + 1); i++) {
+			for (int i = 0; i < (varint.value); i++) {
 	
 				byte[] array = Arrays.copyOfRange(payload,  len + i * 81, len + i * 81 + 81);
 
-				BlockHeaders header = blockHeadersSerializer.deserialize(array);
+				BlockHeader header = blockHeadersSerializer.deserialize(array);
 
 				headers.add(header);
 
@@ -61,7 +61,7 @@ public class BitcoinHeadersMessageSerializer implements BitcoinMessageSerializer
 		
 		BlockHeadersSerializer blockHeadersSerializer = new BlockHeadersSerializer();
 		
-		for (BlockHeaders header : message.getHeaders()) {
+		for (BlockHeader header : message.getHeaders()) {
 			
 			buffer.put(blockHeadersSerializer.serialize(header));
 			
@@ -73,4 +73,12 @@ public class BitcoinHeadersMessageSerializer implements BitcoinMessageSerializer
 
 	}
 	
+	public static void main(String[] args) {
+		
+		VarInt v = new VarInt(2);
+		
+		v.encode();
+	}
+	
 }
+

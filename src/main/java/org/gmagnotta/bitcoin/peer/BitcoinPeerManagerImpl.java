@@ -14,7 +14,7 @@ import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
-import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
+import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -25,7 +25,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BitcoinPeerManagerImpl.class);
 	
-	private static final int MAX_PEERS_CONNECTED =  3;
+	private static final int MAX_PEERS_CONNECTED =  1;
 	
 	private MagicVersion magicVersion;
 	private List<BitcoinPeer> peers;
@@ -110,9 +110,9 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 		LOGGER.info("Peer {} returned {} headers!", bitcoinClient, bitcoinHeaders.getHeaders().size());
 		
-		for (BlockHeaders b : bitcoinHeaders.getHeaders()) {
+		for (BlockHeader header : bitcoinHeaders.getHeaders()) {
 			
-			LOGGER.info("Read {}", b.toString());
+			blockChain.addBlockHeader(header);
 			
 		}
 		
@@ -185,7 +185,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					
 					LOGGER.info("Peer {} returned {} headers!", bitcoinClient, bitcoinHeaders.getHeaders().size());
 					
-					for (BlockHeaders b : bitcoinHeaders.getHeaders()) {
+					for (BlockHeader b : bitcoinHeaders.getHeaders()) {
 						
 						LOGGER.info("Read {}", b.toString());
 						
@@ -198,6 +198,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				}
 				
 			}
+			
 		});
 		
 		t.start();

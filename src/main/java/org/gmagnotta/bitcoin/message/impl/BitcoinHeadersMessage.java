@@ -14,15 +14,15 @@ import org.gmagnotta.bitcoin.wire.BitcoinCommand;
  */
 public class BitcoinHeadersMessage implements BitcoinMessage {
 
-	private List<BlockHeaders> headers;
+	private List<BlockHeader> headers;
 
-	public BitcoinHeadersMessage(List<BlockHeaders> headers) {
+	public BitcoinHeadersMessage(List<BlockHeader> headers) {
 
 		this.headers = headers;
 
 	}
 	
-	public List<BlockHeaders> getHeaders() {
+	public List<BlockHeader> getHeaders() {
 		return headers;
 	}
 

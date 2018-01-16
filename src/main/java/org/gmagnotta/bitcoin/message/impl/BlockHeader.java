@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import org.bitcoinj.core.Sha256Hash;
 
-public class BlockHeaders {
+public class BlockHeader {
 	
 	private long version;
 	private Sha256Hash prevBlock;
@@ -14,7 +14,7 @@ public class BlockHeaders {
 	private long nonce;
 	private long txnCount;
 	
-	public BlockHeaders(long version, Sha256Hash prevBlock, Sha256Hash merkleRoot, long timestamp, long bits,
+	public BlockHeader(long version, Sha256Hash prevBlock, Sha256Hash merkleRoot, long timestamp, long bits,
 			long nonce, long txnCount) {
 		this.version = version;
 		this.prevBlock = prevBlock;
@@ -84,13 +84,13 @@ public class BlockHeaders {
 	@Override
 	public boolean equals(final Object object) {
 		
-		if (!(object instanceof BlockHeaders))
+		if (!(object instanceof BlockHeader))
 			return false;
 		
 		if (this == object)
 			return true;
 		
-		final BlockHeaders other = (BlockHeaders) object;
+		final BlockHeader other = (BlockHeader) object;
 		
 		return Objects.equals(version, other.version) &&
 				Objects.equals(prevBlock, other.prevBlock) &&

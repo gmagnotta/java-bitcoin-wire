@@ -3,13 +3,11 @@ package org.gmagnotta.bitcoin.blockchain;
 import java.util.List;
 
 import org.bitcoinj.core.Sha256Hash;
-import org.gmagnotta.bitcoin.message.impl.BlockHeaders;
+import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 
 /**
- * Represent the blockchain known by the node
+ * Represents the blockchain known by a node
  * 
- * @author giuseppe
- *
  */
 public interface BlockChain {
 	
@@ -26,7 +24,7 @@ public interface BlockChain {
 	 * @param index
 	 * @return
 	 */
-	public BlockHeaders getBlock(int index);
+	public BlockHeader getBlock(int index);
 	
 	/**
 	 * Returns a list of hashes
@@ -38,6 +36,12 @@ public interface BlockChain {
 	 * Return a list of block headers
 	 * @return
 	 */
-	public List<BlockHeaders> getBlockHeaders();
+	public List<BlockHeader> getBlockHeaders();
+	
+	/**
+	 * Add the blockheader to the blockchain
+	 * @param header
+	 */
+	public void addBlockHeader(BlockHeader header);
 
 }
