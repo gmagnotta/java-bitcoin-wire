@@ -1,5 +1,6 @@
 package org.gmagnotta.bitcoin.message.impl;
 
+import java.util.Date;
 import java.util.Objects;
 
 import org.bitcoinj.core.Sha256Hash;
@@ -112,7 +113,7 @@ public class BlockHeader {
 	@Override
 	public String toString() {
 		
-		return String.format("BlockHeaders: %d, %s, %s, %d, %d, %d, %d", version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount );
+		return String.format("BlockHeaders: %d, %s, %s, %s, %d, %d, %d", version, prevBlock, merkleRoot, new Date(timestamp * 1000), bits, nonce, txnCount );
 		
 	}
 
