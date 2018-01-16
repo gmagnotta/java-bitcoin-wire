@@ -7,15 +7,16 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
+import org.gmagnotta.bitcoin.utils.Utils;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
@@ -60,8 +61,25 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.GETHEADERS)) {
 			
-			// Send our block list
-			BitcoinHeadersMessage headers = new BitcoinHeadersMessage(blockChain.getBlockHeaders());
+//			// Send our block list: only 24 known blocks
+//			
+//			long lastKnownIndex = blockChain.getLastKnownIndex();
+//			
+//			BitcoinHeadersMessage headers;
+//			
+//			if (lastKnownIndex == 0) {
+//				
+//				headers = new BitcoinHeadersMessage(blockChain.getBlockHeaders(0, 1));
+//
+//			} else {
+//				
+//				long start = lastKnownIndex - 24;
+//				
+//				headers = new BitcoinHeadersMessage(blockChain.getBlockHeaders(start, 24));
+//				
+//			}
+			
+			BitcoinHeadersMessage headers = new BitcoinHeadersMessage(new ArrayList<BlockHeader>());
 			
 			try {
 				
@@ -78,19 +96,19 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.ADDR)) {
 			
-			BitcoinAddrMessage addrMessage = (BitcoinAddrMessage) bitcoinMessage;
-			
-			for (NetworkAddress networkAddress : addrMessage.getNetworkAddress()) {
-				
-				if (peers.size() < MAX_PEERS_CONNECTED && !isConnected(peers, networkAddress.getInetAddress())) {
-					
-					LOGGER.info("Opening connection with {} ", bitcoinMessage);
-					
-					openConnection(networkAddress, this);
-					
-				}
-				
-			}
+//			BitcoinAddrMessage addrMessage = (BitcoinAddrMessage) bitcoinMessage;
+//			
+//			for (NetworkAddress networkAddress : addrMessage.getNetworkAddress()) {
+//				
+//				if (peers.size() < MAX_PEERS_CONNECTED && !isConnected(peers, networkAddress.getInetAddress())) {
+//					
+//					LOGGER.info("Opening connection with {} ", bitcoinMessage);
+//					
+//					openConnection(networkAddress, this);
+//					
+//				}
+//				
+//			}
 			
 		}
 	}
@@ -104,17 +122,60 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 		peers.add(bitcoinClient);
 		
-		BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, blockChain.getHashList());
+		while (blockChain.getLastKnownIndex() < bitcoinClient.getBlockStartHeight()) {
 		
-		BitcoinHeadersMessage bitcoinHeaders = bitcoinClient.sendGetHeaders(bitcoinGetHeadersMessage);
-		
-		LOGGER.info("Peer {} returned {} headers!", bitcoinClient, bitcoinHeaders.getHeaders().size());
-		
-		for (BlockHeader header : bitcoinHeaders.getHeaders()) {
+			List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
 			
-			blockChain.addBlockHeader(header);
+			hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlock((int) blockChain.getLastKnownIndex())));
 			
+			BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, hashes);
+			
+			BitcoinHeadersMessage bitcoinHeaders = bitcoinClient.sendGetHeaders(bitcoinGetHeadersMessage);
+			
+			LOGGER.info("Peer {} returned {} headers!", bitcoinClient, bitcoinHeaders.getHeaders().size());
+			
+			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
+	//			
+	//			LOGGER.info("Read {}", b.toString());
+	//			
+	//			LOGGER.info("Block difficulty is valid: {}", Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits()));
+				
+				if (Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits())) {
+					
+					blockChain.addBlockHeader(b);
+				
+				} else {
+					
+					LOGGER.error("Block hash doesn't match target: {}", b);
+					
+				}
+				
+				
+			}
+		
 		}
+		
+		System.out.println("Best chain: " + blockChain);
+		
+//		BlockHeader l = bitcoinHeaders.getHeaders().get(1999);
+//		
+//		List<Sha256Hash> s = new ArrayList<Sha256Hash>();
+//		
+//		s.add(Utils.computeBlockHeaderHash(l));
+//		
+//		BitcoinGetHeadersMessage bitcoinGetHeadersMessage2 = new BitcoinGetHeadersMessage(70012, s);
+//		
+//		bitcoinHeaders = bitcoinClient.sendGetHeaders(bitcoinGetHeadersMessage2);
+//		
+//		LOGGER.info("Peer {} returned {} headers!", bitcoinClient, bitcoinHeaders.getHeaders().size());
+//		
+//		for (BlockHeader b : bitcoinHeaders.getHeaders()) {
+//			
+//			LOGGER.info("Read {}", b.toString());
+//			
+//			LOGGER.info("Block difficulty is valid: {}", Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits()));
+//			
+//		}
 		
 	}
 	
@@ -179,7 +240,23 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					
 					peers.add(bitcoinClient);
 					
-					BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, blockChain.getHashList());
+					// We want to send last 24 hashes.
+					
+					long lastKnownBlock = blockChain.getLastKnownIndex();
+					
+					List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
+					
+					if (lastKnownBlock == 0) {
+						
+						hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlock(0)));
+						
+					} else {
+
+						// TODO add last known hashes
+						
+					}
+					
+					BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, hashes);
 					
 					BitcoinHeadersMessage bitcoinHeaders = bitcoinClient.sendGetHeaders(bitcoinGetHeadersMessage);
 					
@@ -188,6 +265,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					for (BlockHeader b : bitcoinHeaders.getHeaders()) {
 						
 						LOGGER.info("Read {}", b.toString());
+						
+						LOGGER.info("Block difficulty is valid: {}", Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits()));
 						
 					}
 				

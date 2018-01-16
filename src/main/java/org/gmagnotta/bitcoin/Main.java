@@ -16,9 +16,9 @@ public class Main {
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
-		BlockChain blockChain = new BlockChainImpl();
+		BlockChain bestChain = new BlockChainImpl();
 		
-		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(MagicVersion.TESTNET3, blockChain);
+		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(MagicVersion.TESTNET3, bestChain);
 		
 		new Thread(new Runnable() {
 			
@@ -30,15 +30,12 @@ public class Main {
 					e.printStackTrace();
 				}
 			}
+			
 		}, "bitcoinPeerManagerListener").start();
 		
 //		bitcoinPeerManager.connect("52.167.211.151", 19000);
 		
-		bitcoinPeerManager.connect("13.125.54.76", 18333);
-		
-//		bitcoinPeerManager.connect("47.88.214.164", 18333);
-		
-//		bitcoinPeerManager.connect("127.0.0.1", 4000);
+		bitcoinPeerManager.connect("127.0.0.1", 18333);
 //		
 //		for (BitcoinPeer p : bitcoinPeerManager.getConnectedPeers()) {
 //

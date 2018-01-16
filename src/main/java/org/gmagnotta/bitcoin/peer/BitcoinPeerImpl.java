@@ -68,7 +68,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(70012L, new BigInteger("1"),
 				new BigInteger("" + System.currentTimeMillis() / 1000), receiving, emitting, new BigInteger("123"),
-				"/BitcoinPeppe:0.0.1/", blockChain.getBlockStartHeight(), false);
+				"/BitcoinPeppe:0.0.1/", blockChain.getLastKnownIndex(), false);
 
 		synchronized (syncObj) {
 
@@ -183,15 +183,25 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		synchronized (syncObj) {
 			
-			waiting = command;
+			try {
 			
-			while (receivedMessage == null) {
+				waiting = command;
 				
-				syncObj.wait(timeout);
+				while (receivedMessage == null) {
+					
+					syncObj.wait(timeout);
+					
+				}
+				
+				BitcoinMessage copy = receivedMessage;
+				
+				return copy;
+			
+			} finally {
+				
+				receivedMessage = null;
 				
 			}
-			
-			return receivedMessage;
 			
 		}
 		

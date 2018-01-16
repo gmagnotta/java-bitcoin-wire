@@ -12,11 +12,11 @@ import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 public interface BlockChain {
 	
 	/**
-	 * Return last known block
+	 * Return last known index
 	 * 
 	 * @return
 	 */
-	public long getBlockStartHeight();
+	public long getLastKnownIndex();
 
 	/**
 	 * Returns block at position
@@ -27,16 +27,16 @@ public interface BlockChain {
 	public BlockHeader getBlock(int index);
 	
 	/**
-	 * Returns a list of hashes
+	 * Returns a list of len hashes starting from index
 	 * @return
 	 */
-	public List<Sha256Hash> getHashList();
+	public List<Sha256Hash> getHashList(long index, long len);
 	
 	/**
 	 * Return a list of block headers
 	 * @return
 	 */
-	public List<BlockHeader> getBlockHeaders();
+	public List<BlockHeader> getBlockHeaders(long index, long len);
 	
 	/**
 	 * Add the blockheader to the blockchain
