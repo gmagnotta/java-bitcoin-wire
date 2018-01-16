@@ -18,7 +18,10 @@ public enum MagicVersion {
 	TESTNET(new byte[] { (byte) 0xfa, (byte) 0xbf, (byte) 0xb5, (byte) 0xda } ),
 	
 	/* testnet 3 */
-	TESTNET3(new byte[] { (byte) 0x0b, (byte) 0x11, (byte) 0x09, (byte) 0x07 } );
+	TESTNET3(new byte[] { (byte) 0x0b, (byte) 0x11, (byte) 0x09, (byte) 0x07 } ),
+	
+	/* regtest */
+	REGTEST(new byte[] { (byte) 0xfa, (byte) 0xbf, (byte) 0xb5, (byte) 0xda } );
 	
 	/* map that contains all versions to fast lookup */
 	private static HashMap<ByteBuffer, MagicVersion> VERSION_MAP = new HashMap<ByteBuffer, MagicVersion>();
