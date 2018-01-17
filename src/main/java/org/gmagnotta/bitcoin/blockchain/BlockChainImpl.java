@@ -13,24 +13,22 @@ public class BlockChainImpl implements BlockChain {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BlockChainImpl.class);
 	
 	private List<BlockHeader> headers;
-	private long index;
+	private long last;
+	private int currentTarget;
 	
 	public BlockChainImpl() {
 
 		headers = new ArrayList<BlockHeader>();
 
-		headers.add(
-				
-				/* TESTNET3 GENESIS BLOCK */
-				new BlockHeader(1,
+		/* TESTNET3 GENESIS BLOCK */
+		BlockHeader genesis = new BlockHeader(1,
 				Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000"),
 				Sha256Hash.wrap("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
 				1296688602,
 				486604799,
 				414098458,
-				1
-				
-		));
+				1);
+		
 		
 //		headers.add(
 //				
@@ -45,13 +43,16 @@ public class BlockChainImpl implements BlockChain {
 //				
 //		));
 		
-		index = 0;
+		headers.add(genesis);
+		last = 0;
+		
+		currentTarget = (int) genesis.getBits();
 		
 	}
 	
 	@Override
 	public synchronized long getLastKnownIndex() {
-		return index;
+		return last;
 	}
 
 	@Override
@@ -92,16 +93,38 @@ public class BlockChainImpl implements BlockChain {
 			
 		} else {
 			
-				BlockHeader current = headers.get((int) index);
+			BlockHeader current = headers.get((int) last);
+		
+			Sha256Hash myHeaderSha = Sha256Hash.wrapReversed(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(current).getBytes());
 			
-				Sha256Hash myHeaderSha = Sha256Hash.wrapReversed(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(current).getBytes());
+			if (receivedHeader.getPrevBlock().equals(myHeaderSha)) {
 				
-				if (receivedHeader.getPrevBlock().equals(myHeaderSha)) {
+				if ((last + 1) % 2016 == 0) {
 					
-					headers.add(receivedHeader);
-					index++;
+					long endingTimestamp = headers.get((int)last).getTimestamp();
+					
+					int end = last == 2015 ? 1 : 0;
+					
+					long initialTimestamp = headers.get((int)last - 2015 + end).getTimestamp();
+					
+					// recalculate bits
+					currentTarget = (int) org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(endingTimestamp,
+							initialTimestamp, 14 * 24 * 60 * 60, currentTarget);
 					
 				}
+					
+				if (receivedHeader.getBits() < currentTarget) {
+					
+					LOGGER.error("Not valid bits!");
+					
+					return;
+					
+				}
+				
+				headers.add(receivedHeader);
+				last++;
+				
+			}
 		
 		}
 		
