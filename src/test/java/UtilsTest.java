@@ -131,5 +131,15 @@ public class UtilsTest {
 		Assert.assertEquals(0x1d00d86a, org.gmagnotta.bitcoin.utils.Utils.compact(bigInteger2));
 		
 	}
+	
+	@Test
+	public void testCalculateNextWorkRequired() {
+		
+		// calculate nBits for block: 32256 (range is 32255-32240)!!!
+		long b = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(1262152739, 1261130161, 14 * 24 * 60 * 60, 0x1d00ffff);
+		
+		Assert.assertEquals(0x1d00d86a, b);
+		
+	}
 
 }
