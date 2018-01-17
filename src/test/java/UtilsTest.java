@@ -139,7 +139,14 @@ public class UtilsTest {
 		long b = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(1262152739, 1261130161, 14 * 24 * 60 * 60, 0x1d00ffff);
 		
 		Assert.assertEquals(0x1d00d86a, b);
+
+		long b2 = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(1337966313, 1296688928, 14 * 24 * 60 * 60, 0x1d00ffff);
 		
+		Assert.assertEquals(0x1d00ffff, b2);
+		
+		long b3 = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(1337966650, 1337966313, 14 * 24 * 60 * 60, 0x1d00ffff);
+		
+		Assert.assertEquals(0x1c3fffc0, b3);
 	}
 
 }

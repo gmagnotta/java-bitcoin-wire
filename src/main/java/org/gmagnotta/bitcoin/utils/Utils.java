@@ -82,6 +82,7 @@ public class Utils {
 	public static long calculateNextWorkRequired(long finalTimestap, long initialTimestamp, long nPowTargetTimespan,
 			int nbits) {
 
+		BigInteger limit = new BigInteger("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
 		// https://bitcoin.stackexchange.com/questions/22581/how-was-the-new-target-for-block-32256-calculated?rq=1
 
 		// Limit adjustment step
@@ -98,9 +99,10 @@ public class Utils {
 		d = d.multiply(BigInteger.valueOf(nActualTimespan));
 		d = d.divide(BigInteger.valueOf(nPowTargetTimespan));
 
-		// if (bnNew > bnPowLimit)
-		// bnNew = bnPowLimit;
-		//
+		if (d.compareTo(limit) > 0) {
+			return compact(limit);
+		}
+
 		return compact(d);
 
 	}
