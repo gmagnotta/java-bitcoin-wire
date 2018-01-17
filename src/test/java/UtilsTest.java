@@ -102,11 +102,33 @@ public class UtilsTest {
 		Assert.assertArrayEquals(array64, Utils.writeInt64BE(new BigInteger("18446744073709551289").longValue()));
 	}
 	
+	@Test
 	public void testDifficulty() {
 		
-		Assert.assertTrue(org.gmagnotta.bitcoin.utils.Utils.isShaMatchesTarget("373a3da49309ba43cc521e8919b77bab1f9aed0f9f61e1", 0x177e578c));
+		Assert.assertTrue(org.gmagnotta.bitcoin.utils.Utils.isShaMatchesTarget("839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048", 0x1d00ffff));
+
+		Assert.assertFalse(org.gmagnotta.bitcoin.utils.Utils.isShaMatchesTarget("839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048", 0x177e578c));
+
+		Assert.assertTrue(org.gmagnotta.bitcoin.utils.Utils.isShaMatchesTarget("7b2b98bf2ab895d585601704439bbd68681442c97940b0", 0x177e578c));
 		
-		Assert.assertFalse(org.gmagnotta.bitcoin.utils.Utils.isShaMatchesTarget("373a3da49309ba43cc521e8919b77bab1f9aed0f9f61e1", 0x177e578c));
+		Assert.assertTrue(org.gmagnotta.bitcoin.utils.Utils.isShaMatchesTarget("7b2b98bf2ab895d585601704439bbd68681442c97940b0", 0x1d00ffff));
+		
+	}
+
+	@Test
+	public void testCompact() {
+		
+		BigInteger bigInteger =  new BigInteger("680733321990486529407107157001552378184394215934016880640");
+		
+		Assert.assertEquals(bigInteger, org.gmagnotta.bitcoin.utils.Utils.uncompact(0x181bc330));
+		
+		BigInteger bigInteger2 = new BigInteger("22791060871177364286867400663010583169263383106957897897309909286912");
+		
+		Assert.assertEquals(bigInteger2, org.gmagnotta.bitcoin.utils.Utils.uncompact(0x1d00d86a));
+		
+		Assert.assertEquals(0x181bc330, org.gmagnotta.bitcoin.utils.Utils.compact(bigInteger));
+		
+		Assert.assertEquals(0x1d00d86a, org.gmagnotta.bitcoin.utils.Utils.compact(bigInteger2));
 		
 	}
 
