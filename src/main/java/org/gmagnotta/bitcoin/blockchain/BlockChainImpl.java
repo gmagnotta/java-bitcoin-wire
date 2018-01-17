@@ -21,7 +21,7 @@ public class BlockChainImpl implements BlockChain {
 		headers = new ArrayList<BlockHeader>();
 
 		/* TESTNET3 GENESIS BLOCK */
-		BlockHeader genesis = new BlockHeader(1,
+		BlockHeader testnet = new BlockHeader(1,
 				Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000"),
 				Sha256Hash.wrap("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
 				1296688602,
@@ -29,19 +29,16 @@ public class BlockChainImpl implements BlockChain {
 				414098458,
 				1);
 		
+		/* REGTEST GENESIS BLOCK */
+		BlockHeader regtest = new BlockHeader(1,
+				Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000"),
+				Sha256Hash.wrap("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
+				1296688602,
+				545259519,
+				2,
+				1);
 		
-//		headers.add(
-//				
-//				/* REGTEST GENESIS BLOCK */
-//				new BlockHeader(1,
-//				Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000"),
-//				Sha256Hash.wrap("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
-//				1296688602,
-//				545259519,
-//				2,
-//				1
-//				
-//		));
+		BlockHeader genesis = testnet;
 		
 		headers.add(genesis);
 		last = 0;
