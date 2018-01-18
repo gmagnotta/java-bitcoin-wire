@@ -23,54 +23,72 @@
 		</dependency>
 
 		<dependency>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                        <version>1.7.22</version>
-                </dependency>
-
-                <dependency>
-                        <groupId>org.gmagnotta</groupId>
-                        <artifactId>slf4j-jel</artifactId>
-                        <version>0.1-SNAPSHOT</version>
-                </dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.22</version>
+		</dependency>
 
 		<dependency>
-                        <groupId>org.gmagnotta</groupId>
-                        <artifactId>java-embeddable-logger</artifactId>
-                        <version>0.1-SNAPSHOT</version>
-                </dependency>
+			<groupId>org.gmagnotta</groupId>
+			<artifactId>slf4j-jel</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.gmagnotta</groupId>
+			<artifactId>java-embeddable-logger</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.xerial</groupId>
+			<artifactId>sqlite-jdbc</artifactId>
+			<version>3.16.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-dbutils</groupId>
+			<artifactId>commons-dbutils</artifactId>
+			<version>1.6</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-dbcp2</artifactId>
+			<version>2.1.1</version>
+		</dependency>
 
 	</dependencies>
 
-<build>
-                <plugins>
-                        <plugin>
-                                <groupId>org.codehaus.mojo</groupId>
-                                <artifactId>exec-maven-plugin</artifactId>
-                                <version>1.2</version>
-                                <configuration>
-                                        <executable>java</executable>
-                                        <arguments>
-                                                <argument>-cp</argument>
-                                                <classpath />
-                                                <argument>org.gmagnotta.bitcoin.Main</argument>
-                                        </arguments>
-                                </configuration>
-                        </plugin>
-                        <plugin>
-                                <artifactId>maven-assembly-plugin</artifactId>
-                                <configuration>
-                                        <archive>
-                                                <manifest>
-                                                        <mainClass>org.gmagnotta.bitcoin.Main</mainClass>
-                                                </manifest>
-                                        </archive>
-                                        <descriptorRefs>
-                                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                                        </descriptorRefs>
-                                </configuration>
-                        </plugin>
-                </plugins>
-        </build>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.2</version>
+				<configuration>
+					<executable>java</executable>
+					<arguments>
+						<argument>-cp</argument>
+						<classpath />
+						<argument>org.gmagnotta.bitcoin.Main</argument>
+					</arguments>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>org.gmagnotta.bitcoin.Main</mainClass>
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
