@@ -34,7 +34,7 @@ public class BlockChainImpl implements BlockChain {
 	}
 
 	@Override
-	public synchronized BlockHeader getBlock(int index) {
+	public synchronized BlockHeader getBlockHeader(int index) {
 		return headers.get(index);
 	}
 
@@ -78,7 +78,7 @@ public class BlockChainImpl implements BlockChain {
 
 			if (receivedHeader.getPrevBlock().equals(myHeaderSha)) {
 
-				int currentTarget = (int) org.gmagnotta.bitcoin.utils.Utils.getNextWorkRequired(last, headers, receivedHeader, blockChainParameters);
+				int currentTarget = (int) org.gmagnotta.bitcoin.utils.Utils.getNextWorkRequired(last, this, receivedHeader, blockChainParameters);
 
 				if (!Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(receivedHeader), currentTarget)) {
 

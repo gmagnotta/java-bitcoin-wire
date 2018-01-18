@@ -126,7 +126,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 			List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
 			
-			hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlock((int) blockChain.getLastKnownIndex())));
+			hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader((int) blockChain.getLastKnownIndex())));
 			
 			BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, hashes);
 			
@@ -252,7 +252,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					
 					if (lastKnownBlock == 0) {
 						
-						hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlock(0)));
+						hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
 						
 					} else {
 

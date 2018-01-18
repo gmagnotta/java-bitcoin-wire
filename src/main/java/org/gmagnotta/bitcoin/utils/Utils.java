@@ -2,9 +2,9 @@ package org.gmagnotta.bitcoin.utils;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.List;
 
 import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BlockHeadersSerializer;
@@ -81,10 +81,10 @@ public class Utils {
 
 	}
 
-	public static long getNextWorkRequired(long height, List<BlockHeader> headers, BlockHeader pblock,
+	public static long getNextWorkRequired(long height, BlockChain blockchain, BlockHeader pblock,
 			BlockChainParameters blockChainParameters) {
 
-		BlockHeader pindexLast = headers.get((int) height);
+		BlockHeader pindexLast = blockchain.getBlockHeader((int) height);
 		
 		if ((height + 1) % blockChainParameters.getDifficultyAdjustmentInterval() != 0) {
 
@@ -102,12 +102,12 @@ public class Utils {
 
 					// Return the last non-special-min-difficulty-rules-block
 					long pindex = height;
-					while (pindex % blockChainParameters.getDifficultyAdjustmentInterval() != 0 && headers
-							.get((int) pindex).getBits() == compact(blockChainParameters.getPowLimit())) {
+					while (pindex % blockChainParameters.getDifficultyAdjustmentInterval() != 0 &&
+							blockchain.getBlockHeader((int) pindex).getBits() == compact(blockChainParameters.getPowLimit())) {
 						pindex--;
 					}
 
-					return headers.get((int) pindex).getBits();
+					return blockchain.getBlockHeader((int) pindex).getBits();
 
 				}
 
@@ -120,7 +120,7 @@ public class Utils {
 		// Go back by what we want to be 14 days worth of blocks
 		long nHeightFirst = height - (blockChainParameters.getDifficultyAdjustmentInterval() - 1);
 
-		BlockHeader pindexFirst = headers.get((int) nHeightFirst);
+		BlockHeader pindexFirst = blockchain.getBlockHeader((int) nHeightFirst);
 
 		return calculateNextWorkRequired(pindexLast, pindexFirst.getTimestamp(), blockChainParameters);
 
