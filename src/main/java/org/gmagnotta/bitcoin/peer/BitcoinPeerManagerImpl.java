@@ -135,20 +135,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			LOGGER.info("Peer {} returned {} headers!", bitcoinClient, bitcoinHeaders.getHeaders().size());
 			
 			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
-	//			
-	//			LOGGER.info("Read {}", b.toString());
-	//			
-	//			LOGGER.info("Block difficulty is valid: {}", Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits()));
-				
-//				if (Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits())) {
-//					
-//					blockChain.addBlockHeader(b);
-//				
-//				} else {
-//					
-//					LOGGER.error("Block hash doesn't match target: {}", b);
-//					
-//				}
 				
 				blockChain.addBlockHeader(b);
 				

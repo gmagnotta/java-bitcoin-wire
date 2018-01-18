@@ -15,20 +15,21 @@ import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 public class BlockChainSQLiteImpl implements BlockChain {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BlockChainSQLiteImpl.class);
 
-	public static final String CREATE_HEADER_TABLE = "create table provider_channel (hash text not null, version integer not null, prevBlock text not null, merkleRoot text not null, timestamp integer not null, bits integer not null, nonce integer not null, txnCount integer not null, primary key (hash));";
+	public static final String CREATE_HEADER_TABLE = "create table blockHeader (hash text not null, version integer not null, prevBlock text not null, merkleRoot text not null, timestamp integer not null, bits integer not null, nonce integer not null, txnCount integer not null, primary key (hash));";
 
-	public static final String RETRIEVE_LAST_INDEX = "select count(hash) as lastIndex from provider_channel order by timestamp asc;";
+	public static final String RETRIEVE_LAST_INDEX = "select count(hash) as lastIndex from blockHeader order by timestamp asc;";
 
-	public static final String RETRIEVE_BY_INDEX = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from provider_channel where rowid = ?;";
+	public static final String RETRIEVE_BY_INDEX = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from blockHeader where rowid = ?;";
 	
-	public static final String RETRIEVE_BY_HASH = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from provider_channel where hash = ?;";
+	public static final String RETRIEVE_BY_HASH = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from blockHeader where hash = ?;";
 	
-	private static final String HEADER_INSERT = "insert into provider_channel (hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount) values (?, ?, ?, ?, ?, ?, ?, ?);";
+	private static final String HEADER_INSERT = "insert into blockHeader (hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount) values (?, ?, ?, ?, ?, ?, ?, ?);";
 
 	protected BasicDataSource dataSource;
 
@@ -189,9 +190,9 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	@Override
 	public synchronized void addBlockHeader(BlockHeader receivedHeader) {
 		
-		Sha256Hash hash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(receivedHeader);
+		Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(receivedHeader);
 
-		if (getBlockHeader(hash.toString()) != null) {
+		if (getBlockHeader(Hex.toHexString(receivedHeaderHash.getReversedBytes())) != null) {
 
 			LOGGER.error("Blockchain already contains block {}", receivedHeader);
 
@@ -199,26 +200,28 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 			long lastIndex = getLastKnownIndex();
 			
-			BlockHeader current = getBlockHeader((int) lastIndex);
+			BlockHeader lastKnownHeader = getBlockHeader((int) lastIndex);
 
 			Sha256Hash myHeaderSha = Sha256Hash
-					.wrapReversed(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(current).getBytes());
+					.wrapReversed(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(lastKnownHeader).getBytes());
 
 			if (receivedHeader.getPrevBlock().equals(myHeaderSha)) {
 
 				int currentTarget = (int) org.gmagnotta.bitcoin.utils.Utils.getNextWorkRequired(lastIndex, this,
 						receivedHeader, blockChainParameters);
 
-				if (!Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(receivedHeader), currentTarget)) {
+				if (!Utils.isShaMatchesTarget(receivedHeaderHash, currentTarget)) {
 
-					LOGGER.error("Block hash is not valid!");
+					LOGGER.error("Block Header {} doesn't match target {}!", receivedHeaderHash, currentTarget);
 
 					return;
 
 				}
 
 				try {
-					insertHeader(receivedHeader, hash.toString());
+					
+					insertHeader(receivedHeader, Hex.toHexString(receivedHeaderHash.getReversedBytes()));
+					
 				} catch (Exception e) {
 					
 					LOGGER.error("Exception!", e);
@@ -235,8 +238,6 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		
 		QueryRunner run = new QueryRunner(dataSource);
 		
-			//hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount
-			
 			run.update(HEADER_INSERT, hash,
 					blockHeader.getVersion(), blockHeader.getPrevBlock().toString(), blockHeader.getMerkleRoot().toString(),
 					blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount());
