@@ -61,25 +61,25 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.GETHEADERS)) {
 			
-//			// Send our block list: only 24 known blocks
-//			
-//			long lastKnownIndex = blockChain.getLastKnownIndex();
-//			
-//			BitcoinHeadersMessage headers;
-//			
-//			if (lastKnownIndex == 0) {
-//				
-//				headers = new BitcoinHeadersMessage(blockChain.getBlockHeaders(0, 1));
-//
-//			} else {
-//				
-//				long start = lastKnownIndex - 24;
-//				
-//				headers = new BitcoinHeadersMessage(blockChain.getBlockHeaders(start, 24));
-//				
-//			}
+			// Send our block list: only 24 known blocks
 			
-			BitcoinHeadersMessage headers = new BitcoinHeadersMessage(new ArrayList<BlockHeader>());
+			long lastKnownIndex = blockChain.getLastKnownIndex();
+			
+			BitcoinHeadersMessage headers;
+			
+			if (lastKnownIndex < 24) {
+				
+				headers = new BitcoinHeadersMessage(new ArrayList<BlockHeader>());
+
+			} else {
+				
+				long start = lastKnownIndex - 24;
+				
+				headers = new BitcoinHeadersMessage(blockChain.getBlockHeaders(start, 24));
+				
+			}
+			
+//			BitcoinHeadersMessage headers = new BitcoinHeadersMessage(new ArrayList<BlockHeader>());
 			
 			try {
 				
@@ -140,22 +140,26 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	//			
 	//			LOGGER.info("Block difficulty is valid: {}", Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits()));
 				
-				if (Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits())) {
-					
-					blockChain.addBlockHeader(b);
+//				if (Utils.isShaMatchesTarget(Utils.computeBlockHeaderHash(b), (int) b.getBits())) {
+//					
+//					blockChain.addBlockHeader(b);
+//				
+//				} else {
+//					
+//					LOGGER.error("Block hash doesn't match target: {}", b);
+//					
+//				}
 				
-				} else {
-					
-					LOGGER.error("Block hash doesn't match target: {}", b);
-					
-				}
+				blockChain.addBlockHeader(b);
 				
 				
 			}
 		
+			LOGGER.info("Best chain: " + blockChain.getLastKnownIndex() +  " " + (blockChain.getLastKnownIndex()*100.0)/bitcoinClient.getBlockStartHeight());
+			
+			
 		}
 		
-		System.out.println("Best chain: " + blockChain);
 		
 //		BlockHeader l = bitcoinHeaders.getHeaders().get(1999);
 //		

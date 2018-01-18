@@ -1,5 +1,7 @@
 import java.math.BigInteger;
 
+import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
+import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.wire.Utils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -136,15 +138,21 @@ public class UtilsTest {
 	public void testCalculateNextWorkRequired() {
 		
 		// calculate nBits for block: 32256 (range is 32255-32240)!!!
-		long b = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(1262152739, 1261130161, 14 * 24 * 60 * 60, 0x1d00ffff);
+		BlockHeader header = new BlockHeader(0, null, null, 1262152739, 0x1d00ffff, 0, 0);
+		
+		long b = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(header, 1261130161, BlockChainParameters.TESTNET3);
 		
 		Assert.assertEquals(0x1d00d86a, b);
+		
+		header = new BlockHeader(1, null, null, 1337966313, 0x1d00ffff, 0, 0);
 
-		long b2 = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(1337966313, 1296688928, 14 * 24 * 60 * 60, 0x1d00ffff);
+		long b2 = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(header, 1296688928, BlockChainParameters.TESTNET3);
 		
 		Assert.assertEquals(0x1d00ffff, b2);
 		
-		long b3 = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(1337966650, 1337966313, 14 * 24 * 60 * 60, 0x1d00ffff);
+		header = new BlockHeader(1, null, null, 1337966650, 0x1d00ffff, 0, 0);
+		
+		long b3 = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(header, 1337966313, BlockChainParameters.TESTNET3);
 		
 		Assert.assertEquals(0x1c3fffc0, b3);
 	}
