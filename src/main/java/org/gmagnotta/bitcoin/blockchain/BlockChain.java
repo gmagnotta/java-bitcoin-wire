@@ -34,6 +34,13 @@ public interface BlockChain {
 	public BlockHeader getBlockHeader(String hash);
 	
 	/**
+	 * 
+	 * @param hash
+	 * @return
+	 */
+	public List<BlockHeader> getBlockHeaderByPrevBlock(String hash);
+	
+	/**
 	 * Retrieve index from hash
 	 * 
 	 * @param hash

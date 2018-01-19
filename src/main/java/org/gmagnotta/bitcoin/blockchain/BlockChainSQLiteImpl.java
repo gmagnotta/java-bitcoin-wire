@@ -30,6 +30,8 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String RETRIEVE_BY_HASH = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from blockHeader where hash = ?;";
 	
+	public static final String RETRIEVE_BY_PREV_BLOCK = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from blockHeader where prevBlock = ?;";
+	
 	public static final String RETRIEVE_HEADER_FROM_TO = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from blockHeader where rowid >= ? limit ?;";
 	
 	private static final String HEADER_INSERT = "insert into blockHeader (hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount) values (?, ?, ?, ?, ?, ?, ?, ?);";
@@ -235,6 +237,23 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 	
 	@Override
+	public List<BlockHeader> getBlockHeaderByPrevBlock(String hash) {
+		
+		ResultSetHandler<List<BlockHeader>> handler = createListBlockHeaderResultSetHandler();
+
+		QueryRunner queryRunner = new QueryRunner(dataSource);
+
+		try {
+			return queryRunner.query(RETRIEVE_BY_PREV_BLOCK, handler, hash);
+		} catch (SQLException e) {
+
+			LOGGER.error("Exception!", e);
+
+			return null;
+		}
+	}
+	
+	@Override
 	public long getIndexFromHash(String hash) {
 		
 		PreparedStatement statement = null;
@@ -339,6 +358,11 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 			LOGGER.error("Blockchain already contains block {}", receivedHeader);
 
+		} else if (getBlockHeaderByPrevBlock(Hex.toHexString(receivedHeader.getPrevBlock().getReversedBytes())).size() > 0) {
+			
+			// This is a fork!
+			
+			
 		} else {
 
 			long lastIndex = getLastKnownIndex();

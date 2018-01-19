@@ -4,9 +4,11 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
@@ -178,7 +180,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 		} else if (blockChain.getLastKnownIndex() < bitcoinClient.getBlockStartHeight()) {
 			
-			// We are back than other peer
+			// Our blockchain is fewer than the peer's
 			
 			List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
 			
@@ -186,9 +188,16 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			long start = (lastKnownIndex - 50) + 1;
 			
+			// Add block zero
 			hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
-
-			BlockHeader header = blockChain.getBlockHeader((int) (lastKnownIndex/2));
+			
+			// Add a random value between 1 and half 
+			int randomNum = ThreadLocalRandom.current().nextInt(1, (int)(lastKnownIndex/2)-1);
+			BlockHeader header = blockChain.getBlockHeader(randomNum);
+			hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(header));
+			
+			// Add last 50 values
+			header = blockChain.getBlockHeader((int) (lastKnownIndex/2));
 			hashes.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(header));
 			
 			hashes.addAll(blockChain.getHashList(start, 50));
@@ -199,6 +208,12 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, hashes);
 			
 			BitcoinHeadersMessage bitcoinHeaders = bitcoinClient.sendGetHeaders(bitcoinGetHeadersMessage);
+			
+			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
+				
+				blockChain.addBlockHeader(b);
+				
+			}
 			
 		}
 		
