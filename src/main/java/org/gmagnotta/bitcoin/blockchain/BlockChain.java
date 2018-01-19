@@ -26,6 +26,22 @@ public interface BlockChain {
 	public BlockHeader getBlockHeader(int index);
 	
 	/**
+	 * Returns block header from specified hash
+	 * 
+	 * @param hash
+	 * @return
+	 */
+	public BlockHeader getBlockHeader(String hash);
+	
+	/**
+	 * Retrieve index from hash
+	 * 
+	 * @param hash
+	 * @return
+	 */
+	public long getIndexFromHash(String hash);
+	
+	/**
 	 * Return a list of block headers
 	 * @return
 	 */

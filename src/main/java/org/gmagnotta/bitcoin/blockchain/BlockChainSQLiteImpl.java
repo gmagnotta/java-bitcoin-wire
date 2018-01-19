@@ -1,6 +1,7 @@
 package org.gmagnotta.bitcoin.blockchain;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -29,11 +30,17 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String RETRIEVE_BY_HASH = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from blockHeader where hash = ?;";
 	
+	public static final String RETRIEVE_HEADER_FROM_TO = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from blockHeader where rowid >= ? limit ?;";
+	
 	private static final String HEADER_INSERT = "insert into blockHeader (hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount) values (?, ?, ?, ?, ?, ?, ?, ?);";
+	
+	private static final String INDEX_FROM_HASH = "select rowid from blockHeader where hash = ?;";
 
 	protected BasicDataSource dataSource;
 
 	private BlockChainParameters blockChainParameters;
+	
+	private String genesisHash;
 
 	public BlockChainSQLiteImpl(BlockChainParameters blockChainParameters, BasicDataSource dataSource) {
 
@@ -41,6 +48,8 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 		this.dataSource = dataSource;
 
+		this.genesisHash = Hex.toHexString(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChainParameters.getGenesis()).getBytes());
+		
 	}
 
 	@Override
@@ -115,6 +124,54 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		};
 
 	}
+	
+	private ResultSetHandler<List<Sha256Hash>> createListBlockHeaderHashesResultSetHandler() {
+
+		return new ResultSetHandler<List<Sha256Hash>>() {
+
+			@Override
+			public List<Sha256Hash> handle(ResultSet rs) throws SQLException {
+				
+				List<Sha256Hash> list = new ArrayList<Sha256Hash>();
+
+				while (rs.next()) {
+
+					BlockHeader header = blockHeaderFromResultSet(rs);
+					
+					Sha256Hash h = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(header);
+					
+					list.add(h);
+
+				}
+
+				return list;
+			}
+			
+		};
+
+	}
+	
+	private ResultSetHandler<List<BlockHeader>> createListBlockHeaderResultSetHandler() {
+
+		return new ResultSetHandler<List<BlockHeader>>() {
+
+			@Override
+			public List<BlockHeader> handle(ResultSet rs) throws SQLException {
+				
+				List<BlockHeader> list = new ArrayList<BlockHeader>();
+
+				while (rs.next()) {
+
+					list.add(blockHeaderFromResultSet(rs));
+
+				}
+
+				return list;
+			}
+			
+		};
+
+	}
 
 	/**
 	 * Helper method
@@ -136,8 +193,9 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	@Override
 	public synchronized BlockHeader getBlockHeader(int index) {
 		
-		if (index == 0)
+		if (index == 0) {
 			return blockChainParameters.getGenesis();
+		}
 
 		ResultSetHandler<BlockHeader> handler = createBlockHeaderResultSetHandler();
 
@@ -154,7 +212,12 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
+	@Override
 	public synchronized BlockHeader getBlockHeader(String hash) {
+		
+		if (hash.equals(genesisHash)) {
+			return blockChainParameters.getGenesis();
+		}
 
 		ResultSetHandler<BlockHeader> handler = createBlockHeaderResultSetHandler();
 
@@ -170,20 +233,100 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		}
 
 	}
+	
+	@Override
+	public long getIndexFromHash(String hash) {
+		
+		PreparedStatement statement = null;
+		Connection connection = null;
+
+		try {
+
+			connection = dataSource.getConnection();
+			
+			statement = connection.prepareStatement(INDEX_FROM_HASH);
+			
+			statement.setString(1, hash);
+
+			ResultSet rs = statement.executeQuery();
+
+			if (rs.next()) {
+
+				return rs.getInt("rowid");
+
+			}
+
+			statement.close();
+			connection.close();
+
+		} catch (Exception ex) {
+			
+			LOGGER.error("Exception", ex);
+
+		} finally {
+
+			if (statement != null) {
+
+				try {
+					statement.close();
+				} catch (SQLException e) {
+					LOGGER.error("Exception!", e);
+				}
+
+			}
+			
+			if (connection != null) {
+
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					LOGGER.error("Exception!", e);
+				}
+
+			}
+
+		}
+
+		return 0;
+	}
 
 	@Override
 	public synchronized List<Sha256Hash> getHashList(long index, long len) {
 
-		List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
+		ResultSetHandler<List<Sha256Hash>> handler = createListBlockHeaderHashesResultSetHandler();
 
-		return hashes;
+		QueryRunner queryRunner = new QueryRunner(dataSource);
 
+		try {
+			
+			return queryRunner.query(RETRIEVE_HEADER_FROM_TO, handler, index, len);
+			
+		} catch (SQLException e) {
+
+			LOGGER.error("Exception!", e);
+
+			return null;
+		}
+		
 	}
 
 	@Override
 	public synchronized List<BlockHeader> getBlockHeaders(long index, long len) {
 
-		return null;
+		ResultSetHandler<List<BlockHeader>> handler = createListBlockHeaderResultSetHandler();
+
+		QueryRunner queryRunner = new QueryRunner(dataSource);
+
+		try {
+			
+			return queryRunner.query(RETRIEVE_HEADER_FROM_TO, handler, index, len);
+			
+		} catch (SQLException e) {
+
+			LOGGER.error("Exception!", e);
+
+			return null;
+		}
 
 	}
 
@@ -242,7 +385,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 					blockHeader.getVersion(), blockHeader.getPrevBlock().toString(), blockHeader.getMerkleRoot().toString(),
 					blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount());
 			
-			LOGGER.info("Inserted {}", hash);
+//			LOGGER.info("Inserted {}", hash);
 			
 		
 	}
