@@ -1,7 +1,13 @@
 package org.gmagnotta.bitcoin;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
-import org.gmagnotta.bitcoin.blockchain.BlockChainImpl;
+import org.gmagnotta.bitcoin.blockchain.BlockChainSQLiteImpl;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManager;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManagerImpl;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -16,9 +22,67 @@ public class Main {
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
-		BlockChain bestChain = new BlockChainImpl();
+		MagicVersion magicVersion = MagicVersion.REGTEST;
 		
-		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(MagicVersion.TESTNET3, bestChain);
+		BasicDataSource dataSource = new BasicDataSource();
+
+		dataSource.setDriverClassName("org.sqlite.JDBC");
+		
+		dataSource.addConnectionProperty("foreign_keys", "ON");
+		dataSource.addConnectionProperty("journal_mode", "WAL");
+		dataSource.addConnectionProperty("transaction_mode", "IMMEDIATE");
+		dataSource.addConnectionProperty("busy_timeout", "0");
+		
+		dataSource.setDefaultAutoCommit(true);
+
+		dataSource.setUrl("jdbc:sqlite:regtest.db");
+
+		Connection connection = dataSource.getConnection();
+		
+		if (!tableExist(connection, "blockHeader")) {
+			
+//			LOGGER.info("Found empty database! Creating needed tables");
+			
+			initDb(connection);
+			
+		}
+		
+		connection.close();
+		
+		BlockChain bestChain = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource);
+		
+		//
+		
+		BasicDataSource dataSource2 = new BasicDataSource();
+
+		dataSource2.setDriverClassName("org.sqlite.JDBC");
+		
+		dataSource2.addConnectionProperty("foreign_keys", "ON");
+		dataSource2.addConnectionProperty("journal_mode", "WAL");
+		dataSource2.addConnectionProperty("transaction_mode", "IMMEDIATE");
+		dataSource2.addConnectionProperty("busy_timeout", "0");
+		
+		dataSource2.setDefaultAutoCommit(true);
+
+		dataSource2.setUrl("jdbc:sqlite:regtest2.db");
+
+		Connection connection2 = dataSource2.getConnection();
+		
+		if (!tableExist(connection2, "blockHeader")) {
+			
+//			LOGGER.info("Found empty database! Creating needed tables");
+			
+			initDb(connection2);
+			
+		}
+		
+		connection2.close();
+		
+		BlockChain bestChain2 = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource2);
+		
+		//
+		
+		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(magicVersion, bestChain);
 		
 		new Thread(new Runnable() {
 			
@@ -33,9 +97,17 @@ public class Main {
 			
 		}, "bitcoinPeerManagerListener").start();
 		
-//		bitcoinPeerManager.connect("52.167.211.151", 19000);
 		
-		bitcoinPeerManager.connect("127.0.0.1", 18333);
+		final BitcoinPeerManager bitcoinPeerManager2 = new BitcoinPeerManagerImpl(magicVersion, bestChain2);
+		
+		bitcoinPeerManager2.connect("127.0.0.1", 4000);
+		
+//		bitcoinPeerManager.connect("127.0.0.1", 18333);
+		
+//		bitcoinPeerManager.connect("13.228.237.222", 8333);
+		
+		
+//		bitcoinPeerManager.connect("47.88.214.164", 18333);
 //		
 //		for (BitcoinPeer p : bitcoinPeerManager.getConnectedPeers()) {
 //
@@ -49,6 +121,49 @@ public class Main {
 		
 		System.in.read();
 		
+	}
+	
+	protected static void initDb(Connection connection) throws Exception {
+		
+		Statement statement = connection.createStatement();
+		
+		statement.executeUpdate(BlockChainSQLiteImpl.CREATE_HEADER_TABLE);
+		
+		statement.close();
+		
+	}
+	
+	/**
+	 * This is an utility method that checks if a table exists in the database
+	 * @param conn
+	 * @param tableName
+	 * @return
+	 * @throws SQLException
+	 */
+	private static boolean tableExist(Connection conn, String tableName) throws SQLException {
+		
+		boolean tExists = false;
+		
+		ResultSet rs = null;
+		
+		try {
+			rs = conn.getMetaData().getTables(null, null, tableName, null);
+			
+			while (rs.next()) {
+				String tName = rs.getString("TABLE_NAME");
+				if (tName != null && tName.equals(tableName)) {
+					tExists = true;
+					break;
+				}
+			}
+		} finally {
+			
+			if (rs != null) {
+				rs.close();
+			}
+			
+		}
+		return tExists;
 	}
 	
 }
