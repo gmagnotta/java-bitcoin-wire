@@ -4,7 +4,6 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -180,7 +179,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 		} else if (blockChain.getLastKnownIndex() < bitcoinClient.getBlockStartHeight()) {
 			
-			// Our blockchain is fewer than the peer's
+			// Our blockchain is fewer than the peer's. We can be back or we can be on another chain (fork)
 			
 			List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
 			
@@ -214,6 +213,12 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				blockChain.addBlockHeader(b);
 				
 			}
+			
+			LOGGER.info("Best chain is now {}", blockChain.getLastKnownIndex());
+			
+		} else {
+			
+			LOGGER.info("Our chain is the same length of the peer. Doing nothing now");
 			
 		}
 		

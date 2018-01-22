@@ -66,5 +66,5 @@ public interface BlockChain {
 	 * @param header
 	 */
 	public void addBlockHeader(BlockHeader header);
-
+	
 }
