@@ -11,11 +11,11 @@ import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 public interface BlockChain {
 	
 	/**
-	 * Return last known index
+	 * Return last known number
 	 * 
 	 * @return
 	 */
-	public long getLastKnownIndex();
+	public long getBestChainLenght();
 
 	/**
 	 * Returns block header at specified position
@@ -23,7 +23,7 @@ public interface BlockChain {
 	 * @param index
 	 * @return
 	 */
-	public BlockHeader getBlockHeader(int index);
+	public ValidatedBlockHeader getBlockHeader(int index);
 	
 	/**
 	 * Returns block header from specified hash
@@ -31,28 +31,13 @@ public interface BlockChain {
 	 * @param hash
 	 * @return
 	 */
-	public BlockHeader getBlockHeader(String hash);
-	
-	/**
-	 * 
-	 * @param hash
-	 * @return
-	 */
-	public List<BlockHeader> getBlockHeaderByPrevBlock(String hash);
-	
-	/**
-	 * Retrieve index from hash
-	 * 
-	 * @param hash
-	 * @return
-	 */
-	public long getIndexFromHash(String hash);
+	public ValidatedBlockHeader getBlockHeader(String hash);
 	
 	/**
 	 * Return a list of block headers
 	 * @return
 	 */
-	public List<BlockHeader> getBlockHeaders(long index, long len);
+	public List<ValidatedBlockHeader> getBlockHeaders(long index, long len);
 
 	/**
 	 * Returns a list of len hashes starting from index

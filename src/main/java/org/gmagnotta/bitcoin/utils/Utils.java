@@ -155,5 +155,36 @@ public class Utils {
 		return compact(d);
 
 	}
+	
+	/**
+	 * 
+	 * @param index
+	 * @return
+	 */
+	public static long calculatBlockIndexRange(long index) {
+		
+		return Math.floorDiv(index, 2016);
+		
+	}
+	
+	public static void main(String[] args) {
+		
+		System.out.println(calculatBlockIndexRange(0));
+		
+		System.out.println(calculatBlockIndexRange(1));
+		
+		System.out.println(calculatBlockIndexRange(2015));
+		
+		System.out.println(calculatBlockIndexRange(2016));
+		
+		System.out.println(calculatBlockIndexRange(2017));
+
+		System.out.println(calculatBlockIndexRange(3992));
+		
+		System.out.println(calculatBlockIndexRange(4031));
+		
+		System.out.println(calculatBlockIndexRange(4032));
+		
+	}
 
 }

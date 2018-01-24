@@ -13,8 +13,12 @@ import org.gmagnotta.bitcoin.peer.BitcoinPeerManagerImpl;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.log.LogLevel;
 import org.gmagnotta.log.impl.system.ConsoleLogEventWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Main {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
 	public static void main(String[] args) throws Exception {
 		
@@ -22,7 +26,7 @@ public class Main {
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
-		MagicVersion magicVersion = MagicVersion.REGTEST;
+		MagicVersion magicVersion = MagicVersion.MAIN;
 		
 		BasicDataSource dataSource = new BasicDataSource();
 
@@ -35,13 +39,13 @@ public class Main {
 		
 		dataSource.setDefaultAutoCommit(true);
 
-		dataSource.setUrl("jdbc:sqlite:regtest.db");
+		dataSource.setUrl("jdbc:sqlite:main.db");
 
 		Connection connection = dataSource.getConnection();
 		
 		if (!tableExist(connection, "blockHeader")) {
 			
-//			LOGGER.info("Found empty database! Creating needed tables");
+			LOGGER.info("Found empty database! Creating needed tables");
 			
 			initDb(connection);
 			
@@ -49,65 +53,65 @@ public class Main {
 		
 		connection.close();
 		
-		BlockChain bestChain = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource);
+		BlockChain blockChain = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource);
 		
 		//
 		
-		BasicDataSource dataSource2 = new BasicDataSource();
-
-		dataSource2.setDriverClassName("org.sqlite.JDBC");
+//		BasicDataSource dataSource2 = new BasicDataSource();
+//
+//		dataSource2.setDriverClassName("org.sqlite.JDBC");
+//		
+//		dataSource2.addConnectionProperty("foreign_keys", "ON");
+//		dataSource2.addConnectionProperty("journal_mode", "WAL");
+//		dataSource2.addConnectionProperty("transaction_mode", "IMMEDIATE");
+//		dataSource2.addConnectionProperty("busy_timeout", "0");
+//		
+//		dataSource2.setDefaultAutoCommit(true);
+//
+//		dataSource2.setUrl("jdbc:sqlite:regtest2.db");
+//
+//		Connection connection2 = dataSource2.getConnection();
+//		
+//		if (!tableExist(connection2, "blockHeader")) {
+//			
+////			LOGGER.info("Found empty database! Creating needed tables");
+//			
+//			initDb(connection2);
+//			
+//		}
+//		
+//		connection2.close();
+//		
+//		BlockChain bestChain2 = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource2);
+//		
+//		//
 		
-		dataSource2.addConnectionProperty("foreign_keys", "ON");
-		dataSource2.addConnectionProperty("journal_mode", "WAL");
-		dataSource2.addConnectionProperty("transaction_mode", "IMMEDIATE");
-		dataSource2.addConnectionProperty("busy_timeout", "0");
+		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(magicVersion, blockChain);
 		
-		dataSource2.setDefaultAutoCommit(true);
-
-		dataSource2.setUrl("jdbc:sqlite:regtest2.db");
-
-		Connection connection2 = dataSource2.getConnection();
+//		new Thread(new Runnable() {
+//			
+//			@Override
+//			public void run() {
+//				try {
+//					bitcoinPeerManager.listen(4000);
+//				} catch (Exception e) {
+//					e.printStackTrace();
+//				}
+//			}
+//			
+//		}, "bitcoinPeerManagerListener").start();
+//		
+//		
+//		final BitcoinPeerManager bitcoinPeerManager2 = new BitcoinPeerManagerImpl(magicVersion, bestChain2);
 		
-		if (!tableExist(connection2, "blockHeader")) {
-			
-//			LOGGER.info("Found empty database! Creating needed tables");
-			
-			initDb(connection2);
-			
-		}
+//		bitcoinPeerManager2.connect("127.0.0.1", 4000);
 		
-		connection2.close();
+//		bitcoinPeerManager.connect("surricani.chickenkiller.com", 18333);
 		
-		BlockChain bestChain2 = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource2);
-		
-		//
-		
-		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(magicVersion, bestChain);
-		
-		new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				try {
-					bitcoinPeerManager.listen(4000);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			
-		}, "bitcoinPeerManagerListener").start();
+		bitcoinPeerManager.connect("198.245.61.166", 8333);
 		
 		
-		final BitcoinPeerManager bitcoinPeerManager2 = new BitcoinPeerManagerImpl(magicVersion, bestChain2);
-		
-		bitcoinPeerManager2.connect("127.0.0.1", 4000);
-		
-//		bitcoinPeerManager.connect("127.0.0.1", 18333);
-		
-//		bitcoinPeerManager.connect("13.228.237.222", 8333);
-		
-		
-//		bitcoinPeerManager.connect("47.88.214.164", 18333);
+//		bitcoinPeerManager.connect("52.167.211.151", 19000);
 //		
 //		for (BitcoinPeer p : bitcoinPeerManager.getConnectedPeers()) {
 //
@@ -128,6 +132,8 @@ public class Main {
 		Statement statement = connection.createStatement();
 		
 		statement.executeUpdate(BlockChainSQLiteImpl.CREATE_HEADER_TABLE);
+		
+		statement.executeUpdate(BlockChainSQLiteImpl.CREATE_BESTCHAIN_VIEW);
 		
 		statement.close();
 		

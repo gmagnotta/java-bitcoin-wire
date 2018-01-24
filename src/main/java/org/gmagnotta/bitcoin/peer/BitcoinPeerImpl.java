@@ -68,7 +68,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		BitcoinVersionMessage versionMessage = new BitcoinVersionMessage(70012L, new BigInteger("1"),
 				new BigInteger("" + System.currentTimeMillis() / 1000), receiving, emitting, new BigInteger("123"),
-				"/BitcoinPeppe:0.0.1/", blockChain.getLastKnownIndex(), false);
+				"/BitcoinPeppe:0.0.1/", blockChain.getBestChainLenght(), false);
 
 		synchronized (syncObj) {
 
