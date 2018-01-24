@@ -22,7 +22,7 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 		
-		org.gmagnotta.log.LogEventCollector.getInstance().setLogLevelThreshold(LogLevel.INFO);
+		org.gmagnotta.log.LogEventCollector.getInstance().setLogLevelThreshold(LogLevel.DEBUG);
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
@@ -108,7 +108,7 @@ public class Main {
 		
 //		bitcoinPeerManager.connect("surricani.chickenkiller.com", 18333);
 		
-		bitcoinPeerManager.connect("198.245.61.166", 8333);
+		bitcoinPeerManager.connect("seed.bitcoin.jonasschnelli.ch", 8333);
 		
 		
 //		bitcoinPeerManager.connect("52.167.211.151", 19000);

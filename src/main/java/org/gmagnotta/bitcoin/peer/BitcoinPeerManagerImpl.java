@@ -2,16 +2,21 @@ package org.gmagnotta.bitcoin.peer;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
@@ -34,12 +39,14 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	private List<BitcoinPeer> peers;
 	private BlockChain blockChain;
 	private boolean isSyncing;
+	private SecureRandom secureRandom;
 	
 	public BitcoinPeerManagerImpl(MagicVersion magicVersion, BlockChain blockChain) {
 		this.magicVersion = magicVersion;
 		this.peers = new ArrayList<BitcoinPeer>();
 		this.blockChain = blockChain;
 		this.isSyncing = false;
+		this.secureRandom = new SecureRandom();
 	}
 
 	@Override
@@ -108,38 +115,34 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			BitcoinAddrMessage addrMessage = (BitcoinAddrMessage) bitcoinMessage;
 			
-			for (NetworkAddress networkAddress : addrMessage.getNetworkAddress()) {
+			int randomElement = ThreadLocalRandom.current().nextInt(addrMessage.getNetworkAddress().size());
+			
+			NetworkAddress networkAddress = addrMessage.getNetworkAddress().get(randomElement);
+			
+//			List<BitcoinPeer> connected = getConnectedPeers();
+//			
+//			if (connected.size() < MAX_PEERS_CONNECTED && !isConnected(connected, networkAddress.getInetAddress().getHostAddress())) {
+//				
+//				LOGGER.info("Opening connection with {} ", bitcoinMessage);
 				
-				List<BitcoinPeer> connected = getConnectedPeers();
+				Thread t = new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
 				
-				if (connected.size() < MAX_PEERS_CONNECTED && !isConnected(connected, networkAddress.getInetAddress())) {
+						openConnection(networkAddress.getInetAddress().getHostAddress(), networkAddress.getPort(), BitcoinPeerManagerImpl.this);
+						
+					}
 					
-					LOGGER.info("Opening connection with {} ", bitcoinMessage);
-					
-					openConnection(networkAddress, this);
-					
-				}
+				});
 				
-			}
+				t.start();
+				
+//			}
 			
 		}
 	}
 
-	@Override
-	public void connect(String address, int port) throws Exception {
-		
-		Socket socket = new Socket(address, port);
-		
-		BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this, blockChain);
-		
-		addPeer(bitcoinClient);
-		
-		syncBC(bitcoinClient);
-		
-		LOGGER.info("Best chain is {}", blockChain.getBestChainLenght());
-			
-	}
-	
 	private void syncBC(BitcoinPeer bitcoinPeer) throws Exception {
 		
 		// if peer has more blocks than us
@@ -230,7 +233,12 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	}
 	
 	private synchronized void removePeer(BitcoinPeer bitcoinPeer) {
-		peers.remove(bitcoinPeer);
+		
+		if (peers.contains(bitcoinPeer)) {
+			
+			peers.remove(bitcoinPeer);
+			
+		}
 	}
 
 	@Override
@@ -276,48 +284,66 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 	}
 	
-	private void openConnection(final NetworkAddress networkAddress, final BitcoinPeerCallback callback) {
+	@Override
+	public void connect(String address, int port) throws Exception {
 		
-		Thread t = new Thread(new Runnable() {
+		openConnection(address, port, this);
 			
-			@Override
-			public void run() {
-				
-				BitcoinPeerImpl bitcoinClient = null;
-				
-				try {
-				
-					Socket socket = new Socket(networkAddress.getInetAddress(), networkAddress.getPort());
-					
-					bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, callback, blockChain);
-					
-					addPeer(bitcoinClient);
-					
-					syncBC(bitcoinClient);
-
-					LOGGER.info("Best chain is {}", blockChain.getBestChainLenght());
-				
-				} catch (Exception e) {
-					
-					LOGGER.error("Error", e);
-					
-					if (bitcoinClient != null)
-						removePeer(bitcoinClient);
-					
-				}
-				
-			}
-			
-		});
-		
-		t.start();
-		
 	}
 	
-	private static boolean isConnected(List<BitcoinPeer> peers , InetAddress inetaddress) {
+	private void openConnection(final String address, int port, final BitcoinPeerCallback callback) {
+		
+		BitcoinPeerImpl bitcoinClient = null;
+		
+		try {
+			
+			if (!isConnected(getConnectedPeers(), address) && getConnectedPeers().size() < MAX_PEERS_CONNECTED) {
+		
+				Socket socket = new Socket();
+				socket.connect(new InetSocketAddress(address, port), 10000);
+				
+				bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, callback, blockChain);
+				
+				addPeer(bitcoinClient);
+				
+				syncBC(bitcoinClient);
+	
+				LOGGER.info("Best chain is {}", blockChain.getBestChainLenght());
+				
+	//			BitcoinAddrMessage addrResponse = bitcoinClient.sendGetAddrMessage(new BitcoinGetAddrMessage());
+	//			
+	//			callback.onMessageReceived(addrResponse, bitcoinClient);
+			
+			} else {
+				
+				LOGGER.warn("Already connected with {}", address);
+				
+			}
+		
+		} catch (Exception e) {
+			
+			LOGGER.error("Error", e);
+			
+			if (bitcoinClient != null)
+				removePeer(bitcoinClient);
+			
+		}
+				
+	}
+	
+	private static boolean isConnected(List<BitcoinPeer> peers , String address) {
+		
+		String ip;
+		
+		try {
+			InetAddress resolvedAddr = InetAddress.getByName(address);
+			ip = resolvedAddr.getHostAddress();
+		} catch (UnknownHostException ex) {
+			return true;
+		}
 
 		for (BitcoinPeer peer : peers) {
-			if (peer.getInetAddress().equals(inetaddress)) {
+			if (peer.getInetAddress().getHostAddress().equals(ip)) {
 				return true;
 			}
 		}

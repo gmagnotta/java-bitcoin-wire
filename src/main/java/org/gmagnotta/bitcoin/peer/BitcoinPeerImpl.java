@@ -200,6 +200,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 			} finally {
 				
 				receivedMessage = null;
+				waiting = null;
 				
 			}
 			
@@ -210,15 +211,15 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	private void processReceivedMessage(BitcoinMessage bitcoinMessage) {
 
 		synchronized (syncObj) {
-
+			
 			if (waiting != null && waiting.equals(bitcoinMessage.getCommand())) {
-
+				
 				receivedMessage = bitcoinMessage;
-
+				
 				syncObj.notify();
 
 			} else {
-
+				
 				bitcoinPeerManagerCallbacks.onMessageReceived(bitcoinMessage, this);
 
 			}
@@ -259,9 +260,9 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 				try {
 
 					BitcoinFrame frame = bitcoinFrameParserStream.getBitcoinFrame();
-
+					
 					BitcoinMessage bitcoinMessage = frame.getPayload();
-
+					
 					processReceivedMessage(bitcoinMessage);
 
 				} catch (InterruptedException ex) {
