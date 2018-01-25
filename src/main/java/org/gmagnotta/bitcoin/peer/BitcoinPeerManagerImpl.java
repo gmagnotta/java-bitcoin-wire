@@ -118,7 +118,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			int randomElement = ThreadLocalRandom.current().nextInt(addrMessage.getNetworkAddress().size());
 			
-			NetworkAddress networkAddress = addrMessage.getNetworkAddress().get(randomElement);
+			final NetworkAddress networkAddress = addrMessage.getNetworkAddress().get(randomElement);
 			
 //			List<BitcoinPeer> connected = getConnectedPeers();
 //			
