@@ -13,6 +13,13 @@ public interface BitcoinPeerCallback {
 	public void onMessageReceived(BitcoinMessage bitcoinMessage, BitcoinPeer bitcoinPeer);
 	
 	/**
+	 * Tell the manager that the connection with the peer is ready
+	 * 
+	 * @param bitcoinPeer
+	 */
+	public void onConnectionEstablished(BitcoinPeer bitcoinPeer);
+	
+	/**
 	 * Tell the manager that the connection with the peer was closed
 	 * 
 	 * @param bitcoinPeer
