@@ -24,7 +24,7 @@ public enum BlockChainParameters {
 
 			10 * 60,
 			
-			new String[]{ "seed.bitcoin.jonasschnelli.ch", "seed.bitcoin.sipa.be", "dnsseed.bluematt.me", "dnsseed.bitcoin.dashjr.org", "seed.btc.petertodd.org", "seed.bitcoinstats.com" },
+			new String[]{ /*"seed.bitcoinabc.org", */"seed.bitcoin.jonasschnelli.ch", "seed.bitcoin.sipa.be", "dnsseed.bluematt.me", "dnsseed.bitcoin.dashjr.org", "seed.btc.petertodd.org", "seed.bitcoinstats.com" },
 			
 			8333
 

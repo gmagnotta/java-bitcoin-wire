@@ -146,66 +146,125 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 
 	private void syncBC(BitcoinPeer bitcoinPeer) throws Exception {
 		
-		long cycles = Math.round((bitcoinPeer.getBlockStartHeight() - blockChain.getBestChainLenght()) / 2000) + 1;
+		long cycles = 1000; //Math.round((bitcoinPeer.getBlockStartHeight() - blockChain.getBestChainLenght()) / 2000) + 1;
 		
 		LOGGER.info("Start sync");
 		
-		for (int i = 0; i < cycles; i++) {
+		long insertedHeaders = 0;
 		
-			List<Sha256Hash> inverted = new ArrayList<Sha256Hash>();
+		List<Sha256Hash> inverted = new ArrayList<Sha256Hash>();
+		
+		Sha256Hash lastReceivedHash = null;
+		
+		long lastKnownIndex = blockChain.getBestChainLenght();
+		
+		if (lastKnownIndex == 0) {
 			
-			long lastKnownIndex = blockChain.getBestChainLenght();
+			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
 			
-			if (lastKnownIndex == 0) {
+		} else if (lastKnownIndex < 20) {
+			
+			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
+			
+			List<Sha256Hash> hashes = blockChain.getHashList(1, lastKnownIndex);
+			
+			for (Sha256Hash hash : hashes) {
 				
-				inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
+				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
 				
-			} else if (lastKnownIndex < 20) {
-				
-				inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
-				
-				List<Sha256Hash> hashes = blockChain.getHashList(1, lastKnownIndex);
-				
-				for (Sha256Hash hash : hashes) {
-					
-					inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
-					
-				}
-
-			} else {
-				
-				long start = (lastKnownIndex - 20) + 1;
-				
-				List<Sha256Hash> hashes = blockChain.getHashList(start, 20);
-				
-				for (Sha256Hash hash : hashes) {
-					
-					inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
-					
-				}
-
 			}
+
+		} else {
+			
+			long start = (lastKnownIndex - 20) + 1;
+			
+			List<Sha256Hash> hashes = blockChain.getHashList(start, 20);
+			
+			for (Sha256Hash hash : hashes) {
+				
+				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				
+			}
+			
+			hashes = blockChain.getHashList(lastKnownIndex / 4, 1);
+			
+			for (Sha256Hash hash : hashes) {
+				
+				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				
+			}
+			
+			hashes = blockChain.getHashList((lastKnownIndex / 4) * 2, 1);
+			
+			for (Sha256Hash hash : hashes) {
+				
+				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				
+			}
+			
+			hashes = blockChain.getHashList((lastKnownIndex / 4) * 3, 1);
+			
+			for (Sha256Hash hash : hashes) {
+				
+				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				
+			}
+			
+			hashes = blockChain.getHashList(0, 1);
+			
+			for (Sha256Hash hash : hashes) {
+				
+				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				
+			}
+
+		}
+		
+		long receivedHeaders = 0;
+		do {
+			
+			if (lastReceivedHash != null) {
+				
+				inverted = new ArrayList<Sha256Hash>();
+				inverted.add(lastReceivedHash);
+				
+			}
+			
+			insertedHeaders = 0;
 			
 			BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, inverted);
 			
 			BitcoinHeadersMessage bitcoinHeaders = bitcoinPeer.sendGetHeaders(bitcoinGetHeadersMessage);
 			
-			LOGGER.info("Peer {} returned {} headers!", bitcoinPeer, bitcoinHeaders.getHeaders().size());
+			receivedHeaders = bitcoinHeaders.getHeaders().size();
+			
+			LOGGER.info("Peer {} returned {} headers!", bitcoinPeer, receivedHeaders);
 			
 			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
 				
-				blockChain.addBlockHeader(b);
+				if (blockChain.addBlockHeader(b)) {
+					insertedHeaders++;
+					
+				}
+
+				lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b); 
 				
 			}
 			
 			LOGGER.info("Sync in progress {}%", (blockChain.getBestChainLenght()*100.0)/bitcoinPeer.getBlockStartHeight());
-
-		}
-		
-		LOGGER.info("Done Sync {}", blockChain.getBestChainLenght());
 			
+			if (insertedHeaders == 0) {
+				
+				LOGGER.warn("We were not able to insert blocks during this iteration! Maybe the peer is in another fork?");
+				
+			}
+			
+		} while (receivedHeaders != 0);
+
+		LOGGER.info("Done Sync {}", blockChain.getBestChainLenght());
+		
 	}
-	
+		
 	@Override
 	public synchronized List<BitcoinPeer> getConnectedPeers() {
 		return peers;
@@ -269,9 +328,9 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	@Override
 	public void connect(String address, int port) throws Exception {
-		
+
 		openConnection(address, port, this);
-			
+
 	}
 	
 	private void openConnection(final String address, int port, final BitcoinPeerCallback callback) {
@@ -350,6 +409,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 			if (blockChain.getBestChainLenght() < bitcoinPeer.getBlockStartHeight()) {
 				
+				LOGGER.info("The peer have a better chain lenght {} than our {}. Start sync", bitcoinPeer.getBlockStartHeight(),blockChain.getBestChainLenght());
+				
 				syncBC(bitcoinPeer);
 				
 			}
@@ -357,6 +418,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		} catch (Exception ex) {
 			
 			LOGGER.error("Exception while sync", ex);
+			
+			onConnectionClosed(bitcoinPeer);
 			
 		} finally {
 			

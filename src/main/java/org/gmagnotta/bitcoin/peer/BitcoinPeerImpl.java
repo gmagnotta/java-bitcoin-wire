@@ -4,6 +4,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -274,6 +275,14 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 				} catch (EndOfStreamException ex) {
 					
 					LOGGER.error("EndOfStreamException", ex);
+					
+					bitcoinPeerManagerCallbacks.onConnectionClosed(BitcoinPeerImpl.this);
+					
+					break;
+					
+				} catch (SocketException ex) {
+					
+					LOGGER.error("SocketException", ex);
 					
 					bitcoinPeerManagerCallbacks.onConnectionClosed(BitcoinPeerImpl.this);
 					

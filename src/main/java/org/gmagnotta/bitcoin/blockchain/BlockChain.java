@@ -50,6 +50,6 @@ public interface BlockChain {
 	 * Add the blockheader to the blockchain
 	 * @param header
 	 */
-	public void addBlockHeader(BlockHeader header);
+	public boolean addBlockHeader(BlockHeader header);
 	
 }

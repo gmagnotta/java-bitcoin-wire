@@ -38,7 +38,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String RETRIEVE_HEADER_FROM_TO = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where number >= ? order by number desc limit ?;";
 	
-	public static final String HEADER_INSERT = "insert into blockHeader (hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount, number) select ?,?,?,?,?,?,?,?,(select number + 1  as number from blockHeader where hash = ?);";
+	public static final String HEADER_INSERT = "insert into blockHeader (hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount, number) values (?,?,?,?,?,?,?,?,?);";
 	
 //	public static final String INDEX_FROM_HASH = "select number from bestChain where hash = ?;";
 	
@@ -67,7 +67,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 
 	@Override
-	public synchronized long getBestChainLenght() {
+	public long getBestChainLenght() {
 
 		Statement statement = null;
 		Connection connection = null;
@@ -204,7 +204,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 
 	@Override
-	public synchronized ValidatedBlockHeader getBlockHeader(int number) {
+	public ValidatedBlockHeader getBlockHeader(int number) {
 		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
@@ -224,7 +224,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 	
 	@Override
-	public synchronized ValidatedBlockHeader getBlockHeader(String hash) {
+	public ValidatedBlockHeader getBlockHeader(String hash) {
 		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
@@ -241,7 +241,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
-	private synchronized ValidatedBlockHeader getBlockHeaderFromAll(String hash) {
+	private ValidatedBlockHeader getBlockHeaderFromAll(String hash) {
 		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
@@ -261,7 +261,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 	
 	@Override
-	public synchronized List<Sha256Hash> getHashList(long index, long len) {
+	public List<Sha256Hash> getHashList(long index, long len) {
 
 		ResultSetHandler<List<Sha256Hash>> handler = createListBlockHeaderHashesResultSetHandler();
 
@@ -281,7 +281,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 
 	@Override
-	public synchronized List<ValidatedBlockHeader> getBlockHeaders(long index, long len) {
+	public List<ValidatedBlockHeader> getBlockHeaders(long index, long len) {
 
 		ResultSetHandler<List<ValidatedBlockHeader>> handler = createListBlockHeaderResultSetHandler();
 
@@ -301,7 +301,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 
 	@Override
-	public synchronized void addBlockHeader(BlockHeader receivedHeader) {
+	public boolean addBlockHeader(BlockHeader receivedHeader) {
 		
 		// compute hash of received header
 		Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(receivedHeader);
@@ -310,6 +310,8 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		if (getBlockHeaderFromAll(Hex.toHexString(receivedHeaderHash.getReversedBytes())) != null) {
 
 			LOGGER.warn("Blockchain already contains block {}", receivedHeader);
+			
+			return false;
 
 		} else {
 
@@ -320,7 +322,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 				
 				LOGGER.error("BlockHeader {} references an unknown block {}", receivedHeader, Hex.toHexString(receivedHeader.getPrevBlock().getBytes()));
 				
-				return;
+				return false;
 				
 			}
 			
@@ -330,19 +332,23 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 				LOGGER.error("Block Header {} doesn't match expected target {}!", receivedHeaderHash, currentTarget);
 
-				return;
+				return false;
 
 			}
 			
 			try {
 				
-				insertHeader(receivedHeader, Hex.toHexString(receivedHeaderHash.getReversedBytes()));
+				insertHeader(receivedHeader, Hex.toHexString(receivedHeaderHash.getReversedBytes()), previousHeader);
 				
 				LOGGER.info("Inserted header {}", receivedHeader);
+				
+				return true;
 				
 			} catch (Exception e) {
 				
 				LOGGER.error("Exception!", e);
+				
+				return false;
 				
 			}
 			
@@ -350,14 +356,14 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
-	public void insertHeader(BlockHeader blockHeader, String hash) throws Exception {
+	public void insertHeader(BlockHeader blockHeader, String hash, ValidatedBlockHeader previous) throws Exception {
 		
 		QueryRunner run = new QueryRunner(dataSource);
 		
 			run.update(HEADER_INSERT, hash,
 					blockHeader.getVersion(), blockHeader.getPrevBlock().toString(), blockHeader.getMerkleRoot().toString(),
 					blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount(),
-					blockHeader.getPrevBlock().toString());
+					(previous.getNumber() + 1));
 			
 //			LOGGER.info("Inserted {}", hash);
 		
