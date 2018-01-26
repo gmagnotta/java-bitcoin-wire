@@ -13,7 +13,7 @@ import org.gmagnotta.bitcoin.wire.exception.MagicVersionException;
 public enum MagicVersion {
 
 	/* mainnet */
-	MAIN(new byte[] { (byte) 0xf9, (byte) 0xbe, (byte) 0xb4, (byte) 0xd9 },
+	MAINNET(new byte[] { (byte) 0xf9, (byte) 0xbe, (byte) 0xb4, (byte) 0xd9 },
 			
 			BlockChainParameters.MAINNET
 			

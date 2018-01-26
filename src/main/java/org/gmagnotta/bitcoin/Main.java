@@ -36,7 +36,7 @@ public class Main {
 					
 			} else if ("mainnet".equals(args[0])) {
 				
-				magicVersion = MagicVersion.MAIN;
+				magicVersion = MagicVersion.MAINNET;
 				
 			} else if ("regtest".equals(args[0])) {
 				
