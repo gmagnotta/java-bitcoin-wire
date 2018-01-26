@@ -4,10 +4,15 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainSQLiteImpl;
+import org.gmagnotta.bitcoin.peer.BitcoinPeer;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManager;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManagerImpl;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -151,6 +156,35 @@ public class Main {
 			bitcoinPeerManager.connect(seed, magicVersion.getBlockChainParameters().getPort());
 			
 		}
+		
+		Timer inputTimer = new Timer();
+		inputTimer.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+
+				List<BitcoinPeer> peers = bitcoinPeerManager.getConnectedPeers();
+				
+				if (peers.size() > 1) {
+				
+					int randomElement = ThreadLocalRandom.current().nextInt(peers.size());
+					
+						try {
+							
+							LOGGER.info("Disconnecting from a peer");
+							
+							peers.get(randomElement).disconnect();
+							
+						} catch (Exception e) {
+							
+							LOGGER.error("Exception killing connection", e);
+							
+						}
+				
+				}
+				
+			}
+		}, 0, 300000);
 		
 	}
 	
