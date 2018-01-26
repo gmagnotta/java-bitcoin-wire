@@ -22,7 +22,11 @@ public enum BlockChainParameters {
 
 			14 * 24 * 60 * 60,
 
-			10 * 60
+			10 * 60,
+			
+			new String[]{ "seed.bitcoin.jonasschnelli.ch", "seed.bitcoin.sipa.be" },
+			
+			8333
 
 	),
 
@@ -41,7 +45,11 @@ public enum BlockChainParameters {
 
 			14 * 24 * 60 * 60,
 
-			10 * 60
+			10 * 60,
+			
+			new String[]{ "testnet-seed.bitcoin.jonasschnelli.ch", "seed.tbtc.petertodd.org" },
+			
+			18333
 
 	),
 
@@ -60,7 +68,11 @@ public enum BlockChainParameters {
 
 			14 * 24 * 60 * 60,
 
-			10 * 60
+			10 * 60,
+			
+			new String[]{""},
+			
+			18333
 
 	);
 
@@ -70,15 +82,19 @@ public enum BlockChainParameters {
 	private int targetTimespan;
 	private int targetSpacing;
 	private boolean powAllowMinDifficultyBlocks;
+	private String[] seeds;
+	private int port;
 
 	private BlockChainParameters(BlockHeader genesis, BigInteger powLimit, boolean powAllowMinDifficultyBlocks,
-			boolean powNoRetargeting, int targetTimespan, int targetSpacing) {
+			boolean powNoRetargeting, int targetTimespan, int targetSpacing, String[] seeds, int port) {
 		this.genesis = genesis;
 		this.powLimit = powLimit;
 		this.powAllowMinDifficultyBlocks = powAllowMinDifficultyBlocks;
 		this.powNoRetargeting = powNoRetargeting;
 		this.targetTimespan = targetTimespan;
 		this.targetSpacing = targetSpacing;
+		this.seeds = seeds;
+		this.port = port;
 	}
 
 	public BlockHeader getGenesis() {
@@ -107,6 +123,14 @@ public enum BlockChainParameters {
 
 	public boolean getAllowMinDifficultyBlocks() {
 		return powAllowMinDifficultyBlocks;
+	}
+	
+	public String[] getSeeds() {
+		return seeds;
+	}
+	
+	public int getPort() {
+		return port;
 	}
 
 }

@@ -26,7 +26,37 @@ public class Main {
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
-		MagicVersion magicVersion = MagicVersion.MAIN;
+		MagicVersion magicVersion = null;
+		
+		if (args.length > 0) {
+		
+			if ("testnet3".equals(args[0])) {
+			
+				magicVersion = MagicVersion.TESTNET3;
+					
+			} else if ("mainnet".equals(args[0])) {
+				
+				magicVersion = MagicVersion.MAIN;
+				
+			} else if ("regtest".equals(args[0])) {
+				
+				magicVersion = MagicVersion.REGTEST;
+				
+			} else {
+				
+				LOGGER.info("Unknown network type {}", args[0]);
+				
+				System.exit(-1);
+				
+			}
+		
+		} else {
+			
+			LOGGER.info("Please specify network type!");
+			
+			System.exit(-1);
+			
+		}
 		
 		BasicDataSource dataSource = new BasicDataSource();
 
@@ -39,7 +69,7 @@ public class Main {
 		
 		dataSource.setDefaultAutoCommit(true);
 
-		dataSource.setUrl("jdbc:sqlite:main.db");
+		dataSource.setUrl("jdbc:sqlite:" + magicVersion.toString() + ".db");
 
 		Connection connection = dataSource.getConnection();
 		
@@ -108,22 +138,19 @@ public class Main {
 		
 //		bitcoinPeerManager.connect("surricani.chickenkiller.com", 18333);
 		
-		bitcoinPeerManager.connect("seed.bitcoin.jonasschnelli.ch", 8333);
-		
-		
-//		bitcoinPeerManager.connect("52.167.211.151", 19000);
+//		bitcoinPeerManager.connect("seed.bitcoin.jonasschnelli.ch", 8333);
 //		
-//		for (BitcoinPeer p : bitcoinPeerManager.getConnectedPeers()) {
-//
-//			long nonce = System.currentTimeMillis();
-//			
-//			BitcoinPingMessage bitcoinPingMessage = new BitcoinPingMessage(new BigInteger("" + nonce));
-//			
-//			BitcoinPongMessage pong = p.sendPing(bitcoinPingMessage);
-//			
-//		}
+//		bitcoinPeerManager.connect("seed.bitcoin.sipa.be", 8333);
+//		
+//		bitcoinPeerManager.connect("seed.btc.petertodd.org", 8333);
 		
-		System.in.read();
+		for (String seed : magicVersion.getBlockChainParameters().getSeeds()) {
+			
+			LOGGER.info("Connecting to {}", seed);
+			
+			bitcoinPeerManager.connect(seed, magicVersion.getBlockChainParameters().getPort());
+			
+		}
 		
 	}
 	
