@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
@@ -11,9 +12,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainSQLiteImpl;
+import org.gmagnotta.bitcoin.peer.BitcoinPeer;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManager;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManagerImpl;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
+import org.gmagnotta.log.LogEventWriter;
 import org.gmagnotta.log.LogLevel;
 import org.gmagnotta.log.impl.system.ConsoleLogEventWriter;
 import org.slf4j.Logger;
@@ -65,7 +68,7 @@ public class Main {
 			
 		}
 		
-		BasicDataSource dataSource = new BasicDataSource();
+		final BasicDataSource dataSource = new BasicDataSource();
 
 		dataSource.setDriverClassName("org.sqlite.JDBC");
 		
@@ -102,7 +105,7 @@ public class Main {
 //			
 //		}
 		
-		Timer inputTimer = new Timer();
+		final Timer inputTimer = new Timer();
 		inputTimer.schedule(new TimerTask() {
 			
 			@Override
@@ -133,6 +136,47 @@ public class Main {
 			}
 			
 		}, 0, 60000);
+		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			
+			public void run() {
+
+				LOGGER.info("Terminating simulator...");
+
+				try {
+					
+					LOGGER.info("Cancelling timer");
+					inputTimer.cancel();
+					
+					List<BitcoinPeer> connected = bitcoinPeerManager.getConnectedPeers();
+					
+					for (BitcoinPeer peer : connected) {
+						
+						LOGGER.info("Disconnecting from {}", peer);
+						bitcoinPeerManager.disconnect(peer);
+						
+					}
+
+					// tell the library to shutdown and close all opened resources
+					LOGGER.info("Closing datasource");
+					dataSource.close();
+
+					// explicitly stop logging
+					for (LogEventWriter writer : org.gmagnotta.log.LogEventCollector.getInstance().getLogEventWriters()) {
+
+						writer.stop();
+
+					}
+					
+					org.gmagnotta.log.LogEventCollector.getInstance().stop();
+
+				} catch (Exception ex) {
+
+					System.err.println("Exception while terminating simulator " + ex.getMessage());
+
+				}
+			}
+		});
 		
 	}
 	

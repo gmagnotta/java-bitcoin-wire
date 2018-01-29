@@ -65,6 +65,12 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		this.dataSource = dataSource;
 
 	}
+	
+	public void close() throws Exception {
+		
+		dataSource.close();
+		
+	}
 
 	@Override
 	public long getBestChainLenght() {

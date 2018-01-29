@@ -10,19 +10,16 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
-import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
@@ -115,7 +112,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.ADDR)) {
 			
-			BitcoinAddrMessage addrMessage = (BitcoinAddrMessage) bitcoinMessage;
+			/*BitcoinAddrMessage addrMessage = (BitcoinAddrMessage) bitcoinMessage;
 			
 			int randomElement = ThreadLocalRandom.current().nextInt(addrMessage.getNetworkAddress().size());
 			
@@ -132,7 +129,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			});
 			
-			t.start();
+			t.start();*/
 			
 		}
 	}
@@ -140,8 +137,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	private void syncBC(BitcoinPeer bitcoinPeer) throws Exception {
 		
 		LOGGER.info("Start sync");
-		
-		long insertedHeaders = 0;
 		
 		List<Sha256Hash> inverted = new ArrayList<Sha256Hash>();
 		
@@ -236,8 +231,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			}
 			
-			insertedHeaders = 0;
-			
 			BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, inverted);
 			
 			BitcoinHeadersMessage bitcoinHeaders = bitcoinPeer.sendGetHeaders(bitcoinGetHeadersMessage);
@@ -248,22 +241,13 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
 				
-				if (blockChain.addBlockHeader(b)) {
-					insertedHeaders++;
+				blockChain.addBlockHeader(b);
 					
-				}
-
 				lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b); 
 				
 			}
 			
 			LOGGER.info("Sync in progress {}%", (blockChain.getBestChainLenght()*100.0)/bitcoinPeer.getBlockStartHeight());
-			
-			if (insertedHeaders == 0) {
-				
-				LOGGER.warn("We were not able to insert blocks during this iteration! Maybe the peer is in another fork?");
-				
-			}
 			
 		} while (receivedHeaders != 0);
 
