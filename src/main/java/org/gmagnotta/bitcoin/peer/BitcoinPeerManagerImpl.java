@@ -275,7 +275,16 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 
 	@Override
 	public void disconnect(BitcoinPeer bitcoinPeer) {
-		// TODO Auto-generated method stub
+		
+		try {
+			
+			bitcoinPeer.disconnect();
+		
+		} catch (Exception e) {
+			
+			LOGGER.error("Exception disconneting", e);
+			
+		}
 		
 	}
 
