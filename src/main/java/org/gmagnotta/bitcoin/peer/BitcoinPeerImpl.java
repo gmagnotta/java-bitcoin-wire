@@ -1,10 +1,10 @@
 package org.gmagnotta.bitcoin.peer;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -23,6 +23,7 @@ import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame.BitcoinFrameBuilder;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
+import org.gmagnotta.bitcoin.wire.exception.BitcoinFrameBuilderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -266,12 +267,6 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 					
 					processReceivedMessage(bitcoinMessage);
 
-				} catch (InterruptedException ex) {
-
-					LOGGER.info("Interrupting...");
-
-					break;
-
 				} catch (EndOfStreamException ex) {
 					
 					LOGGER.error("EndOfStreamException", ex);
@@ -280,17 +275,21 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 					
 					break;
 					
-				} catch (SocketException ex) {
+				} catch (IOException ex) {
 					
-					LOGGER.error("SocketException", ex);
+					LOGGER.error("IOException", ex);
 					
-					bitcoinPeerManagerCallbacks.onConnectionClosed(BitcoinPeerImpl.this);
+					if (socket.isClosed()) {
 					
-					break;
-					
-				} catch (Exception ex) {
+						bitcoinPeerManagerCallbacks.onConnectionClosed(BitcoinPeerImpl.this);
+						
+						break;
 
-					LOGGER.error("Exception", ex);
+					}
+					
+				} catch (BitcoinFrameBuilderException ex) {
+
+					LOGGER.error("BitcoinFrameBuilderException", ex);
 					
 				}
 

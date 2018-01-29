@@ -1,11 +1,13 @@
 package org.gmagnotta.bitcoin.parser;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.gmagnotta.bitcoin.wire.Utils;
+import org.gmagnotta.bitcoin.wire.exception.BitcoinFrameBuilderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +81,7 @@ public class BitcoinFrameParserStream implements Context {
 		isComplete = true;
 	}
 	
-	public BitcoinFrame getBitcoinFrame() throws Exception {
+	public BitcoinFrame getBitcoinFrame() throws BitcoinFrameBuilderException, EndOfStreamException, IOException {
 		
 		try {
 			
@@ -88,8 +90,10 @@ public class BitcoinFrameParserStream implements Context {
 				int input = inputStream.read();
 				
 				if (input == -1) {
-					//End of Stream
+					
+					//End of Stream reached
 					throw new EndOfStreamException("End of Stream reached!");
+					
 				}
 				
 				messageState.process((byte) input);
@@ -106,14 +110,8 @@ public class BitcoinFrameParserStream implements Context {
 			buffer.put(checksum);
 			buffer.put(payload);
 			
-			BitcoinFrame frame = BitcoinFrame.deserialize(buffer.array());
+			return BitcoinFrame.deserialize(buffer.array());
 		
-			return frame;
-		
-		} catch (Exception ex) {
-			
-			throw ex;
-			
 		} finally {
 			
 			// reset status

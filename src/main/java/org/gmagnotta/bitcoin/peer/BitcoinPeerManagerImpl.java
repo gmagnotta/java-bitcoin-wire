@@ -120,26 +120,18 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			final NetworkAddress networkAddress = addrMessage.getNetworkAddress().get(randomElement);
 			
-//			List<BitcoinPeer> connected = getConnectedPeers();
-//			
-//			if (connected.size() < MAX_PEERS_CONNECTED && !isConnected(connected, networkAddress.getInetAddress().getHostAddress())) {
-//				
-//				LOGGER.info("Opening connection with {} ", bitcoinMessage);
+			Thread t = new Thread(new Runnable() {
 				
-				Thread t = new Thread(new Runnable() {
+				@Override
+				public void run() {
+			
+					openConnection(networkAddress.getInetAddress().getHostAddress(), networkAddress.getPort(), BitcoinPeerManagerImpl.this);
 					
-					@Override
-					public void run() {
+				}
 				
-						openConnection(networkAddress.getInetAddress().getHostAddress(), networkAddress.getPort(), BitcoinPeerManagerImpl.this);
-						
-					}
-					
-				});
-				
-				t.start();
-				
-//			}
+			});
+			
+			t.start();
 			
 		}
 	}

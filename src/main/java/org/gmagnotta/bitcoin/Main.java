@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
@@ -12,7 +11,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainSQLiteImpl;
-import org.gmagnotta.bitcoin.peer.BitcoinPeer;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManager;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManagerImpl;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -31,7 +29,7 @@ public class Main {
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
-		MagicVersion magicVersion = null;
+		final MagicVersion magicVersion;
 		
 		if (args.length > 0) {
 		
@@ -49,6 +47,8 @@ public class Main {
 				
 			} else {
 				
+				magicVersion = null;
+				
 				LOGGER.info("Unknown network type {}", args[0]);
 				
 				System.exit(-1);
@@ -56,6 +56,8 @@ public class Main {
 			}
 		
 		} else {
+			
+			magicVersion = null;
 			
 			LOGGER.info("Please specify network type!");
 			
@@ -90,72 +92,15 @@ public class Main {
 		
 		BlockChain blockChain = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource);
 		
-		//
-		
-//		BasicDataSource dataSource2 = new BasicDataSource();
-//
-//		dataSource2.setDriverClassName("org.sqlite.JDBC");
-//		
-//		dataSource2.addConnectionProperty("foreign_keys", "ON");
-//		dataSource2.addConnectionProperty("journal_mode", "WAL");
-//		dataSource2.addConnectionProperty("transaction_mode", "IMMEDIATE");
-//		dataSource2.addConnectionProperty("busy_timeout", "0");
-//		
-//		dataSource2.setDefaultAutoCommit(true);
-//
-//		dataSource2.setUrl("jdbc:sqlite:regtest2.db");
-//
-//		Connection connection2 = dataSource2.getConnection();
-//		
-//		if (!tableExist(connection2, "blockHeader")) {
-//			
-////			LOGGER.info("Found empty database! Creating needed tables");
-//			
-//			initDb(connection2);
-//			
-//		}
-//		
-//		connection2.close();
-//		
-//		BlockChain bestChain2 = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource2);
-//		
-//		//
-		
 		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(magicVersion, blockChain);
 		
-//		new Thread(new Runnable() {
+//		for (String seed : magicVersion.getBlockChainParameters().getSeeds()) {
 //			
-//			@Override
-//			public void run() {
-//				try {
-//					bitcoinPeerManager.listen(4000);
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//			}
+//			LOGGER.info("Connecting to {}", seed);
 //			
-//		}, "bitcoinPeerManagerListener").start();
-//		
-//		
-//		final BitcoinPeerManager bitcoinPeerManager2 = new BitcoinPeerManagerImpl(magicVersion, bestChain2);
-		
-//		bitcoinPeerManager2.connect("127.0.0.1", 4000);
-		
-//		bitcoinPeerManager.connect("surricani.chickenkiller.com", 18333);
-		
-//		bitcoinPeerManager.connect("seed.bitcoin.jonasschnelli.ch", 8333);
-//		
-//		bitcoinPeerManager.connect("seed.bitcoin.sipa.be", 8333);
-//		
-//		bitcoinPeerManager.connect("seed.btc.petertodd.org", 8333);
-		
-		for (String seed : magicVersion.getBlockChainParameters().getSeeds()) {
-			
-			LOGGER.info("Connecting to {}", seed);
-			
-			bitcoinPeerManager.connect(seed, magicVersion.getBlockChainParameters().getPort());
-			
-		}
+//			bitcoinPeerManager.connect(seed, magicVersion.getBlockChainParameters().getPort());
+//			
+//		}
 		
 		Timer inputTimer = new Timer();
 		inputTimer.schedule(new TimerTask() {
@@ -163,28 +108,31 @@ public class Main {
 			@Override
 			public void run() {
 
-				List<BitcoinPeer> peers = bitcoinPeerManager.getConnectedPeers();
+				if (!(bitcoinPeerManager.getConnectedPeers().size() > 1)) {
+					
+					LOGGER.info("Manager need other peers");
 				
-				if (peers.size() > 1) {
-				
-					int randomElement = ThreadLocalRandom.current().nextInt(peers.size());
+					int randomElement = ThreadLocalRandom.current().nextInt(magicVersion.getBlockChainParameters().getSeeds().length);
 					
 						try {
 							
-							LOGGER.info("Disconnecting from a peer");
+							LOGGER.info("Connecting to a peer");
 							
-							peers.get(randomElement).disconnect();
+							String seed = magicVersion.getBlockChainParameters().getSeeds()[randomElement];
+							
+							bitcoinPeerManager.connect(seed, magicVersion.getBlockChainParameters().getPort());
 							
 						} catch (Exception e) {
 							
-							LOGGER.error("Exception killing connection", e);
+							LOGGER.error("Exception connecting", e);
 							
 						}
 				
 				}
 				
 			}
-		}, 0, 300000);
+			
+		}, 0, 60000);
 		
 	}
 	
