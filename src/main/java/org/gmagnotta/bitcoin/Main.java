@@ -141,24 +141,32 @@ public class Main {
 			
 			public void run() {
 
-				LOGGER.info("Terminating simulator...");
+				System.out.println("Terminating simulator...");
 
 				try {
 					
-					LOGGER.info("Cancelling timer");
+					System.out.println("Cancelling timer");
 					inputTimer.cancel();
 					
 					List<BitcoinPeer> connected = bitcoinPeerManager.getConnectedPeers();
 					
 					for (BitcoinPeer peer : connected) {
 						
-						LOGGER.info("Disconnecting from {}", peer);
+						System.out.println("Disconnecting from " + peer);
 						bitcoinPeerManager.disconnect(peer);
 						
 					}
+					
+					System.out.println("Stop sync");
+					bitcoinPeerManager.stopSync();
+					
+					
+					while (bitcoinPeerManager.isSyncing()) {
+						Thread.sleep(1000);
+					}
 
 					// tell the library to shutdown and close all opened resources
-					LOGGER.info("Closing datasource");
+					System.out.println("Closing datasource");
 					dataSource.close();
 
 					// explicitly stop logging
@@ -177,6 +185,9 @@ public class Main {
 				}
 			}
 		});
+		
+		System.in.read();
+		System.exit(-1);
 		
 	}
 	

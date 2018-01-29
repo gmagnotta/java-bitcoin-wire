@@ -33,5 +33,15 @@ public interface BitcoinPeerManager {
 	 * @throws Exception 
 	 */
 	public void listen(int port) throws Exception;
+	
+	/**
+	 * 
+	 */
+	public boolean isSyncing();
+	
+	/**
+	 * 
+	 */
+	public void stopSync();
 
 }

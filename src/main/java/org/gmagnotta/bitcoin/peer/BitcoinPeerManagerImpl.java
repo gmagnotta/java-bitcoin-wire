@@ -8,18 +8,24 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.message.impl.InventoryVector;
+import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
@@ -38,6 +44,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	private final Object syncObj;
 	private boolean isSyncing;
 	private SecureRandom secureRandom;
+	private Thread syncThread;
 	
 	public BitcoinPeerManagerImpl(MagicVersion magicVersion, BlockChain blockChain) {
 		this.magicVersion = magicVersion;
@@ -242,8 +249,21 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
 				
 				blockChain.addBlockHeader(b);
-					
+				
 				lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b); 
+
+				List<InventoryVector> i = new ArrayList<InventoryVector>();
+				
+				i.add(new InventoryVector(Type.MSG_BLOCK, lastReceivedHash));
+				
+				BitcoinGetDataMessage bitcoinGetDataMessage = new BitcoinGetDataMessage(i);
+				
+				bitcoinPeer.sendGetData(bitcoinGetDataMessage);
+				
+				if (Thread.interrupted()) {
+					LOGGER.warn("Interrupted!");
+					return;
+				}
 				
 			}
 			
@@ -384,7 +404,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	}
 
 	@Override
-	public void onConnectionEstablished(BitcoinPeer bitcoinPeer) {
+	public void onConnectionEstablished(final BitcoinPeer bitcoinPeer) {
 		
 		addPeer(bitcoinPeer);
 		
@@ -410,7 +430,22 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 				LOGGER.info("The peer have a better chain lenght {} than our {}. Start sync", bitcoinPeer.getBlockStartHeight(),blockChain.getBestChainLenght());
 				
-				syncBC(bitcoinPeer);
+				syncThread = new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
+						
+						try {
+							syncBC(bitcoinPeer);
+						} catch (Exception e) {
+							LOGGER.error("Expcetion", e);
+						}
+						
+					}
+					
+				});
+				
+				syncThread.start();
 				
 			}
 		
@@ -429,6 +464,24 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			}
 			
 		}
+		
+	}
+
+	@Override
+	public boolean isSyncing() {
+		
+		synchronized (syncObj) {
+			return isSyncing;
+		}
+		
+	}
+
+	@Override
+	public void stopSync() {
+		
+			if (syncThread != null) {
+				syncThread.interrupt();
+			}
 		
 	}
 
