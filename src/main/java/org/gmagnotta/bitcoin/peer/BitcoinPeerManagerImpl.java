@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -138,8 +139,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 
 	private void syncBC(BitcoinPeer bitcoinPeer) throws Exception {
 		
-		long cycles = 1000; //Math.round((bitcoinPeer.getBlockStartHeight() - blockChain.getBestChainLenght()) / 2000) + 1;
-		
 		LOGGER.info("Start sync");
 		
 		long insertedHeaders = 0;
@@ -156,8 +155,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 		} else if (lastKnownIndex < 20) {
 			
-			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
-			
 			List<Sha256Hash> hashes = blockChain.getHashList(1, lastKnownIndex);
 			
 			for (Sha256Hash hash : hashes) {
@@ -165,6 +162,11 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
 				
 			}
+			
+			// Reverse list!!!!
+			Collections.reverse(inverted);
+			
+			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
 
 		} else {
 			
@@ -178,7 +180,10 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			}
 			
-			hashes = blockChain.getHashList(lastKnownIndex / 4, 1);
+			// Reverse list!!!!
+			Collections.reverse(inverted);
+			
+			hashes = blockChain.getHashList((lastKnownIndex / 5) * 4, 1);
 			
 			for (Sha256Hash hash : hashes) {
 				
@@ -186,7 +191,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			}
 			
-			hashes = blockChain.getHashList((lastKnownIndex / 4) * 2, 1);
+			hashes = blockChain.getHashList((lastKnownIndex / 5) * 3, 1);
 			
 			for (Sha256Hash hash : hashes) {
 				
@@ -194,7 +199,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			}
 			
-			hashes = blockChain.getHashList((lastKnownIndex / 4) * 3, 1);
+			hashes = blockChain.getHashList((lastKnownIndex / 5) * 2, 1);
 			
 			for (Sha256Hash hash : hashes) {
 				
@@ -202,6 +207,15 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			}
 			
+			hashes = blockChain.getHashList((lastKnownIndex / 5) * 1, 1);
+			
+			for (Sha256Hash hash : hashes) {
+				
+				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				
+			}
+			
+			// LAST ELEMENT
 			hashes = blockChain.getHashList(0, 1);
 			
 			for (Sha256Hash hash : hashes) {
@@ -209,7 +223,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
 				
 			}
-
+			
 		}
 		
 		long receivedHeaders = 0;

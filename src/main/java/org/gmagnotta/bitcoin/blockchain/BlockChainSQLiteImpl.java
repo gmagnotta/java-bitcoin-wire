@@ -36,7 +36,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 //	public static final String RETRIEVE_BY_PREV_BLOCK = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where prevBlock = ?;";
 	
-	public static final String RETRIEVE_HEADER_FROM_TO = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where number >= ? order by number desc limit ?;";
+	public static final String RETRIEVE_HEADER_FROM_TO = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where number >= ? order by number asc limit ?;";
 	
 	public static final String HEADER_INSERT = "insert into blockHeader (hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount, number) values (?,?,?,?,?,?,?,?,?);";
 	
