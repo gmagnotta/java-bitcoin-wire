@@ -144,7 +144,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		sendMessage(bitcoinPingMessage);
 		
-		return (BitcoinPongMessage) waitResponse(BitcoinCommand.PONG, 10000);
+		return (BitcoinPongMessage) waitResponse(BitcoinCommand.PONG, 60000);
 
 	}
 
@@ -160,7 +160,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		sendMessage(bitcoinGetAddrMessage);
 		
-		return (BitcoinAddrMessage) waitResponse(BitcoinCommand.ADDR, 10000);
+		return (BitcoinAddrMessage) waitResponse(BitcoinCommand.ADDR, 60000);
 	}
 
 	@Override
@@ -239,7 +239,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 	}
 	
-	private synchronized void sendMessage(BitcoinMessage bitcoinMessage) throws Exception {
+	private void sendMessage(BitcoinMessage bitcoinMessage) throws Exception {
 		
 		BitcoinFrameBuilder builder = new BitcoinFrameBuilder();
 
@@ -325,7 +325,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		sendMessage(bitcoinGetHeadersMessage);
 		
-		return (BitcoinHeadersMessage) waitResponse(BitcoinCommand.HEADERS, 10000);
+		return (BitcoinHeadersMessage) waitResponse(BitcoinCommand.HEADERS, 60000);
 		
 	}
 
@@ -334,7 +334,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		sendMessage(bitcoinGetDataMessage);
 		
-		return (BitcoinBlockMessage) waitResponse(BitcoinCommand.BLOCK, 30000);
+		return (BitcoinBlockMessage) waitResponse(BitcoinCommand.BLOCK, 60000);
 		
 	}
 

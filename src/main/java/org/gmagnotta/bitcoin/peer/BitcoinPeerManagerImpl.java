@@ -38,7 +38,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BitcoinPeerManagerImpl.class);
 	
-	private static final int MAX_PEERS_CONNECTED =  1;
+	private static final int MAX_PEERS_CONNECTED =  4;
 	
 	private MagicVersion magicVersion;
 	private List<BitcoinPeer> peers;
@@ -144,7 +144,48 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			LOGGER.info("Received INV!");
 			
-			if (org.gmagnotta.bitcoin.utils.Utils.isPeerNetworkNode(bitcoinPeer.getPeerServices())) {
+			synchronized (syncObj) {
+				
+				if (isSyncing) {
+					
+					LOGGER.info("Sync already in progress. Skip");
+					
+					return;
+					
+				}
+				
+				// set we are syncing
+				isSyncing = true;
+				
+			}
+			
+			try {
+					
+				try {
+					
+					syncBC(bitcoinPeer);
+					
+				} catch (Exception e) {
+					LOGGER.error("Expcetion", e);
+				}
+			
+			} catch (Exception ex) {
+				
+				LOGGER.error("Exception while sync", ex);
+				
+				onConnectionClosed(bitcoinPeer);
+				
+			} finally {
+				
+				synchronized (syncObj) {
+					
+					isSyncing = false;
+					
+				}
+				
+			}
+			
+			/*if (org.gmagnotta.bitcoin.utils.Utils.isPeerNetworkNode(bitcoinPeer.getPeerServices())) {
 				
 				LOGGER.info("Downloading block!");
 			
@@ -170,7 +211,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 				LOGGER.info("Peer doesn't allow to download!");
 				
-			}
+			}*/
 			
 		}
 	}
