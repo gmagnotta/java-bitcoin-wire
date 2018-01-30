@@ -167,23 +167,14 @@ public class Utils {
 		
 	}
 	
-	public static void main(String[] args) {
+	public static boolean isPeerNetworkNode(BigInteger bigInteger) {
 		
-		System.out.println(calculatBlockIndexRange(0));
+		BigInteger result = bigInteger.and(BigInteger.ONE);
 		
-		System.out.println(calculatBlockIndexRange(1));
+		if (result.equals(BigInteger.ONE))
+			return true;
 		
-		System.out.println(calculatBlockIndexRange(2015));
-		
-		System.out.println(calculatBlockIndexRange(2016));
-		
-		System.out.println(calculatBlockIndexRange(2017));
-
-		System.out.println(calculatBlockIndexRange(3992));
-		
-		System.out.println(calculatBlockIndexRange(4031));
-		
-		System.out.println(calculatBlockIndexRange(4032));
+		return false;
 		
 	}
 

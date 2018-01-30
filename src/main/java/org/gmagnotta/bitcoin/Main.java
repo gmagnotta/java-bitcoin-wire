@@ -186,9 +186,6 @@ public class Main {
 			}
 		});
 		
-		System.in.read();
-		System.exit(-1);
-		
 	}
 	
 	protected static void initDb(Connection connection) throws Exception {

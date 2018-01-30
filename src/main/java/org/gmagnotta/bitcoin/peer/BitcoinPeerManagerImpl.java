@@ -18,9 +18,11 @@ import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinBlockMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinInvMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
@@ -36,7 +38,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BitcoinPeerManagerImpl.class);
 	
-	private static final int MAX_PEERS_CONNECTED =  4;
+	private static final int MAX_PEERS_CONNECTED =  1;
 	
 	private MagicVersion magicVersion;
 	private List<BitcoinPeer> peers;
@@ -137,6 +139,38 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			});
 			
 			t.start();*/
+			
+		}  else if (bitcoinMessage.getCommand().equals(BitcoinCommand.INV)) {
+			
+			LOGGER.info("Received INV!");
+			
+			if (org.gmagnotta.bitcoin.utils.Utils.isPeerNetworkNode(bitcoinPeer.getPeerServices())) {
+				
+				LOGGER.info("Downloading block!");
+			
+				BitcoinInvMessage bitcoinInvMessage = (BitcoinInvMessage) bitcoinMessage;
+				
+				BitcoinGetDataMessage bitcoinGetDataMessage = new BitcoinGetDataMessage(bitcoinInvMessage.getInventoryVectors());
+				
+				try {
+				
+					BitcoinBlockMessage block = bitcoinPeer.sendGetData(bitcoinGetDataMessage);
+					
+					LOGGER.info("Peer {} returned header!", bitcoinPeer);
+					
+					blockChain.addBlockHeader(block.getHeader());
+						
+				} catch (Exception ex) {
+					
+					LOGGER.error("Exception", ex);
+					
+				}
+			
+			} else {
+				
+				LOGGER.info("Peer doesn't allow to download!");
+				
+			}
 			
 		}
 	}
@@ -252,14 +286,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 				lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b); 
 
-				List<InventoryVector> i = new ArrayList<InventoryVector>();
-				
-				i.add(new InventoryVector(Type.MSG_BLOCK, lastReceivedHash));
-				
-				BitcoinGetDataMessage bitcoinGetDataMessage = new BitcoinGetDataMessage(i);
-				
-				bitcoinPeer.sendGetData(bitcoinGetDataMessage);
-				
 				if (Thread.interrupted()) {
 					LOGGER.warn("Interrupted!");
 					return;

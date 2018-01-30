@@ -9,8 +9,9 @@ import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinInvMessage;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector;
+import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
 import org.gmagnotta.bitcoin.wire.Utils;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
@@ -20,28 +21,28 @@ public class BitcoinInvMessageSerializer implements BitcoinMessageSerializer {
 	@Override
 	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
 		
-		// nonce
-		long version = Utils.readUint32LE(payload, 0);
-		
 		// read varint
-		VarInt varint = new VarInt(payload, 4);
+		VarInt count = new VarInt(payload, 0);
 		
 		// how many bytes represents the value?
-		int len = varint.getSizeInBytes();
+		int len = count.getSizeInBytes();
 		
-		List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
+		List<InventoryVector> vector = new ArrayList<InventoryVector>();
 		
-		for (int i = 0; i < (varint.value + 1); i++) {
+		for (int i = 0; i < (count.value); i++) {
 
-			byte[] array = Arrays.copyOfRange(payload,  4 + len + i * 32, 4 + len + i * 32 + 32);
+			byte[] array = Arrays.copyOfRange(payload,  len + i * 36, len + i * 36 + 36);
 			
-			Sha256Hash hash = Sha256Hash.wrapReversed(array);
+			long type = Utils.readUint32LE(array, 0);
 			
-			hashes.add(hash);
+			Sha256Hash hash = Sha256Hash.wrap(Arrays.copyOfRange(array, 4, 36));
+			
+			vector.add(new InventoryVector(Type.valueOf((int)type), hash));
+			
 		}
 		
 		// return assembled message
-		return new BitcoinGetHeadersMessage(version, hashes);
+		return new BitcoinInvMessage(vector);
 	}
 
 	@Override

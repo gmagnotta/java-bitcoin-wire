@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.concurrent.TimeoutException;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -183,7 +184,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		
 	}
 	
-	private BitcoinMessage waitResponse(BitcoinCommand command, long timeout) throws InterruptedException {
+	private BitcoinMessage waitResponse(BitcoinCommand command, long timeout) throws InterruptedException, TimeoutException {
 
 		synchronized (syncObj) {
 			
@@ -191,9 +192,15 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 			
 				waiting = command;
 				
-				while (receivedMessage == null) {
+				if (receivedMessage == null) {
 					
 					syncObj.wait(timeout);
+					
+				}
+				
+				if (receivedMessage == null) {
+					
+					throw new TimeoutException("Peer did not reply in time");
 					
 				}
 				
@@ -327,7 +334,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		sendMessage(bitcoinGetDataMessage);
 		
-		return (BitcoinBlockMessage) waitResponse(BitcoinCommand.BLOCK, 10000);
+		return (BitcoinBlockMessage) waitResponse(BitcoinCommand.BLOCK, 30000);
 		
 	}
 

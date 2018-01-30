@@ -1,7 +1,5 @@
 package org.gmagnotta.bitcoin.message.impl;
 
-import java.util.List;
-
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
@@ -14,27 +12,27 @@ import org.gmagnotta.bitcoin.wire.BitcoinCommand;
  */
 public class BitcoinBlockMessage implements BitcoinMessage {
 
-	private List<BlockHeader> headers;
+	private BlockHeader header;
 
-	public BitcoinBlockMessage(List<BlockHeader> headers) {
+	public BitcoinBlockMessage(BlockHeader header) {
 
-		this.headers = headers;
+		this.header = header;
 
 	}
 	
-	public List<BlockHeader> getHeaders() {
-		return headers;
+	public BlockHeader getHeader() {
+		return header;
 	}
 
 	@Override
 	public BitcoinCommand getCommand() {
-		return BitcoinCommand.HEADERS;
+		return BitcoinCommand.BLOCK;
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("%s: size %d",
-				BitcoinCommand.HEADERS, headers.size());
+		return String.format("%s:",
+				BitcoinCommand.BLOCK);
 	}
 
 }
