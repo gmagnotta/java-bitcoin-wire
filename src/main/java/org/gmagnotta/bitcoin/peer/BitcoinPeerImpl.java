@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.concurrent.TimeoutException;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -39,14 +38,12 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	private Thread receiver;
 	private BitcoinPeerCallback bitcoinPeerManagerCallbacks;
 	private BitcoinFrameParserStream bitcoinFrameParserStream;
-	private final Object syncObj;
-	private BitcoinMessage receivedMessage;
-	private BitcoinCommand waiting;
 
 	private BigInteger nodeServices;
 	private String userAgent;
 	private long startHeight;
 	private BlockChain blockChain;
+	private ResponseManager responseManager;
 	
 	public BitcoinPeerImpl(MagicVersion magicVersion, Socket socket, BitcoinPeerCallback bitcoinPeerManagerCallbacks,
 			BlockChain blockChain)
@@ -56,8 +53,8 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		this.socket = socket;
 		this.bitcoinFrameParserStream = new BitcoinFrameParserStream(magicVersion, socket.getInputStream());
 		this.bitcoinPeerManagerCallbacks = bitcoinPeerManagerCallbacks;
-		this.syncObj = new Object();
 		this.blockChain = blockChain;
+		this.responseManager = new ResponseManager();
 
 		connect();
 
@@ -75,48 +72,44 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 				new BigInteger("" + System.currentTimeMillis() / 1000), receiving, emitting, new BigInteger("123"),
 				"/BitcoinPeppe:0.0.1/", blockChain.getBestChainLenght(), false);
 
-		synchronized (syncObj) {
+		sendMessage(versionMessage);
 
-			sendMessage(versionMessage);
+		BitcoinFrame receivedFrame = bitcoinFrameParserStream.getBitcoinFrame();
 
-			BitcoinFrame receivedFrame = bitcoinFrameParserStream.getBitcoinFrame();
+		if (!receivedFrame.getCommand().equals(BitcoinCommand.VERSION)) {
 
-			if (!receivedFrame.getCommand().equals(BitcoinCommand.VERSION)) {
-
-				throw new Exception("Unexpected response!");
-
-			}
-
-			// Verify that version is compatible to our!
-
-			// update peer data
-			BitcoinVersionMessage bitcoinVersionMessage = (BitcoinVersionMessage) receivedFrame.getPayload();
-
-			// initialize node info
-			nodeServices = bitcoinVersionMessage.getServices();
-			userAgent = bitcoinVersionMessage.getUserAgent();
-			startHeight = bitcoinVersionMessage.getStartHeight();
-
-			BitcoinVerackMessage verack = new BitcoinVerackMessage();
-
-			sendMessage(verack);
-
-			receivedFrame = bitcoinFrameParserStream.getBitcoinFrame();
-
-			if (!receivedFrame.getCommand().equals(BitcoinCommand.VERACK)) {
-
-				throw new Exception("Unexpected response!");
-
-			}
-
-			// handshake complete!
-
-			// Start receiving thread
-			receiver = new Thread(new ReaderRunnable(bitcoinFrameParserStream), "receiver-" + socket.getInetAddress());
-
-			receiver.start();
+			throw new Exception("Unexpected response!");
 
 		}
+
+		// Verify that version is compatible to our!
+
+		// update peer data
+		BitcoinVersionMessage bitcoinVersionMessage = (BitcoinVersionMessage) receivedFrame.getPayload();
+
+		// initialize node info
+		nodeServices = bitcoinVersionMessage.getServices();
+		userAgent = bitcoinVersionMessage.getUserAgent();
+		startHeight = bitcoinVersionMessage.getStartHeight();
+
+		BitcoinVerackMessage verack = new BitcoinVerackMessage();
+
+		sendMessage(verack);
+
+		receivedFrame = bitcoinFrameParserStream.getBitcoinFrame();
+
+		if (!receivedFrame.getCommand().equals(BitcoinCommand.VERACK)) {
+
+			throw new Exception("Unexpected response!");
+
+		}
+
+		// handshake complete!
+
+		// Start receiving thread
+		receiver = new Thread(new ReaderRunnable(bitcoinFrameParserStream), "receiver-" + socket.getInetAddress());
+
+		receiver.start();
 
 	}
 
@@ -142,9 +135,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	@Override
 	public BitcoinPongMessage sendPing(BitcoinPingMessage bitcoinPingMessage) throws Exception {
 
-		sendMessage(bitcoinPingMessage);
-		
-		return (BitcoinPongMessage) waitResponse(BitcoinCommand.PONG, 60000);
+		return (BitcoinPongMessage) sendRecvMessage(bitcoinPingMessage, BitcoinCommand.PONG, 60000);
 
 	}
 
@@ -158,9 +149,8 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	@Override
 	public BitcoinAddrMessage sendGetAddrMessage(BitcoinGetAddrMessage bitcoinGetAddrMessage) throws Exception {
 
-		sendMessage(bitcoinGetAddrMessage);
+		return (BitcoinAddrMessage) sendRecvMessage(bitcoinGetAddrMessage, BitcoinCommand.ADDR, 60000);
 		
-		return (BitcoinAddrMessage) waitResponse(BitcoinCommand.ADDR, 60000);
 	}
 
 	@Override
@@ -184,57 +174,12 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		
 	}
 	
-	private BitcoinMessage waitResponse(BitcoinCommand command, long timeout) throws InterruptedException, TimeoutException {
-
-		synchronized (syncObj) {
-			
-			try {
-			
-				waiting = command;
-				
-				if (receivedMessage == null) {
-					
-					syncObj.wait(timeout);
-					
-				}
-				
-				if (receivedMessage == null) {
-					
-					throw new TimeoutException("Peer did not reply in time");
-					
-				}
-				
-				BitcoinMessage copy = receivedMessage;
-				
-				return copy;
-			
-			} finally {
-				
-				receivedMessage = null;
-				waiting = null;
-				
-			}
-			
-		}
-		
-	}
-
 	private void processReceivedMessage(BitcoinMessage bitcoinMessage) {
 
-		synchronized (syncObj) {
+		if (!responseManager.responseArrived(bitcoinMessage)) {
 			
-			if (waiting != null && waiting.equals(bitcoinMessage.getCommand())) {
-				
-				receivedMessage = bitcoinMessage;
-				
-				syncObj.notify();
-
-			} else {
-				
-				bitcoinPeerManagerCallbacks.onMessageReceived(bitcoinMessage, this);
-
-			}
-
+			bitcoinPeerManagerCallbacks.onMessageReceived(bitcoinMessage, this);
+			
 		}
 
 	}
@@ -248,6 +193,14 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		OutputStream outputStream = socket.getOutputStream();
 
 		outputStream.write(BitcoinFrame.serialize(frame));
+		
+	}
+	
+	private BitcoinMessage sendRecvMessage(BitcoinMessage bitcoinMessage, BitcoinCommand expectedResponse, long timeout) throws Exception {
+		
+		sendMessage(bitcoinMessage);
+		
+		return responseManager.waitResponse(expectedResponse, timeout);
 		
 	}
 
@@ -323,18 +276,14 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	@Override
 	public BitcoinHeadersMessage sendGetHeaders(BitcoinGetHeadersMessage bitcoinGetHeadersMessage) throws Exception {
 
-		sendMessage(bitcoinGetHeadersMessage);
-		
-		return (BitcoinHeadersMessage) waitResponse(BitcoinCommand.HEADERS, 60000);
+		return (BitcoinHeadersMessage) sendRecvMessage(bitcoinGetHeadersMessage, BitcoinCommand.HEADERS, 60000);
 		
 	}
 
 	@Override
 	public BitcoinBlockMessage sendGetData(BitcoinGetDataMessage bitcoinGetDataMessage) throws Exception {
 
-		sendMessage(bitcoinGetDataMessage);
-		
-		return (BitcoinBlockMessage) waitResponse(BitcoinCommand.BLOCK, 60000);
+		return (BitcoinBlockMessage) sendRecvMessage(bitcoinGetDataMessage, BitcoinCommand.BLOCK, 60000);
 		
 	}
 
