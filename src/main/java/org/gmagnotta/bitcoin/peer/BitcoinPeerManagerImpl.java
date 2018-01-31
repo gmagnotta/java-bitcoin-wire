@@ -49,7 +49,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	}
 
 	@Override
-	public void onMessageReceived(BitcoinMessage bitcoinMessage, BitcoinPeer bitcoinPeer) {
+	public void onMessageReceived(final BitcoinMessage bitcoinMessage, final BitcoinPeer bitcoinPeer) {
 
 		LOGGER.info("onMessageReceived {} {}", bitcoinMessage, bitcoinPeer);
 		
@@ -135,42 +135,51 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			LOGGER.info("Received INV!");
 			
-			synchronized (syncObj) {
+			Thread t = new Thread(new Runnable() {
 				
-				if (isSyncing) {
+				@Override
+				public void run() {
 					
-					LOGGER.info("Sync already in progress. Skip");
+					synchronized (syncObj) {
+						
+						if (isSyncing) {
+							
+							LOGGER.info("Sync already in progress. Skip");
+							
+							return;
+							
+						} else {
+						
+							// set we are syncing
+							isSyncing = true;
+						
+						}
+						
+					}
+						
+					try {
+							
+						syncBC(bitcoinPeer);
 					
-					return;
-					
-				} else {
-				
-					// set we are syncing
-					isSyncing = true;
-				
+					} catch (Exception ex) {
+						
+						LOGGER.error("Exception while sync", ex);
+						
+						onConnectionClosed(bitcoinPeer);
+						
+					} finally {
+						
+						synchronized (syncObj) {
+							
+							isSyncing = false;
+							
+						}
+						
+					}					
 				}
-				
-			}
-				
-			try {
-					
-				syncBC(bitcoinPeer);
+			});
 			
-			} catch (Exception ex) {
-				
-				LOGGER.error("Exception while sync", ex);
-				
-				onConnectionClosed(bitcoinPeer);
-				
-			} finally {
-				
-				synchronized (syncObj) {
-					
-					isSyncing = false;
-					
-				}
-				
-			}
+			t.start();
 			
 			/*if (org.gmagnotta.bitcoin.utils.Utils.isPeerNetworkNode(bitcoinPeer.getPeerServices())) {
 				

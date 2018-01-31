@@ -239,7 +239,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 					
 					BitcoinFrame frame = bitcoinFrameParserStream.getBitcoinFrame();
 					
-					BitcoinMessage bitcoinMessage = frame.getPayload();
+					final BitcoinMessage bitcoinMessage = frame.getPayload();
 
 					LOGGER.debug("Response arrived {}!", bitcoinMessage);
 					
@@ -277,7 +277,18 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 						
 						if (!processed) {
 							
-							bitcoinPeerManagerCallbacks.onMessageReceived(bitcoinMessage, BitcoinPeerImpl.this);
+							Thread t = new Thread(new Runnable() {
+								
+								@Override
+								public void run() {
+									
+									LOGGER.info("Dispatching event");
+									bitcoinPeerManagerCallbacks.onMessageReceived(bitcoinMessage, BitcoinPeerImpl.this);
+
+								}
+							});
+							
+							t.start();
 							
 						}
 
