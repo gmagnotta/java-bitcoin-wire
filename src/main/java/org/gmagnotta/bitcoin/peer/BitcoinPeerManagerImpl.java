@@ -143,37 +143,33 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					
 					return;
 					
+				} else {
+				
+					// set we are syncing
+					isSyncing = true;
+				
 				}
 				
-				// set we are syncing
-				isSyncing = true;
+			}
 				
-				try {
-						
-					try {
-						
-						syncBC(bitcoinPeer);
-						
-					} catch (Exception e) {
-						LOGGER.error("Expcetion", e);
-					}
-				
-				} catch (Exception ex) {
+			try {
 					
-					LOGGER.error("Exception while sync", ex);
-					
-					onConnectionClosed(bitcoinPeer);
-					
-				} finally {
-					
-					synchronized (syncObj) {
-						
-						isSyncing = false;
-						
-					}
-					
-				}
+				syncBC(bitcoinPeer);
 			
+			} catch (Exception ex) {
+				
+				LOGGER.error("Exception while sync", ex);
+				
+				onConnectionClosed(bitcoinPeer);
+				
+			} finally {
+				
+				synchronized (syncObj) {
+					
+					isSyncing = false;
+					
+				}
+				
 			}
 			
 			/*if (org.gmagnotta.bitcoin.utils.Utils.isPeerNetworkNode(bitcoinPeer.getPeerServices())) {
@@ -334,21 +330,34 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	}
 		
 	@Override
-	public synchronized List<BitcoinPeer> getConnectedPeers() {
-		return peers;
-	}
-	
-	private synchronized void addPeer(BitcoinPeer bitcoinPeer) {
-		peers.add(bitcoinPeer);
-	}
-	
-	private synchronized void removePeer(BitcoinPeer bitcoinPeer) {
+	public List<BitcoinPeer> getConnectedPeers() {
 		
-		if (peers.contains(bitcoinPeer)) {
+		synchronized (syncObj) {
 			
-			peers.remove(bitcoinPeer);
-			
+			return new ArrayList<BitcoinPeer>(peers);
+
 		}
+		
+	}
+	
+	private void addPeer(BitcoinPeer bitcoinPeer) {
+		
+		peers.add(bitcoinPeer);
+		
+	}
+	
+	private void removePeer(BitcoinPeer bitcoinPeer) {
+		
+		synchronized (syncObj) {
+			
+			if (peers.contains(bitcoinPeer)) {
+				
+				peers.remove(bitcoinPeer);
+				
+			}
+
+		}
+		
 	}
 
 	@Override
@@ -397,7 +406,11 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 		} finally {
 		
-			removePeer(bitcoinPeer);
+			synchronized (syncObj) {
+				
+				removePeer(bitcoinPeer);
+
+			}
 
 		}
 		
@@ -412,7 +425,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	private void openConnection(final String address, int port, final BitcoinPeerCallback callback) {
 		
-		if (!isConnected(getConnectedPeers(), address) && getConnectedPeers().size() < MAX_PEERS_CONNECTED) {
+		if (!isConnected(address) && getConnectedPeers().size() < MAX_PEERS_CONNECTED) {
 		
 			BitcoinPeerImpl bitcoinClient = null;
 			
@@ -440,24 +453,28 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 	}
 	
-	private static boolean isConnected(List<BitcoinPeer> peers , String address) {
+	private boolean isConnected(String address) {
 		
-		String ip;
-		
-		try {
-			InetAddress resolvedAddr = InetAddress.getByName(address);
-			ip = resolvedAddr.getHostAddress();
-		} catch (UnknownHostException ex) {
-			return true;
-		}
-
-		for (BitcoinPeer peer : peers) {
-			if (peer.getInetAddress().getHostAddress().equals(ip)) {
+		synchronized (syncObj) {
+			
+			String ip;
+			
+			try {
+				InetAddress resolvedAddr = InetAddress.getByName(address);
+				ip = resolvedAddr.getHostAddress();
+			} catch (UnknownHostException ex) {
 				return true;
 			}
+	
+			for (BitcoinPeer peer : peers) {
+				if (peer.getInetAddress().getHostAddress().equals(ip)) {
+					return true;
+				}
+			}
+			
+			return false;
+			
 		}
-		
-		return false;
 		
 	}
 
@@ -475,35 +492,50 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 				return;
 				
-			}
+			} else {
 			
-			// set we are syncing
-			isSyncing = true;
+				// set we are syncing
+				isSyncing = true;
 			
-			try {
-			
-				if (blockChain.getBestChainLenght() < bitcoinPeer.getBlockStartHeight()) {
-					
-					LOGGER.info("The peer have a better chain lenght {} than our {}. Start sync", bitcoinPeer.getBlockStartHeight(),blockChain.getBestChainLenght());
-					
-					syncBC(bitcoinPeer);
-					
-				}
-			
-			} catch (Exception ex) {
-				
-				LOGGER.error("Exception while sync", ex);
-				
-				onConnectionClosed(bitcoinPeer);
-				
-			} finally {
-				
-				isSyncing = false;
-					
 			}
 			
 		}
-		
+			
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+
+				try {
+					
+					if (blockChain.getBestChainLenght() < bitcoinPeer.getBlockStartHeight()) {
+						
+						LOGGER.info("The peer have a better chain lenght {} than our {}. Start sync", bitcoinPeer.getBlockStartHeight(),blockChain.getBestChainLenght());
+						
+						syncBC(bitcoinPeer);
+						
+					}
+				
+				} catch (Exception ex) {
+					
+					LOGGER.error("Exception while sync", ex);
+					
+					onConnectionClosed(bitcoinPeer);
+					
+				} finally {
+					
+					synchronized (syncObj) {
+					
+						isSyncing = false;
+					
+					}
+						
+				}
+				
+			}
+
+		}).start();
+			
 	}
 
 	@Override
