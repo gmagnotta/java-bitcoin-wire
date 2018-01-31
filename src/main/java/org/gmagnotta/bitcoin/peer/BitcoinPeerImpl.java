@@ -5,6 +5,10 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -36,6 +40,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	private Socket socket;
 	private MagicVersion magicVersion;
 	private Thread receiver;
+	private Thread writer;
 	private BitcoinPeerCallback bitcoinPeerManagerCallbacks;
 	private BitcoinFrameParserStream bitcoinFrameParserStream;
 
@@ -43,7 +48,9 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	private String userAgent;
 	private long startHeight;
 	private BlockChain blockChain;
-	private ResponseManager responseManager;
+	private final Object syncObj;
+	private LinkedBlockingQueue<OutputRequest> outputQueue;
+	private List<OutputRequest> requestsWaiting;
 	
 	public BitcoinPeerImpl(MagicVersion magicVersion, Socket socket, BitcoinPeerCallback bitcoinPeerManagerCallbacks,
 			BlockChain blockChain)
@@ -54,13 +61,19 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		this.bitcoinFrameParserStream = new BitcoinFrameParserStream(magicVersion, socket.getInputStream());
 		this.bitcoinPeerManagerCallbacks = bitcoinPeerManagerCallbacks;
 		this.blockChain = blockChain;
-		this.responseManager = new ResponseManager();
+		this.syncObj = new Object();
+		this.outputQueue = new LinkedBlockingQueue<OutputRequest>();
+		this.requestsWaiting = new ArrayList<OutputRequest>();
 
 		connect();
 
 	}
 
 	private void connect() throws Exception {
+		
+		// Start writer thread
+		writer = new Thread(new WriterRunnable(socket.getOutputStream()), "WriterRunnable");
+		writer.start();
 
 		NetworkAddress emitting = new NetworkAddress(0, new BigInteger("1"),
 				InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }), socket.getLocalPort());
@@ -108,9 +121,8 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 		// Start receiving thread
 		receiver = new Thread(new ReaderRunnable(bitcoinFrameParserStream), "receiver-" + socket.getInetAddress());
-
 		receiver.start();
-
+		
 	}
 
 	@Override
@@ -174,33 +186,37 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		
 	}
 	
-	private void processReceivedMessage(BitcoinMessage bitcoinMessage) {
-
-		if (!responseManager.responseArrived(bitcoinMessage)) {
-			
-			bitcoinPeerManagerCallbacks.onMessageReceived(bitcoinMessage, this);
-			
-		}
-
-	}
-	
+	/**
+	 * Send without waiting for response
+	 * 
+	 * @param bitcoinMessage
+	 * @throws Exception
+	 */
 	private void sendMessage(BitcoinMessage bitcoinMessage) throws Exception {
 		
-		BitcoinFrameBuilder builder = new BitcoinFrameBuilder();
-
-		BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(bitcoinMessage).build();
+		OutputRequest outputRequest = new OutputRequest(bitcoinMessage);
 		
-		OutputStream outputStream = socket.getOutputStream();
-
-		outputStream.write(BitcoinFrame.serialize(frame));
+		outputQueue.add(outputRequest);
 		
 	}
 	
+	/**
+	 * Send waiting for response
+	 * 
+	 * @param bitcoinMessage
+	 * @param expectedResponse
+	 * @param timeout
+	 * @return
+	 * @throws Exception
+	 */
 	private BitcoinMessage sendRecvMessage(BitcoinMessage bitcoinMessage, BitcoinCommand expectedResponse, long timeout) throws Exception {
 		
-		sendMessage(bitcoinMessage);
+		OutputRequest outputRequest = new OutputRequest(bitcoinMessage, expectedResponse, timeout);
 		
-		return responseManager.waitResponse(expectedResponse, timeout);
+		outputQueue.add(outputRequest);
+		
+		// this will block
+		return (BitcoinHeadersMessage) outputRequest.getResponse();
 		
 	}
 
@@ -222,12 +238,52 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 			while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
 
 				try {
-
+					
 					BitcoinFrame frame = bitcoinFrameParserStream.getBitcoinFrame();
 					
 					BitcoinMessage bitcoinMessage = frame.getPayload();
+
+					LOGGER.debug("Response arrived {}!", bitcoinMessage);
 					
-					processReceivedMessage(bitcoinMessage);
+					synchronized (requestsWaiting) {
+						
+						boolean processed = false;
+						Iterator<OutputRequest> iterator = requestsWaiting.iterator();
+						while (iterator.hasNext()) {
+							
+							OutputRequest outputRequest = iterator.next();
+							
+							if (outputRequest.isExpired()) {
+								
+								// remove element from list because expired
+								iterator.remove();
+								
+								continue;
+								
+							}
+							
+							if (bitcoinMessage.getCommand().equals(outputRequest.getExpectedResponseType())) {
+
+								// remove element from list
+								iterator.remove();
+								
+								// tell request to manage response
+								outputRequest.receiveResponse(bitcoinMessage);
+								
+								processed = true;
+								break;
+								
+							}
+							
+						}
+						
+						if (!processed) {
+							
+							bitcoinPeerManagerCallbacks.onMessageReceived(bitcoinMessage, BitcoinPeerImpl.this);
+							
+						}
+
+					}
 
 				} catch (EndOfStreamException ex) {
 					
@@ -252,6 +308,69 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 				} catch (BitcoinFrameBuilderException ex) {
 
 					LOGGER.error("BitcoinFrameBuilderException", ex);
+					
+				}
+
+			}
+			
+		}
+
+	}
+	
+	/**
+	 * This runnable read a frame form inputstream and put it into the input
+	 * queue
+	 */
+	private class WriterRunnable implements Runnable {
+		
+		private OutputStream outputStream;
+
+		public WriterRunnable(OutputStream outputStream) {
+			this.outputStream = outputStream;
+		}
+
+		@Override
+		public void run() {
+
+			while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
+
+				try {
+					
+					OutputRequest outputRequest = outputQueue.take();
+
+					BitcoinFrameBuilder builder = new BitcoinFrameBuilder();
+
+					BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(outputRequest.getBitcoinMessage()).build();
+					
+					outputStream.write(BitcoinFrame.serialize(frame));
+					
+					synchronized (requestsWaiting) {
+						
+						requestsWaiting.add(outputRequest);
+						
+					}
+
+				} catch (IOException ex) {
+					
+					LOGGER.error("IOException", ex);
+					
+					if (socket.isClosed()) {
+					
+						bitcoinPeerManagerCallbacks.onConnectionClosed(BitcoinPeerImpl.this);
+						
+						break;
+
+					}
+					
+				} catch (BitcoinFrameBuilderException ex) {
+
+					LOGGER.error("BitcoinFrameBuilderException", ex);
+					
+				} catch (InterruptedException ex) {
+					
+					LOGGER.error("InterruptedException", ex);
+					
+					break;
 					
 				}
 
