@@ -48,7 +48,6 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	private String userAgent;
 	private long startHeight;
 	private BlockChain blockChain;
-	private final Object syncObj;
 	private LinkedBlockingQueue<OutputRequest> outputQueue;
 	private List<OutputRequest> requestsWaiting;
 	
@@ -61,7 +60,6 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		this.bitcoinFrameParserStream = new BitcoinFrameParserStream(magicVersion, socket.getInputStream());
 		this.bitcoinPeerManagerCallbacks = bitcoinPeerManagerCallbacks;
 		this.blockChain = blockChain;
-		this.syncObj = new Object();
 		this.outputQueue = new LinkedBlockingQueue<OutputRequest>();
 		this.requestsWaiting = new ArrayList<OutputRequest>();
 
@@ -342,11 +340,15 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 					BitcoinFrame frame = builder.setMagicVersion(magicVersion).setBitcoinMessage(outputRequest.getBitcoinMessage()).build();
 					
-					outputStream.write(BitcoinFrame.serialize(frame));
-					
 					synchronized (requestsWaiting) {
 						
-						requestsWaiting.add(outputRequest);
+						if (outputRequest.getExpectedResponseType() != null) {
+
+							requestsWaiting.add(outputRequest);
+						
+						}
+
+						outputStream.write(BitcoinFrame.serialize(frame));
 						
 					}
 

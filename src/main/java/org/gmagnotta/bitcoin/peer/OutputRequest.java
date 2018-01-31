@@ -22,7 +22,7 @@ public class OutputRequest {
 	public OutputRequest(BitcoinMessage bitcoinMessage, BitcoinCommand expectedResponseType, long timeout) {
 		this.outputMessage = bitcoinMessage;
 		this.expectedResponseType = expectedResponseType;
-		this.expired = true;
+		this.expired = false;
 		this.timeout = timeout;
 	}
 	
