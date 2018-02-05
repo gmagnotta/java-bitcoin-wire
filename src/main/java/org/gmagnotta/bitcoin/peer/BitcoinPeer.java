@@ -4,13 +4,13 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinBlockMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
+import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 
 public interface BitcoinPeer {
 	
@@ -89,7 +89,7 @@ public interface BitcoinPeer {
 	 * @param bitcoinGetDataMessageSerializer
 	 * @throws Exception
 	 */
-	public BitcoinBlockMessage sendGetData(BitcoinGetDataMessage bitcoinGetDataMessage) throws Exception;
+	public BlockMessage sendGetData(BitcoinGetDataMessage bitcoinGetDataMessage) throws Exception;
 	
 	/**
 	 * Terminates connection with the peer

@@ -13,7 +13,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinBlockMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
@@ -22,6 +21,7 @@ import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinVerackMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinVersionMessage;
+import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.parser.BitcoinFrameParserStream;
 import org.gmagnotta.bitcoin.parser.EndOfStreamException;
@@ -241,8 +241,6 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 					
 					final BitcoinMessage bitcoinMessage = frame.getPayload();
 
-					LOGGER.debug("Response arrived {}!", bitcoinMessage);
-					
 					synchronized (requestsWaiting) {
 						
 						boolean processed = false;
@@ -413,9 +411,9 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	}
 
 	@Override
-	public BitcoinBlockMessage sendGetData(BitcoinGetDataMessage bitcoinGetDataMessage) throws Exception {
+	public BlockMessage sendGetData(BitcoinGetDataMessage bitcoinGetDataMessage) throws Exception {
 
-		return (BitcoinBlockMessage) sendRecvMessage(bitcoinGetDataMessage, BitcoinCommand.BLOCK, 60000);
+		return (BlockMessage) sendRecvMessage(bitcoinGetDataMessage, BitcoinCommand.BLOCK, 60000);
 		
 	}
 

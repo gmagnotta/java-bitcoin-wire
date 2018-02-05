@@ -337,6 +337,12 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		LOGGER.info("Done Sync {}", blockChain.getBestChainLenght());
 		
 	}
+	
+	private void downloadBlocks(BitcoinPeer bitcoinPeer) throws Exception {
+		
+		
+		
+	}
 		
 	@Override
 	public List<BitcoinPeer> getConnectedPeers() {
@@ -522,6 +528,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						LOGGER.info("The peer have a better chain lenght {} than our {}. Start sync", bitcoinPeer.getBlockStartHeight(),blockChain.getBestChainLenght());
 						
 						syncBC(bitcoinPeer);
+						
+						downloadBlocks(bitcoinPeer);
 						
 					}
 				

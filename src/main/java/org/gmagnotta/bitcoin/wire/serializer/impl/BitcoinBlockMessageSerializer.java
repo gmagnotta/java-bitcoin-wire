@@ -3,13 +3,12 @@ package org.gmagnotta.bitcoin.wire.serializer.impl;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinBlockMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
+import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.wire.Utils;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
@@ -44,10 +43,10 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 
 //			byte[] array = Arrays.copyOfRange(payload,  padding + i * 80, padding + i * 80 + 80);
 
-			BlockHeader blockHeader = new BlockHeader(version.value, prevBlock, merkle, timestamp, bits, nonce, txnCount.value);
+			BlockMessage blockHeader = new BlockMessage(version.value, prevBlock, merkle, timestamp, bits, nonce, txnCount.value, new ArrayList<Object>());
 			
 			// return assembled message
-			return new BitcoinBlockMessage(blockHeader);
+			return blockHeader;
 		
 		} catch (Exception ex) {
 			throw new BitcoinMessageSerializerException("Exception", ex);
