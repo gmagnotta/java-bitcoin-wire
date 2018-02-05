@@ -2,8 +2,9 @@ package org.gmagnotta.bitcoin.message.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 
 public class InventoryVector {
 
@@ -58,5 +59,21 @@ public class InventoryVector {
 
 	public Sha256Hash getHash() {
 		return hash;
+	}
+	
+	@Override
+	public boolean equals(final Object object) {
+		
+		if (!(object instanceof InventoryVector))
+			return false;
+		
+		if (this == object)
+			return true;
+		
+		final InventoryVector other = (InventoryVector) object;
+		
+		return Objects.equals(type, other.type) &&
+				Objects.equals(hash, other.hash);
+		
 	}
 }

@@ -65,7 +65,7 @@ public enum MagicVersion {
 	
 	public static MagicVersion fromByteArray(byte[] array, int offset) throws MagicVersionException {
 		
-		MagicVersion version = VERSION_MAP.get(ByteBuffer.wrap(Arrays.copyOfRange(array, offset, offset + 4)));
+		MagicVersion version = VERSION_MAP.get(ByteBuffer.wrap(array, offset, 4));
 		
 		if (version == null) {
 			throw new MagicVersionException("Unknown magic");

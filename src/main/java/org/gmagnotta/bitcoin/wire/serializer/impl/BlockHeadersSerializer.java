@@ -4,7 +4,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.wire.Utils;

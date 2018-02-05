@@ -1,9 +1,11 @@
 package org.gmagnotta.bitcoin.utils;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.apache.commons.lang3.ArrayUtils;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
@@ -176,6 +178,24 @@ public class Utils {
 		
 		return false;
 		
+	}
+
+	public static byte[] reverseBytesClone(byte[] rawHashBytes) {
+
+		byte[] copy = ArrayUtils.clone(rawHashBytes);
+
+		ArrayUtils.reverse(copy);
+		
+		return copy;
+
+	}
+	
+	public static byte[] reverseBytesnoClone(byte[] rawHashBytes) {
+
+		ArrayUtils.reverse(rawHashBytes);
+		
+		return rawHashBytes;
+
 	}
 
 }

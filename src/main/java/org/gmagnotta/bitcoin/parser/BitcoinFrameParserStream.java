@@ -110,7 +110,7 @@ public class BitcoinFrameParserStream implements Context {
 			buffer.put(checksum);
 			buffer.put(payload);
 			
-			return BitcoinFrame.deserialize(buffer.array());
+			return BitcoinFrame.deserialize(buffer.array(), 0);
 		
 		} finally {
 			

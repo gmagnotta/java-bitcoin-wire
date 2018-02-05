@@ -17,7 +17,7 @@ public class BitcoinHeadersMessageSerializerTest {
 	@Test
 	public void testDeserialize() throws Exception {
 		
-		BitcoinHeadersMessage headersMessage = (BitcoinHeadersMessage) new BitcoinHeadersMessageSerializer().deserialize(message);
+		BitcoinHeadersMessage headersMessage = (BitcoinHeadersMessage) new BitcoinHeadersMessageSerializer().deserialize(message, 0, message.length);
 		
 		Assert.assertEquals(2, headersMessage.getHeaders().size());
 		

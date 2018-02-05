@@ -5,10 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinInvMessage;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
@@ -19,10 +18,10 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 public class BitcoinInvMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		// read varint
-		VarInt count = new VarInt(payload, 0);
+		VarInt count = new VarInt(payload, offset + 0);
 		
 		// how many bytes represents the value?
 		int len = count.getSizeInBytes();
@@ -31,7 +30,7 @@ public class BitcoinInvMessageSerializer implements BitcoinMessageSerializer {
 		
 		for (int i = 0; i < (count.value); i++) {
 
-			byte[] array = Arrays.copyOfRange(payload,  len + i * 36, len + i * 36 + 36);
+			byte[] array = Arrays.copyOfRange(payload, offset + len + i * 36, offset + len + i * 36 + 36);
 			
 			long type = Utils.readUint32LE(array, 0);
 			
@@ -48,7 +47,7 @@ public class BitcoinInvMessageSerializer implements BitcoinMessageSerializer {
 	@Override
 	public byte[] serialize(BitcoinMessage messageToSerialize) {
 		
-		BitcoinGetDataMessage message = ((BitcoinGetDataMessage) messageToSerialize);
+		BitcoinInvMessage message = ((BitcoinInvMessage) messageToSerialize);
 		
 		VarInt count = new VarInt(message.getInventoryVectors().size());
 		

@@ -2,7 +2,7 @@ package org.gmagnotta.bitcoin.message.impl;
 
 import java.util.List;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 

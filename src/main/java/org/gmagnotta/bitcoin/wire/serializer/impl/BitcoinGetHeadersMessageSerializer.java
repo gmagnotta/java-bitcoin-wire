@@ -2,29 +2,27 @@ package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.wire.Utils;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
-
-import com.subgraph.orchid.encoders.Hex;
+import org.spongycastle.util.encoders.Hex;
 
 public class BitcoinGetHeadersMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		// nonce
-		long version = Utils.readUint32LE(payload, 0);
+		long version = Utils.readUint32LE(payload, offset + 0);
 		
 		// read varint
-		VarInt varint = new VarInt(payload, 4);
+		VarInt varint = new VarInt(payload, offset + 4);
 		
 		// how many bytes represents the value?
 		int len = varint.getSizeInBytes();
@@ -33,9 +31,7 @@ public class BitcoinGetHeadersMessageSerializer implements BitcoinMessageSeriali
 		
 		for (int i = 0; i < (varint.value + 1); i++) {
 
-			byte[] array = Arrays.copyOfRange(payload,  4 + len + i * 32, 4 + len + i * 32 + 32);
-			
-			Sha256Hash hash = Sha256Hash.wrapReversed(array);
+			Sha256Hash hash = Sha256Hash.wrapReversed(payload, offset + 4 + len + i * 32, 32);
 			
 			hashes.add(hash);
 		}
@@ -59,7 +55,7 @@ public class BitcoinGetHeadersMessageSerializer implements BitcoinMessageSeriali
 
 		for (Sha256Hash hash : message.getHash()) {
 			
-			buffer.put(hash.getBytes());
+			buffer.put(hash.getReversedBytes());
 			
 		}
 		

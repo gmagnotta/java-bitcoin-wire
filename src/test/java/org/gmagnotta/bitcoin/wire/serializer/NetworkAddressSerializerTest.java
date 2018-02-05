@@ -29,7 +29,7 @@ public class NetworkAddressSerializerTest {
 	@Test
 	public void test1() throws UnknownHostException {
 		
-		NetworkAddress address = new NetworkAddressSerializer(false).deserialize(bytearray1);
+		NetworkAddress address = new NetworkAddressSerializer(false).deserialize(bytearray1, 0, bytearray1.length);
 		
 		Assert.assertEquals(InetAddress.getByAddress(new byte[] { (byte) 0x97, (byte) 0xd, (byte) 0x1b, (byte) 0xda }), address.getInetAddress());
 		
@@ -45,7 +45,7 @@ public class NetworkAddressSerializerTest {
 	@Test
 	public void test2() throws UnknownHostException {
 		
-		NetworkAddress address = new NetworkAddressSerializer(false).deserialize(bytearray2);
+		NetworkAddress address = new NetworkAddressSerializer(false).deserialize(bytearray2, 0, bytearray2.length);
 		
 		Assert.assertEquals(InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }), address.getInetAddress());
 		
@@ -61,7 +61,7 @@ public class NetworkAddressSerializerTest {
 	@Test
 	public void test3() throws UnknownHostException {
 		
-		NetworkAddress address = new NetworkAddressSerializer(true).deserialize(bytearray3);
+		NetworkAddress address = new NetworkAddressSerializer(true).deserialize(bytearray3, 0, bytearray3.length);
 		
 		Assert.assertEquals(InetAddress.getByAddress(new byte[] { (byte) 0x97, 0xd, 0x1b, (byte) 0xda }), address.getInetAddress());
 		

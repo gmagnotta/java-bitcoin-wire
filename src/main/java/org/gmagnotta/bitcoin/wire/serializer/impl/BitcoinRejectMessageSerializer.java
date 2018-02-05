@@ -16,7 +16,7 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 public class BitcoinRejectMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		try {
 			// version
@@ -31,10 +31,10 @@ public class BitcoinRejectMessageSerializer implements BitcoinMessageSerializer 
 			NetworkAddressSerializer networkAddressSerializer = new NetworkAddressSerializer(false);
 	
 			// addre_recv
-			NetworkAddress addressReceiving = networkAddressSerializer.deserialize(Arrays.copyOfRange(payload, 20, 20 + 26));
+			NetworkAddress addressReceiving = networkAddressSerializer.deserialize(payload, offset + 20, 20 + 26);
 	
 			// addre_from
-			NetworkAddress addressEmitting = networkAddressSerializer.deserialize(Arrays.copyOfRange(payload, 46, 46 + 26));
+			NetworkAddress addressEmitting = networkAddressSerializer.deserialize(payload, offset + 46, 46 + 26);
 	
 			// nonce
 			BigInteger nonce = Utils.readUint64LE(payload, 72);

@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.wire.exception.BitcoinFrameBuilderException;
 
@@ -93,21 +93,25 @@ public class BitcoinFrame {
 		
 	}
 	
-	public static BitcoinFrame deserialize(byte[] payload) throws BitcoinFrameBuilderException {
+	/**
+	 * Deserialize a BitcoinFrame from a byte array
+	 * @param payload
+	 * @return
+	 * @throws BitcoinFrameBuilderException
+	 */
+	public static BitcoinFrame deserialize(byte[] payload, int offset) throws BitcoinFrameBuilderException {
 		
 		try {
 			
-			MagicVersion magicVersion = MagicVersion.fromByteArray(payload, 0);
+			MagicVersion magicVersion = MagicVersion.fromByteArray(payload, offset + 0);
 			
-			BitcoinCommand bitcoinCommand = BitcoinCommand.fromByteArray(payload, 4);
+			BitcoinCommand bitcoinCommand = BitcoinCommand.fromByteArray(payload, offset + 4);
 			
-			long len = Utils.readUint32LE(payload, 16);
+			long len = Utils.readUint32LE(payload, offset + 16);
 			
-			long checksum =  Utils.readUint32BE(payload, 20);
+			long checksum =  Utils.readUint32BE(payload, offset + 20);
 			
-			byte[] messagepart = Arrays.copyOfRange(payload, 24, (int) (24 + len));
-			
-			Sha256Hash hash = Sha256Hash.twiceOf(messagepart);
+			Sha256Hash hash = Sha256Hash.twiceOf(payload, offset + 24, (int) (len));
 			
 			long cksum2 = Utils.readUint32BE(hash.getBytes(), 0);
 			
@@ -115,7 +119,7 @@ public class BitcoinFrame {
 				throw new Exception("Invalid checksum");
 			}
 			
-			return new BitcoinFrame(magicVersion, bitcoinCommand, len, checksum, bitcoinCommand.deserialize(messagepart));
+			return new BitcoinFrame(magicVersion, bitcoinCommand, len, checksum, bitcoinCommand.deserialize(payload, offset + 24, (int) (len)));
 		
 		} catch (Exception ex) {
 			

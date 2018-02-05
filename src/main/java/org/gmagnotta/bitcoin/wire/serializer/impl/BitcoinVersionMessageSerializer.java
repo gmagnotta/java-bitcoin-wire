@@ -2,7 +2,6 @@ package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -15,47 +14,47 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 public class BitcoinVersionMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		try {
 			
 			// version
-			long version = Utils.readUint32LE(payload, 0);
+			long version = Utils.readUint32LE(payload, offset + 0);
 	
 			// services
-			BigInteger services = Utils.readUint64LE(payload, 4);
+			BigInteger services = Utils.readUint64LE(payload, offset + 4);
 	
 			// timestamp
-			BigInteger timestamp = Utils.readUint64LE(payload, 12);
+			BigInteger timestamp = Utils.readUint64LE(payload, offset + 12);
 			
 			NetworkAddressSerializer networkAddressSerializer = new NetworkAddressSerializer(false);
 	
 			// addre_recv
-			NetworkAddress addressReceiving = networkAddressSerializer.deserialize(Arrays.copyOfRange(payload, 20, 20 + 26));
+			NetworkAddress addressReceiving = networkAddressSerializer.deserialize(payload, offset + 20, 26);
 	
 			// addre_from
-			NetworkAddress addressEmitting = networkAddressSerializer.deserialize(Arrays.copyOfRange(payload, 46, 46 + 26));
+			NetworkAddress addressEmitting = networkAddressSerializer.deserialize(payload, offset + 46, 26);
 	
 			// nonce
-			BigInteger nonce = Utils.readUint64LE(payload, 72);
+			BigInteger nonce = Utils.readUint64LE(payload, offset + 72);
 	
 			// user agent
-			byte len = payload[80];
+			byte len = payload[offset + 80];
 			String userAgent = null;
 			if (len > 0) {
 	
-				userAgent = new String(Arrays.copyOfRange(payload, 81, 81 + len));
+				userAgent = new String(payload, offset + 81, len).trim();
 	
 			}
 	
 			// start height
-			long startHeight = Utils.readUint32LE(payload, 81 + len);
+			long startHeight = Utils.readUint32LE(payload, offset + 81 + len);
 	
 			boolean relay = false;
 	
 			if (version >= 70001) {
 	
-				byte b = payload[81 + len + 4];
+				byte b = payload[offset + 81 + len + 4];
 	
 				if (b == 0) {
 					relay = false;

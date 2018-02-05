@@ -17,11 +17,11 @@ import com.subgraph.orchid.encoders.Hex;
 public class BitcoinHeadersMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		try {
 			// read varint
-			VarInt varint = new VarInt(payload, 0);
+			VarInt varint = new VarInt(payload, offset + 0);
 			
 			// how many bytes represents the value?
 			int len = varint.getSizeInBytes();
@@ -32,7 +32,7 @@ public class BitcoinHeadersMessageSerializer implements BitcoinMessageSerializer
 			
 			for (int i = 0; i < (varint.value); i++) {
 	
-				byte[] array = Arrays.copyOfRange(payload,  len + i * 81, len + i * 81 + 81);
+				byte[] array = Arrays.copyOfRange(payload, offset + len + i * 81, offset + len + i * 81 + 81);
 
 				BlockHeader header = blockHeadersSerializer.deserialize(array);
 

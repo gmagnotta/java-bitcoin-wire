@@ -1,6 +1,6 @@
 package org.gmagnotta.bitcoin.blockchain;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 
 public class ValidatedBlockHeader extends BlockHeader {

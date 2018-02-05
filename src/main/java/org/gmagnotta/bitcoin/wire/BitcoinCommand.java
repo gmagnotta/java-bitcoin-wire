@@ -96,21 +96,21 @@ public enum BitcoinCommand {
 	
 	public static BitcoinCommand fromByteArray(byte[] array, int offset) throws BitcoinCommandException {
 		
-		String command = new String(Arrays.copyOfRange(array, offset, offset + 12)).trim();
+		String command = new String(array, offset, 12).trim();
 		
 		BitcoinCommand readValue = COMMAND_MAP.get(command);
 		
 		if (readValue == null) {
-			throw new BitcoinCommandException("Unknown command " + new String(Arrays.copyOfRange(array, offset, offset + 12)).trim());
+			throw new BitcoinCommandException("Unknown command " + new String(array, offset, 12).trim());
 		}
 		
 		return readValue;
 		
 	}
 	
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 
-		return bitcoinMessageSerializer.deserialize(payload);
+		return bitcoinMessageSerializer.deserialize(payload, offset, lenght);
 
 	}
 	

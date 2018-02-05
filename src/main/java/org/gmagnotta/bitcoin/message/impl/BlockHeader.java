@@ -3,7 +3,7 @@ package org.gmagnotta.bitcoin.message.impl;
 import java.util.Date;
 import java.util.Objects;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 
 public class BlockHeader {
 	

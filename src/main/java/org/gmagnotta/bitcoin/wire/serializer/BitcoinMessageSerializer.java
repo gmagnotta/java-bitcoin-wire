@@ -11,7 +11,7 @@ public interface BitcoinMessageSerializer {
 	 * @return
 	 * @throws BitcoinMessageSerializerException
 	 */
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException;
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException;
 	
 	/**
 	 * Serialize a BitcoinMessage to a byte array

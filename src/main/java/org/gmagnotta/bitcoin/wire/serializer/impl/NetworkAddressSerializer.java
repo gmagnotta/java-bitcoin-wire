@@ -22,39 +22,39 @@ public class NetworkAddressSerializer {
 		this.serializeTime = serializeTime;
 	}
 
-	public NetworkAddress deserialize(byte[] payload) throws UnknownHostException {
+	public NetworkAddress deserialize(byte[] payload, int offset, int lenght) throws UnknownHostException {
 
 		NetworkAddress networkAddress = null;
 
-		if (payload.length == 30) {
+		if (lenght == 30) {
 
-			long time = Utils.readUint32LE(payload, 0);
+			long time = Utils.readUint32LE(payload, offset + 0);
 
-			BigInteger services = Utils.readUint64LE(payload, 4);
+			BigInteger services = Utils.readUint64LE(payload, offset + 4);
 
-			InetAddress inetAddress = Inet6Address.getByAddress(Arrays.copyOfRange(payload, 12, 28));
+			InetAddress inetAddress = Inet6Address.getByAddress(Arrays.copyOfRange(payload, offset + 12, offset + 28));
 			// only
 			// ipv4
 			// for
 			// the
 			// moment
 
-			int port = Utils.readUint16BE(payload, 28);
+			int port = Utils.readUint16BE(payload, offset + 28);
 
 			networkAddress = new NetworkAddress(time, services, inetAddress, port);
 
 		} else {
 
-			BigInteger services = Utils.readUint64LE(payload, 0);
+			BigInteger services = Utils.readUint64LE(payload, offset + 0);
 
-			InetAddress inetAddress = Inet6Address.getByAddress(Arrays.copyOfRange(payload, /* 8 */20, 24)); // take
+			InetAddress inetAddress = Inet6Address.getByAddress(Arrays.copyOfRange(payload, /* 8 */ offset + 20, offset + 24)); // take
 																												// only
 																												// ipv4
 																												// for
 																												// the
 																												// moment
 
-			int port = Utils.readUint16BE(payload, 24);
+			int port = Utils.readUint16BE(payload, offset + 24);
 
 			networkAddress = new NetworkAddress(0, services, inetAddress, port);
 

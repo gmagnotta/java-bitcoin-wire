@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
@@ -19,27 +19,27 @@ import com.subgraph.orchid.encoders.Hex;
 public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		try {
 			// read varint
-			VarInt version = new VarInt(payload, 0);
+			VarInt version = new VarInt(payload, offset + 0);
 			
 			// how many bytes represents the value?
 			int len = version.getSizeInBytes();
 			
-			Sha256Hash prevBlock = Sha256Hash.wrapReversed(Arrays.copyOfRange(payload, len, len + 32));
+			Sha256Hash prevBlock = Sha256Hash.wrapReversed(Arrays.copyOfRange(payload, offset + len, offset + len + 32));
 
-			Sha256Hash merkle = Sha256Hash.wrapReversed(Arrays.copyOfRange(payload, len + 32, len + 32 + 32));
+			Sha256Hash merkle = Sha256Hash.wrapReversed(Arrays.copyOfRange(payload, offset + len + 32, offset + len + 32 + 32));
 			
-			long timestamp = Utils.readUint32LE(payload, len + 32 + 32);
+			long timestamp = Utils.readUint32LE(payload, offset + len + 32 + 32);
 			
-			long bits = Utils.readUint32LE(payload, len + 32 + 32 + 4);
+			long bits = Utils.readUint32LE(payload, offset + len + 32 + 32 + 4);
 			
-			long nonce = Utils.readUint32LE(payload, len + 32 + 32 + 4 + 4);
+			long nonce = Utils.readUint32LE(payload, offset + len + 32 + 32 + 4 + 4);
 			
 			// read varint
-			VarInt txnCount = new VarInt(payload, len + 32 + 32 + 4 + 4 + 4);
+			VarInt txnCount = new VarInt(payload, offset + len + 32 + 32 + 4 + 4 + 4);
 
 //			byte[] array = Arrays.copyOfRange(payload,  padding + i * 80, padding + i * 80 + 80);
 

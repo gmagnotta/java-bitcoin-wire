@@ -2,7 +2,7 @@ package org.gmagnotta.bitcoin.blockchain;
 
 import java.math.BigInteger;
 
-import org.bitcoinj.core.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 
 public enum BlockChainParameters {

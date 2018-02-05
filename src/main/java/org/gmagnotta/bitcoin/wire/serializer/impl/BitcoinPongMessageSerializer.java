@@ -12,10 +12,10 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 public class BitcoinPongMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		// nonce
-		BigInteger nonce = Utils.readUint64LE(payload, 0);
+		BigInteger nonce = Utils.readUint64LE(payload, offset + 0);
 
 		// return assembled message
 		return new BitcoinPongMessage(nonce);

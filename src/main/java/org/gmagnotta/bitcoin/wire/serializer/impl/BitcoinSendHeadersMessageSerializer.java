@@ -8,7 +8,7 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 public class BitcoinSendHeadersMessageSerializer implements BitcoinMessageSerializer {
 
 	@Override
-	public BitcoinMessage deserialize(byte[] payload) throws BitcoinMessageSerializerException {
+	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		// payload is zero byte length
 		

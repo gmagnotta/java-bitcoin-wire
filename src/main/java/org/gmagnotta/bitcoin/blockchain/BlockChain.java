@@ -2,8 +2,8 @@ package org.gmagnotta.bitcoin.blockchain;
 
 import java.util.List;
 
-import org.bitcoinj.core.Sha256Hash;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 
 /**
  * Represents the blockchain known by a node
