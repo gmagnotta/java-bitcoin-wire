@@ -11,7 +11,6 @@ import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinAddrMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinBlockMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinGetAddrMessageSerializer;
-import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinGetBlocksMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinGetDataMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinGetHeadersMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinHeadersMessageSerializer;
@@ -39,8 +38,6 @@ public enum BitcoinCommand {
 	GETADDR("getaddr", new BitcoinGetAddrMessageSerializer()),
 	
 	GETHEADERS("getheaders", new BitcoinGetHeadersMessageSerializer()),
-	
-	GETBLOCKS("getblocks", new BitcoinGetBlocksMessageSerializer()),
 	
 	PONG("pong", new BitcoinPongMessageSerializer()),
 	

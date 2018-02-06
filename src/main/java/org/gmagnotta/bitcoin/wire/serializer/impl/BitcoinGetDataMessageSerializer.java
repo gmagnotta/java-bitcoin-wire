@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector;
+import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.wire.Utils;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
@@ -20,28 +20,25 @@ public class BitcoinGetDataMessageSerializer implements BitcoinMessageSerializer
 	@Override
 	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
-		// nonce
-		long version = Utils.readUint32LE(payload, offset + 0);
-		
 		// read varint
-		VarInt varint = new VarInt(payload, offset + 4);
+		VarInt varint = new VarInt(payload, offset + 0);
 		
 		// how many bytes represents the value?
 		int len = varint.getSizeInBytes();
 		
-		List<Sha256Hash> hashes = new ArrayList<Sha256Hash>();
+		List<InventoryVector> vectors = new ArrayList<InventoryVector>();
 		
-		for (int i = 0; i < (varint.value + 1); i++) {
+		for (int i = 0; i < varint.value; i++) {
 
-			byte[] array = Arrays.copyOfRange(payload,  offset + 4 + len + i * 32, offset + 4 + len + i * 32 + 32);
+			long type = Utils.readUint32LE(payload, offset + len + i * 36);
 			
-			Sha256Hash hash = Sha256Hash.wrapReversed(array);
+			Sha256Hash hash = Sha256Hash.wrapReversed(payload, offset + len + 4 + i * 36, 32);
 			
-			hashes.add(hash);
+			vectors.add(new InventoryVector(Type.valueOf((int)type), hash));
 		}
 		
 		// return assembled message
-		return new BitcoinGetHeadersMessage(version, hashes);
+		return new BitcoinGetDataMessage(vectors);
 	}
 
 	@Override
@@ -59,7 +56,7 @@ public class BitcoinGetDataMessageSerializer implements BitcoinMessageSerializer
 			
 			buffer.put(Utils.writeInt32LE((int) iv.getType().ordinal()));
 			
-			buffer.put(iv.getHash().getBytes());
+			buffer.put(iv.getHash().getReversedBytes());
 			
 		}
 		

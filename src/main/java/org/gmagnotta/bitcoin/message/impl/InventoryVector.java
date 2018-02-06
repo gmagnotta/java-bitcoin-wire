@@ -6,6 +6,10 @@ import java.util.Objects;
 
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 
+/**
+ * Inventory vectors are used for notifying other nodes about objects they have or data which is being requested
+ *
+ */
 public class InventoryVector {
 
 	public enum Type {
