@@ -15,11 +15,15 @@ import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.message.impl.BlockMessage;
+import org.gmagnotta.bitcoin.message.impl.InventoryVector;
+import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
@@ -340,7 +344,15 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	private void downloadBlocks(BitcoinPeer bitcoinPeer) throws Exception {
 		
+		ValidatedBlockHeader validated = blockChain.getBlockHeader(1);
 		
+		List<InventoryVector> list = new ArrayList<InventoryVector>();
+		
+		list.add(new InventoryVector(Type.MSG_BLOCK, validated.getHash()));
+		
+		BitcoinGetDataMessage getdata = new BitcoinGetDataMessage(list);
+		
+		BlockMessage result = bitcoinPeer.sendGetData(getdata);
 		
 	}
 		

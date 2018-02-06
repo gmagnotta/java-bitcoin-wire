@@ -22,31 +22,18 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		try {
-			// read varint
-			VarInt version = new VarInt(payload, offset + 0);
 			
-			// how many bytes represents the value?
-			int len = version.getSizeInBytes();
+			BlockHeadersSerializer blockHeadersSerializer = new BlockHeadersSerializer();
 			
-			Sha256Hash prevBlock = Sha256Hash.wrapReversed(Arrays.copyOfRange(payload, offset + len, offset + len + 32));
-
-			Sha256Hash merkle = Sha256Hash.wrapReversed(Arrays.copyOfRange(payload, offset + len + 32, offset + len + 32 + 32));
+			BlockHeader header = blockHeadersSerializer.deserialize(payload, offset, lenght);
 			
-			long timestamp = Utils.readUint32LE(payload, offset + len + 32 + 32);
+			VarInt v = new VarInt(header.getTxnCount());
 			
-			long bits = Utils.readUint32LE(payload, offset + len + 32 + 32 + 4);
+			TransactionSerializer transactionSerializer = new TransactionSerializer();
 			
-			long nonce = Utils.readUint32LE(payload, offset + len + 32 + 32 + 4 + 4);
-			
-			// read varint
-			VarInt txnCount = new VarInt(payload, offset + len + 32 + 32 + 4 + 4 + 4);
-
-//			byte[] array = Arrays.copyOfRange(payload,  padding + i * 80, padding + i * 80 + 80);
-
-			BlockMessage blockHeader = new BlockMessage(version.value, prevBlock, merkle, timestamp, bits, nonce, txnCount.value, new ArrayList<Object>());
-			
+			transactionSerializer.deserialize(payload,  offset + 80 + v.getSizeInBytes(), payload.length);
 			// return assembled message
-			return blockHeader;
+			return null;
 		
 		} catch (Exception ex) {
 			throw new BitcoinMessageSerializerException("Exception", ex);
