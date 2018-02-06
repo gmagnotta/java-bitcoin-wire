@@ -71,9 +71,8 @@ public class Sha256Hash implements Serializable, Comparable<Sha256Hash> {
 	 */
 	public static Sha256Hash wrap(byte[] rawHashBytes, int offset, int lenght) {
 		
-		ByteBuffer byteBuffer = ByteBuffer.wrap(rawHashBytes, offset, lenght);
+		return new Sha256Hash(Arrays.copyOfRange(rawHashBytes, offset, offset + lenght));
 		
-		return new Sha256Hash(byteBuffer);
 	}
 
 	/**

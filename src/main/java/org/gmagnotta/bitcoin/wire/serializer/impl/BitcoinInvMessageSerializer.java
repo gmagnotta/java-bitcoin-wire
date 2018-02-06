@@ -2,7 +2,6 @@ package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
@@ -30,11 +29,9 @@ public class BitcoinInvMessageSerializer implements BitcoinMessageSerializer {
 		
 		for (int i = 0; i < (count.value); i++) {
 
-			byte[] array = Arrays.copyOfRange(payload, offset + len + i * 36, offset + len + i * 36 + 36);
+			long type = Utils.readUint32LE(payload, offset + len + i * 36);
 			
-			long type = Utils.readUint32LE(array, 0);
-			
-			Sha256Hash hash = Sha256Hash.wrap(Arrays.copyOfRange(array, 4, 36));
+			Sha256Hash hash = Sha256Hash.wrap(payload, offset + len + 4 + i * 36, 32);
 			
 			vector.add(new InventoryVector(Type.valueOf((int)type), hash));
 			

@@ -2,7 +2,6 @@ package org.gmagnotta.bitcoin.wire.serializer;
 import java.math.BigInteger;
 import java.net.InetAddress;
 
-import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;

@@ -2,7 +2,6 @@ package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.bitcoinj.core.VarInt;
@@ -30,9 +29,7 @@ public class BitcoinHeadersMessageSerializer implements BitcoinMessageSerializer
 			
 			for (int i = 0; i < (varint.value); i++) {
 	
-				byte[] array = Arrays.copyOfRange(payload, offset + len + i * 81, offset + len + i * 81 + 81);
-
-				BlockHeader header = blockHeadersSerializer.deserialize(array);
+				BlockHeader header = blockHeadersSerializer.deserialize(payload, offset + len + i * 81, 81);
 
 				headers.add(header);
 
