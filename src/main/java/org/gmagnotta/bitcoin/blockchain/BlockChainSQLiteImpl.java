@@ -16,7 +16,6 @@ import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 public class BlockChainSQLiteImpl implements BlockChain {
 
@@ -313,7 +312,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(receivedHeader);
 
 		// Check if it is already present
-		if (getBlockHeaderFromAll(Hex.toHexString(receivedHeaderHash.getReversedBytes())) != null) {
+		if (getBlockHeaderFromAll(receivedHeaderHash.toReversedString()) != null) {
 
 			LOGGER.warn("Blockchain already contains block {}", receivedHeader);
 			
@@ -322,11 +321,11 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		} else {
 
 			// Retrieve previous header referenced
-			ValidatedBlockHeader previousHeader = getBlockHeaderFromAll(Hex.toHexString(receivedHeader.getPrevBlock().getBytes()));
+			ValidatedBlockHeader previousHeader = getBlockHeaderFromAll(receivedHeader.getPrevBlock().toString());
 			
 			if (previousHeader == null) {
 				
-				LOGGER.error("BlockHeader {} references an unknown block {}", receivedHeader, Hex.toHexString(receivedHeader.getPrevBlock().getBytes()));
+				LOGGER.error("BlockHeader {} references an unknown block {}", receivedHeader, receivedHeader.getPrevBlock().toString());
 				
 				return false;
 				
@@ -344,7 +343,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 			
 			try {
 				
-				insertHeader(receivedHeader, Hex.toHexString(receivedHeaderHash.getReversedBytes()), previousHeader);
+				insertHeader(receivedHeader, receivedHeaderHash.toReversedString(), previousHeader);
 				
 				LOGGER.info("Inserted header {}", receivedHeader);
 				

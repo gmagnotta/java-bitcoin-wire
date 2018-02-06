@@ -232,7 +232,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (Sha256Hash hash : hashes) {
 				
-				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				inverted.add(hash);
 				
 			}
 			
@@ -249,7 +249,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (Sha256Hash hash : hashes) {
 				
-				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				inverted.add(hash);
 				
 			}
 			
@@ -260,7 +260,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (Sha256Hash hash : hashes) {
 				
-				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				inverted.add(hash);
 				
 			}
 			
@@ -268,7 +268,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (Sha256Hash hash : hashes) {
 				
-				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				inverted.add(hash);
 				
 			}
 			
@@ -276,7 +276,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (Sha256Hash hash : hashes) {
 				
-				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				inverted.add(hash);
 				
 			}
 			
@@ -284,7 +284,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (Sha256Hash hash : hashes) {
 				
-				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				inverted.add(hash);
 				
 			}
 			
@@ -293,7 +293,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (Sha256Hash hash : hashes) {
 				
-				inverted.add(Sha256Hash.wrap(hash.getReversedBytes()));
+				inverted.add(hash);
 				
 			}
 			
@@ -321,7 +321,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 				blockChain.addBlockHeader(b);
 				
-				lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b); 
+				lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed(); 
 
 				if (Thread.interrupted()) {
 					LOGGER.warn("Interrupted!");

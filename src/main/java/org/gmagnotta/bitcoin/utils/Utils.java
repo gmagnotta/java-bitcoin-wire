@@ -1,11 +1,8 @@
 package org.gmagnotta.bitcoin.utils;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
@@ -18,10 +15,7 @@ public class Utils {
 
 		BlockHeadersSerializer blockHeadersSerializer = new BlockHeadersSerializer();
 
-		Sha256Hash blockHash = Sha256Hash
-				.twiceOf(Arrays.copyOfRange(blockHeadersSerializer.serialize(blockHeader), 0, 4 + 32 + 32 + 4 + 4 + 4));
-
-		return blockHash;
+		return Sha256Hash.twiceOf(blockHeadersSerializer.serialize(blockHeader), 0, 80);
 
 	}
 
@@ -56,7 +50,7 @@ public class Utils {
 
 	public static boolean isShaMatchesTarget(Sha256Hash sha256, int target) {
 
-		String string = new String(Hex.encode(sha256.getReversedBytes()));
+		String string = sha256.toReversedString();
 
 		return isShaMatchesTarget(string, target);
 
