@@ -167,6 +167,10 @@ public class Sha256Hash implements Serializable, Comparable<Sha256Hash> {
 	public static Sha256Hash twiceOf(byte[] contents, int offset, int lenght) {
 		return wrap(hashTwice(contents, offset, lenght));
 	}
+	
+	public static Sha256Hash twiceOf(ByteBuffer contents) {
+		return wrap(hashTwice(contents));
+	}
 
 	/**
 	 * Creates a new instance containing the calculated (one-time) hash of the
@@ -284,6 +288,12 @@ public class Sha256Hash implements Serializable, Comparable<Sha256Hash> {
 	public static byte[] hashTwice(byte[] input, int offset, int length) {
 		MessageDigest digest = newDigest();
 		digest.update(input, offset, length);
+		return digest.digest(digest.digest());
+	}
+	
+	public static byte[] hashTwice(ByteBuffer input) {
+		MessageDigest digest = newDigest();
+		digest.update(input);
 		return digest.digest(digest.digest());
 	}
 

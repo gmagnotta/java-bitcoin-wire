@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
-import org.gmagnotta.bitcoin.wire.Utils;
 import org.gmagnotta.bitcoin.wire.exception.BitcoinFrameBuilderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,7 @@ public class BitcoinFrameParserStream implements Context {
 	private byte[] command;
 	private byte[] length;
 	private byte[] checksum;
-	private byte[] payload;
+	private ByteBuffer payload;
 	private boolean isComplete;
 	private InputStream inputStream;
 	private MagicVersion magicVersion;
@@ -72,7 +71,7 @@ public class BitcoinFrameParserStream implements Context {
 	}
 
 	@Override
-	public void setPayload(byte[] payload) {
+	public void setPayload(ByteBuffer payload) {
 		this.payload = payload;
 	}
 	
@@ -100,17 +99,7 @@ public class BitcoinFrameParserStream implements Context {
 				
 			}
 			
-			long len = Utils.readUint32LE(length, 0);
-			
-			ByteBuffer buffer = ByteBuffer.allocate((int) (4 + 12 + 4 + 4 + len));
-			
-			buffer.put(magic);
-			buffer.put(command);
-			buffer.put(length);
-			buffer.put(checksum);
-			buffer.put(payload);
-			
-			return BitcoinFrame.deserialize(buffer.array(), 0);
+			return BitcoinFrame.deserialize(magic, command, length, checksum, payload);
 		
 		} finally {
 			

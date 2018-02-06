@@ -1,6 +1,7 @@
 package org.gmagnotta.bitcoin.parser;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 public class ChecksumState implements MessageState {
 	
@@ -29,7 +30,7 @@ public class ChecksumState implements MessageState {
 			// if size is positive then we can go to to payloadState
 			if (size == 0) {
 				
-				context.setPayload(new byte[0]);
+				context.setPayload(ByteBuffer.wrap(new byte[0]));
 				context.setComplete();
 		
 			} else {

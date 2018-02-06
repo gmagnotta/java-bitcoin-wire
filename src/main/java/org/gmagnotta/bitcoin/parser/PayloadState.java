@@ -1,12 +1,13 @@
 package org.gmagnotta.bitcoin.parser;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 public class PayloadState implements MessageState {
 	
 	private Context context;
 	
-	private byte[] payload;
+	private ByteBuffer payload;
 	private int index = 0;
 	private int size = 0;
 	
@@ -15,13 +16,13 @@ public class PayloadState implements MessageState {
 		
 		size = new BigInteger(reverse(context.getLength())).intValue();
 		
-		payload = new byte[size];
+		payload = ByteBuffer.allocate(size);
 	}
 
 	@Override
 	public void process(byte buffer) {
 
-		payload[index] = buffer;
+		payload.put(buffer);
 		
 		if (index == (size - 1)) {
 			

@@ -32,7 +32,7 @@ public class BitcoinFrame {
 	 * @param checksum
 	 * @param payload
 	 */
-	public BitcoinFrame(MagicVersion magic, BitcoinCommand command, long length, long checksum, BitcoinMessage payload) {
+	private BitcoinFrame(MagicVersion magic, BitcoinCommand command, long length, long checksum, BitcoinMessage payload) {
 		this.magic = magic;
 		this.command = command;
 		this.lenght = length;
@@ -90,6 +90,38 @@ public class BitcoinFrame {
 	public String toString() {
 		
 		return String.format("%s, %s, %d, %d, %s", magic, command, lenght, checksum, payload);
+		
+	}
+	
+	public static BitcoinFrame deserialize(byte[] magic, byte[] command, byte[] length, byte[] checksum, ByteBuffer payload) throws BitcoinFrameBuilderException {
+
+		try {
+			
+			MagicVersion magicVersion = MagicVersion.fromByteArray(magic, 0);
+			
+			BitcoinCommand bitcoinCommand = BitcoinCommand.fromByteArray(command, 0);
+			
+			long len = Utils.readUint32LE(length, 0);
+			
+			long chksum =  Utils.readUint32BE(checksum, 0);
+			
+			byte[] rawPayload = payload.array();
+			Sha256Hash hash = Sha256Hash.twiceOf(rawPayload);
+			
+			long cksum2 = Utils.readUint32BE(hash.getBytes(), 0);
+			
+			if (chksum != cksum2) {
+				throw new Exception("Invalid checksum");
+			}
+			
+			return new BitcoinFrame(magicVersion, bitcoinCommand, len, chksum, bitcoinCommand.deserialize(rawPayload, 0, (int) (len)));
+		
+		} catch (Exception ex) {
+			
+			throw new BitcoinFrameBuilderException("Exception while deserializing frame", ex);
+			
+		}
+		
 		
 	}
 	

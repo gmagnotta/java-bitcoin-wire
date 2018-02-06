@@ -1,5 +1,7 @@
 package org.gmagnotta.bitcoin.parser;
 
+import java.nio.ByteBuffer;
+
 public interface Context {
 	
 	public void setMagic(byte[] array);
@@ -12,7 +14,7 @@ public interface Context {
 	
 	public void setChecksum(byte[] array);
 	
-	public void setPayload(byte[] array);
+	public void setPayload(ByteBuffer array);
 	
 	public void setNextState(MessageState messageState);
 	
