@@ -1,19 +1,15 @@
 package org.gmagnotta.bitcoin.wire.serializer.impl;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
-
-import com.subgraph.orchid.encoders.Hex;
 
 public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 
@@ -51,25 +47,7 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 	@Override
 	public byte[] serialize(BitcoinMessage messageToSerialize) {
 		
-		BitcoinHeadersMessage message = ((BitcoinHeadersMessage) messageToSerialize);
-		
-		VarInt v = new VarInt(message.getHeaders().size());
-		
-		ByteBuffer buffer = ByteBuffer.allocate(4 + v.getSizeInBytes() + 81 * message.getHeaders().size() + 81);
-		
-		buffer.put(v.encode());
-		
-		BlockHeadersSerializer blockHeadersSerializer = new BlockHeadersSerializer();
-		
-		for (BlockHeader header : message.getHeaders()) {
-			
-			buffer.put(blockHeadersSerializer.serialize(header));
-			
-		}
-		
-		buffer.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000000"));
-		
-		return buffer.array();
+		return null;
 
 	}
 	

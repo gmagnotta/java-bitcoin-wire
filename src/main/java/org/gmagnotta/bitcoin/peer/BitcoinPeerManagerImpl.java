@@ -168,7 +168,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 
 						LOGGER.info("Requesting block");
 						
-						BlockMessage block = downloadBlocks(bitcoinPeer, invMessage.getInventoryVectors().get(0).getHash());
+						BlockMessage block = downloadBlocks(bitcoinPeer, invMessage.getInventoryVectors().get(0).getHash().getReversed());
 						
 						blockChain.addBlockHeader(block.getBlockHeader());
 					

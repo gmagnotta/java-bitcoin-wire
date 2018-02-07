@@ -47,9 +47,11 @@ public class BlockHeadersSerializer {
 		
 		buffer.put(Utils.writeInt32LE(blockHeaders.getNonce()));
 		
-		VarInt varInt = new VarInt(blockHeaders.getTxnCount());
+		// Please note that per bitcoin specification the txn_count is always 0. This is not used for hashing
+		//VarInt varInt = new VarInt(blockHeaders.getTxnCount());
+		//buffer.put(varInt.encode());
 		
-		buffer.put(varInt.encode());
+		buffer.put((byte) 0);
 
 		return buffer.array();
 		

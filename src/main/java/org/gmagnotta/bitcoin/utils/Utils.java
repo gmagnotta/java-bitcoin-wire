@@ -7,7 +7,6 @@ import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BlockHeadersSerializer;
-import org.spongycastle.util.encoders.Hex;
 
 public class Utils {
 
