@@ -1,16 +1,18 @@
 package org.gmagnotta.bitcoin.message.impl;
 
+import java.math.BigInteger;
+
 public class TransactionOutput {
 	
-	private long value;
+	private BigInteger value;
 	private byte[] pkScript;
 
-	public TransactionOutput(long value, byte[] pkScript) {
+	public TransactionOutput(BigInteger value, byte[] pkScript) {
 		this.value = value;
 		this.pkScript = pkScript;
 	}
 
-	public long getValue() {
+	public BigInteger getValue() {
 		return value;
 	}
 

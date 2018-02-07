@@ -214,7 +214,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		outputQueue.add(outputRequest);
 		
 		// this will block
-		return (BitcoinHeadersMessage) outputRequest.getResponse();
+		return (BitcoinMessage) outputRequest.getResponse();
 		
 	}
 

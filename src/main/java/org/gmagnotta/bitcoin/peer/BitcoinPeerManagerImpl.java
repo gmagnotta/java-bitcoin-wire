@@ -18,6 +18,7 @@ import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinInvMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
@@ -139,6 +140,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			LOGGER.info("Received INV!");
 			
+			final BitcoinInvMessage invMessage = (BitcoinInvMessage) bitcoinMessage;
+			
 			Thread t = new Thread(new Runnable() {
 				
 				@Override
@@ -162,8 +165,12 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					}
 						
 					try {
-							
-						syncBC(bitcoinPeer);
+
+						LOGGER.info("Requesting block");
+						
+						BlockMessage block = downloadBlocks(bitcoinPeer, invMessage.getInventoryVectors().get(0).getHash());
+						
+						blockChain.addBlockHeader(block.getBlockHeader());
 					
 					} catch (Exception ex) {
 						
@@ -342,17 +349,15 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 	}
 	
-	private void downloadBlocks(BitcoinPeer bitcoinPeer) throws Exception {
-		
-		ValidatedBlockHeader validated = blockChain.getBlockHeader(1);
+	private BlockMessage downloadBlocks(BitcoinPeer bitcoinPeer, Sha256Hash hash) throws Exception {
 		
 		List<InventoryVector> list = new ArrayList<InventoryVector>();
 		
-		list.add(new InventoryVector(Type.MSG_BLOCK, validated.getHash()));
+		list.add(new InventoryVector(Type.MSG_BLOCK, hash));
 		
 		BitcoinGetDataMessage getdata = new BitcoinGetDataMessage(list);
 		
-		BlockMessage result = bitcoinPeer.sendGetData(getdata);
+		return bitcoinPeer.sendGetData(getdata);
 		
 	}
 		
@@ -541,10 +546,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						
 						syncBC(bitcoinPeer);
 						
-						downloadBlocks(bitcoinPeer);
-						
 					}
-				
+
 				} catch (Exception ex) {
 					
 					LOGGER.error("Exception while sync", ex);

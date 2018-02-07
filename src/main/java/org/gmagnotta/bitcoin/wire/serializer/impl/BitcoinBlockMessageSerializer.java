@@ -2,15 +2,14 @@ package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
-import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
-import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
-import org.gmagnotta.bitcoin.wire.Utils;
+import org.gmagnotta.bitcoin.message.impl.BlockMessage;
+import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 
@@ -25,15 +24,24 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 			
 			BlockHeadersSerializer blockHeadersSerializer = new BlockHeadersSerializer();
 			
-			BlockHeader header = blockHeadersSerializer.deserialize(payload, offset, lenght);
+			BlockHeader header = blockHeadersSerializer.deserialize(payload, offset + 0, lenght);
 			
-			VarInt v = new VarInt(header.getTxnCount());
+			VarInt txCount = new VarInt(header.getTxnCount());
+			int lastIndex = offset + 0 + 80 + txCount.getSizeInBytes();
+			List<Transaction> transactions = new ArrayList<Transaction>();
+			for (int i = 0; i < txCount.value; i++) {
 			
-			TransactionSerializer transactionSerializer = new TransactionSerializer();
+				TransactionSerializer transactionSerializer = new TransactionSerializer();
+				
+				TransactionSize transactionSize = transactionSerializer.deserialize(payload, lastIndex, payload.length);
 			
-			transactionSerializer.deserialize(payload,  offset + 80 + v.getSizeInBytes(), payload.length);
+				lastIndex = (int) transactionSize.getSize();
+				
+				transactions.add(transactionSize.getTransaction());
+				
+			}
 			// return assembled message
-			return null;
+			return new BlockMessage(header, transactions);
 		
 		} catch (Exception ex) {
 			throw new BitcoinMessageSerializerException("Exception", ex);
@@ -63,13 +71,6 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 		
 		return buffer.array();
 
-	}
-	
-	public static void main(String[] args) {
-		
-		VarInt v = new VarInt(2);
-		
-		v.encode();
 	}
 	
 }

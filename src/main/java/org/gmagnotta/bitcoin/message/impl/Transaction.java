@@ -7,11 +7,13 @@ public class Transaction {
 	private long version;
 	private List<TransactionInput> transactionInput;
 	private List<TransactionOutput> transactionOutput;
+	private long lockTime;
 	
-	public Transaction(long version, List<TransactionInput> transactionInput, List<TransactionOutput> transactionOutput) {
+	public Transaction(long version, List<TransactionInput> transactionInput, List<TransactionOutput> transactionOutput, long lockTime) {
 		this.version = version;
 		this.transactionInput = transactionInput;
 		this.transactionOutput = transactionOutput;
+		this.lockTime = lockTime;
 	}
 
 	public long getVersion() {
@@ -24,6 +26,10 @@ public class Transaction {
 
 	public List<TransactionOutput> getTransactionOutput() {
 		return transactionOutput;
+	}
+
+	public long getLockTime() {
+		return lockTime;
 	}
 	
 }

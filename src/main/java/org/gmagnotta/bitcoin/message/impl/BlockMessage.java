@@ -2,24 +2,26 @@ package org.gmagnotta.bitcoin.message.impl;
 
 import java.util.List;
 
-import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 
-public class BlockMessage extends BlockHeader implements BitcoinMessage {
+public class BlockMessage implements BitcoinMessage {
 	
-	private List<Object> txns;
+	private BlockHeader blockHeader;
+	private List<Transaction> txns;
 
-	public BlockMessage(long version, Sha256Hash prevBlock, Sha256Hash merkleRoot, long timestamp, long bits, long nonce,
-			long txnCount, List<Object> txns) {
-		super(version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount);
-		
+	public BlockMessage(BlockHeader blockHeader, List<Transaction> txns) {
+		this.blockHeader = blockHeader;
 		this.txns = txns;
 		
 	}
 	
-	public List<Object> getTxns() {
+	public List<Transaction> getTxns() {
 		return txns;
+	}
+	
+	public BlockHeader getBlockHeader() {
+		return blockHeader;
 	}
 	
 	@Override
