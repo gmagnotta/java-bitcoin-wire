@@ -6,7 +6,6 @@ import java.util.Arrays;
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.wire.Utils;
-import org.spongycastle.util.encoders.Hex;
 
 public class TransactionOutputSerializer {
 
@@ -19,8 +18,6 @@ public class TransactionOutputSerializer {
 		byte[] pkScrip = Arrays.copyOfRange(payload,
 				offset + 0 + 8 + pkScriptLen.getSizeInBytes(),
 				offset + 0 + 8 + pkScriptLen.getSizeInBytes() + (int) pkScriptLen.value);
-		
-		Hex.toHexString(pkScrip);
 		
 		TransactionOutput output = new TransactionOutput(new BigInteger(""+value), pkScrip);
 		
