@@ -1,7 +1,10 @@
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.wire.Utils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -155,6 +158,54 @@ public class UtilsTest {
 		long b3 = org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(header, 1337966313, BlockChainParameters.TESTNET3);
 		
 		Assert.assertEquals(0x1c3fffc0, b3);
+	}
+	
+	@Test
+	public void calculateMerkle() {
+		
+		byte[] b1 = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2 };
+		
+		byte[] b2 = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 3 };
+		
+		byte[] b3 = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 4 };
+		
+		byte[] b4 = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 5 };
+		
+		List<byte[]> byteArray = new ArrayList<byte[]>();
+		
+		byteArray.add(b1);
+		byteArray.add(b2);
+		
+		Assert.assertEquals(Sha256Hash.wrap("c0388915402ecbd34cef70695d8579522d27cd30f19ab2e3166e94057ea624cb"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray));
+		
+		// 3 elements
+		List<byte[]> byteArray2 = new ArrayList<byte[]>();
+		
+		byteArray2.add(b1);
+		byteArray2.add(b2);
+		byteArray2.add(b3);
+		
+		Assert.assertEquals(Sha256Hash.wrap("55fb72d43545ad2e010a0d3e7fcb12517b91ae4061a380dda521050106bf1669"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray2));
+		
+		// 4 elements as before
+		List<byte[]> byteArray3 = new ArrayList<byte[]>();
+		
+		byteArray3.add(b1);
+		byteArray3.add(b2);
+		byteArray3.add(b3);
+		byteArray3.add(b3);
+		
+		Assert.assertEquals(Sha256Hash.wrap("55fb72d43545ad2e010a0d3e7fcb12517b91ae4061a380dda521050106bf1669"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray3));
+		
+		// 4 elements different
+		List<byte[]> byteArray4 = new ArrayList<byte[]>();
+		
+		byteArray4.add(b1);
+		byteArray4.add(b2);
+		byteArray4.add(b3);
+		byteArray4.add(b4);
+		
+		Assert.assertEquals(Sha256Hash.wrap("f0ccb445cc9a617b02c491e3034d5868ab3f264b8f00fe874e682521073c4083"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray4));
 	}
 
 }
