@@ -1,12 +1,17 @@
 package org.gmagnotta.bitcoin.utils;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BlockHeadersSerializer;
+import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
+import org.spongycastle.util.Arrays;
 
 public class Utils {
 
@@ -190,5 +195,55 @@ public class Utils {
 		return rawHashBytes;
 
 	}
-
+	
+	public static Sha256Hash calculateMerkleRoot(List<byte[]> arrayByteList) {
+		
+		if (arrayByteList.size() == 2) {
+			
+			Sha256Hash d1 = Sha256Hash.twiceOf(arrayByteList.get(0));
+			
+			Sha256Hash d2 = Sha256Hash.twiceOf(arrayByteList.get(1));
+			
+			byte[] concat = Arrays.concatenate(d1.getBytes(), d2.getBytes());
+			
+			return Sha256Hash.twiceOf(concat);
+			
+		}
+		
+		List<byte[]> hashList = new ArrayList<byte[]>();
+		
+		int len = arrayByteList.size() % 2 == 0 ? arrayByteList.size() : arrayByteList.size() + 1;
+		
+		for (int i = 0; i < (len / 2); i++) {
+			
+			Sha256Hash d1 = Sha256Hash.twiceOf(arrayByteList.get(i * 2));
+			
+			Sha256Hash d2 = Sha256Hash.twiceOf(arrayByteList.get(i * 2 +1 > (arrayByteList.size() - 1)? i*2 : i*2+1));
+			
+			byte[] concat = Arrays.concatenate(d1.getBytes(), d2.getBytes());
+			
+			hashList.add(Sha256Hash.twiceOf(concat).getBytes());
+			
+		}
+		
+		return calculateMerkleRoot(hashList);
+		
+	}
+	
+	public static Sha256Hash calculateMerkleRootTransaction(List<Transaction> txList) {
+		
+		TransactionSerializer transactionSerializer = new TransactionSerializer();
+		
+		List<byte[]> hashList = new ArrayList<byte[]>();
+		
+		for (Transaction transaction : txList) {
+			
+			hashList.add(transactionSerializer.serialize(transaction));
+			
+		}
+		
+		return calculateMerkleRoot(hashList);
+		
+	}
+	
 }
