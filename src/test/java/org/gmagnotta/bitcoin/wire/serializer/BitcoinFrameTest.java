@@ -17,6 +17,7 @@ import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Utils;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -198,6 +199,8 @@ public class BitcoinFrameTest {
 		Assert.assertEquals(2, blockMessage.getTxns().size());
 		
 		Assert.assertArrayEquals(block, BitcoinFrame.serialize(frameBlock));
+		
+		Assert.assertEquals(Sha256Hash.wrap("06a112cfff0a08ac86536dbb4235ddb02614d206eb6d604645e2169959673e95"), Utils.calculateMerkleRootTransaction(blockMessage.getTxns()));
 		
 	}
 

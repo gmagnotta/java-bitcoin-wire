@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Utils;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -170,7 +171,20 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						
 						BlockMessage block = downloadBlocks(bitcoinPeer, invMessage.getInventoryVectors().get(0).getHash().getReversed());
 						
-						blockChain.addBlockHeader(block.getBlockHeader());
+						Sha256Hash calculatedMerkleRoot = Utils.calculateMerkleRootTransaction(block.getTxns()).getReversed();
+						
+						LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
+						
+						if (calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
+						
+							LOGGER.info("Calculated merkle root is the same as header. Adding to BC");
+							blockChain.addBlockHeader(block.getBlockHeader());
+							
+						} else {
+							
+							LOGGER.error("Calculated merkle root is different from the header! Skipping block");
+							
+						}
 					
 					} catch (Exception ex) {
 						

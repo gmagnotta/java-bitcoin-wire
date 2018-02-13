@@ -185,7 +185,7 @@ public class UtilsTest {
 		byteArray2.add(b2);
 		byteArray2.add(b3);
 		
-		Assert.assertEquals(Sha256Hash.wrap("55fb72d43545ad2e010a0d3e7fcb12517b91ae4061a380dda521050106bf1669"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray2));
+		Assert.assertEquals(Sha256Hash.wrap("286335b36c76f4d491530e74ab5441a4bf3a0bb8996514d85ffe795d97e7397e"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray2));
 		
 		// 4 elements as before
 		List<byte[]> byteArray3 = new ArrayList<byte[]>();
@@ -195,7 +195,7 @@ public class UtilsTest {
 		byteArray3.add(b3);
 		byteArray3.add(b3);
 		
-		Assert.assertEquals(Sha256Hash.wrap("55fb72d43545ad2e010a0d3e7fcb12517b91ae4061a380dda521050106bf1669"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray3));
+		Assert.assertEquals(Sha256Hash.wrap("286335b36c76f4d491530e74ab5441a4bf3a0bb8996514d85ffe795d97e7397e"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray3));
 		
 		// 4 elements different
 		List<byte[]> byteArray4 = new ArrayList<byte[]>();
@@ -205,7 +205,7 @@ public class UtilsTest {
 		byteArray4.add(b3);
 		byteArray4.add(b4);
 		
-		Assert.assertEquals(Sha256Hash.wrap("f0ccb445cc9a617b02c491e3034d5868ab3f264b8f00fe874e682521073c4083"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray4));
+		Assert.assertEquals(Sha256Hash.wrap("42b43e54045bcd104dc66f096d1475cc42d2517812871f7d58cdb4cc12b02d92"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray4));
 	}
 
 }

@@ -222,7 +222,7 @@ public class Utils {
 			
 			byte[] concat = Arrays.concatenate(d1.getBytes(), d2.getBytes());
 			
-			hashList.add(Sha256Hash.twiceOf(concat).getBytes());
+			hashList.add(concat);
 			
 		}
 		
