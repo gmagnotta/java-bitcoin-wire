@@ -1,5 +1,6 @@
 package org.gmagnotta.bitcoin.wire.serializer.impl;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.bitcoinj.core.VarInt;
@@ -25,6 +26,27 @@ public class TransactionInputSerializer {
 		TransactionInput input = new TransactionInput(outPoint, script, sequence);
 		
 		return new TransactionInputSize(offset + 0 + 32 + 4 + scriptLen.getSizeInBytes() + (int) scriptLen.value + 4, input);
+		
+	}
+	
+	public byte[] serialize(TransactionInput transactionInput) {
+		
+		OutPoint previousOutput = transactionInput.getPreviousOutput();
+
+		VarInt scriptLen = new VarInt(transactionInput.getSignatureScript().length);
+
+		ByteBuffer buffer = ByteBuffer.allocate(32 + 4 + scriptLen.getSizeInBytes() + transactionInput.getSignatureScript().length + 4);
+		
+		buffer.put(previousOutput.getHash().getReversedBytes());
+		buffer.put(Utils.writeInt32LE(previousOutput.getIndex()));
+		
+		buffer.put(scriptLen.encode());
+		
+		buffer.put(transactionInput.getSignatureScript());
+		
+		buffer.put(Utils.writeInt32LE(transactionInput.getSequence()));
+		
+		return buffer.array();
 		
 	}
 	

@@ -10,6 +10,16 @@ import org.gmagnotta.bitcoin.wire.Utils;
 
 public class BlockHeadersSerializer {
 	
+	private boolean serializeCount;
+	
+	public BlockHeadersSerializer() {
+		this(false);
+	}
+	
+	public BlockHeadersSerializer(boolean serializeCount) {
+		this.serializeCount = serializeCount;
+	}
+	
 	public BlockHeader deserialize(byte[] payload, int offset, int lenght) throws UnknownHostException {
 
 		long version = Utils.readUint32LE(payload, offset + 0);
@@ -48,10 +58,16 @@ public class BlockHeadersSerializer {
 		buffer.put(Utils.writeInt32LE(blockHeaders.getNonce()));
 		
 		// Please note that per bitcoin specification the txn_count is always 0. This is not used for hashing
-		//VarInt varInt = new VarInt(blockHeaders.getTxnCount());
-		//buffer.put(varInt.encode());
+		if (serializeCount) {
+			
+			VarInt varInt = new VarInt(blockHeaders.getTxnCount());
+			buffer.put(varInt.encode());
+			
+		} else {
 		
-		buffer.put((byte) 0);
+			buffer.put((byte) 0);
+		
+		}
 
 		return buffer.array();
 		

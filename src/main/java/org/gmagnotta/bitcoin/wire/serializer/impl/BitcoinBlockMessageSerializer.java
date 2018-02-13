@@ -1,5 +1,6 @@
 package org.gmagnotta.bitcoin.wire.serializer.impl;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +48,36 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 	@Override
 	public byte[] serialize(BitcoinMessage messageToSerialize) {
 		
-		return null;
+		BlockMessage blockMessage = (BlockMessage) messageToSerialize;
+		
+		BlockHeadersSerializer blockHeadersSerializer = new BlockHeadersSerializer(true);
+		
+		byte[] b = blockHeadersSerializer.serialize(blockMessage.getBlockHeader());
+		
+		List<byte[]> serialized = new ArrayList<byte[]>();
+		int size = 0;
+		
+		TransactionSerializer transactionSerializer = new TransactionSerializer();
+		
+		for (Transaction tx : blockMessage.getTxns()) {
+			
+			byte[] txSerialized = transactionSerializer.serialize(tx);
+			
+			serialized.add(txSerialized);
+			
+			size += txSerialized.length;
+			
+		}
+		
+		ByteBuffer buffer = ByteBuffer.allocate(b.length + size);
+		
+		buffer.put(b);
+		
+		for (byte[] tx : serialized) {
+			buffer.put(tx);
+		}
+		
+		return buffer.array();
 
 	}
 	

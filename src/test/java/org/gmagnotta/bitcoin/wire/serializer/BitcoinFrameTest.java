@@ -2,6 +2,7 @@ package org.gmagnotta.bitcoin.wire.serializer;
 import java.math.BigInteger;
 import java.net.InetAddress;
 
+import org.bitcoinj.script.Script;
 import org.gmagnotta.bitcoin.message.impl.BitcoinAddrMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
@@ -14,6 +15,7 @@ import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
 import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
+import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.BitcoinFrame;
@@ -194,6 +196,9 @@ public class BitcoinFrameTest {
 		BlockMessage blockMessage = (BlockMessage) frameBlock.getPayload();
 		
 		Assert.assertEquals(2, blockMessage.getTxns().size());
+		
+		Assert.assertArrayEquals(block, BitcoinFrame.serialize(frameBlock));
+		
 	}
 
 }

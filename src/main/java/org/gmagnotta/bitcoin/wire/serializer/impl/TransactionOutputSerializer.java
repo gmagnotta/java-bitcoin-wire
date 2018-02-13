@@ -1,6 +1,7 @@
 package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.bitcoinj.core.VarInt;
@@ -22,6 +23,22 @@ public class TransactionOutputSerializer {
 		TransactionOutput output = new TransactionOutput(new BigInteger(""+value), pkScrip);
 		
 		return new TransactionOutputSize(offset + 0 + 8 + pkScriptLen.getSizeInBytes() + pkScriptLen.value, output);
+		
+	}
+	
+	public byte[] serialize(TransactionOutput transactionOutput) {
+		
+		VarInt pkScriptLen = new VarInt(transactionOutput.getPkScript().length);
+		
+		ByteBuffer buffer = ByteBuffer.allocate(8 + pkScriptLen.getSizeInBytes() + transactionOutput.getPkScript().length);
+		
+		buffer.put(Utils.writeInt64LE(transactionOutput.getValue().longValue()));
+		
+		buffer.put(pkScriptLen.encode());
+		
+		buffer.put(transactionOutput.getPkScript());
+		
+		return buffer.array();
 		
 	}
 	
