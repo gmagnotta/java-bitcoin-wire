@@ -198,7 +198,10 @@ public class BitcoinFrameTest {
 		
 		Assert.assertEquals(2, blockMessage.getTxns().size());
 		
+		Assert.assertNotNull(blockMessage.getIndexedTxns().get(Sha256Hash.wrap("70e03b1fa7f2d207bbc6ed1d494cbbf9252947ee4e14a725ad76190ac3296be8")));
+		
 		Assert.assertArrayEquals(block, BitcoinFrame.serialize(frameBlock));
+		
 		
 		Assert.assertEquals(Sha256Hash.wrap("06a112cfff0a08ac86536dbb4235ddb02614d206eb6d604645e2169959673e95"), Utils.calculateMerkleRootTransaction(blockMessage.getTxns()));
 		

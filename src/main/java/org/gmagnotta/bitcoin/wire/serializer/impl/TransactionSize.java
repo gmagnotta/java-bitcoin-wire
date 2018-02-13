@@ -1,13 +1,13 @@
 package org.gmagnotta.bitcoin.wire.serializer.impl;
 
-import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.message.impl.HashedTransaction;
 
 public class TransactionSize {
 	
 	private long size;
-	private Transaction transaction;
+	private HashedTransaction transaction;
 	
-	public TransactionSize(long size, Transaction transaction) {
+	public TransactionSize(long size, HashedTransaction transaction) {
 		this.size = size;
 		this.transaction = transaction;
 	}
@@ -16,7 +16,7 @@ public class TransactionSize {
 		return size;
 	}
 
-	public Transaction getTransaction() {
+	public HashedTransaction getTransaction() {
 		return transaction;
 	}
 	

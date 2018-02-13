@@ -2,13 +2,16 @@ package org.gmagnotta.bitcoin.wire.serializer.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 
@@ -26,6 +29,7 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 			VarInt txCount = new VarInt(header.getTxnCount());
 			int lastIndex = offset + 0 + 80 + txCount.getSizeInBytes();
 			List<Transaction> transactions = new ArrayList<Transaction>();
+			Map<Sha256Hash, Transaction> transactionsMap = new HashMap<Sha256Hash, Transaction>();
 			for (int i = 0; i < txCount.value; i++) {
 			
 				TransactionSerializer transactionSerializer = new TransactionSerializer();
@@ -35,10 +39,11 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 				lastIndex = (int) transactionSize.getSize();
 				
 				transactions.add(transactionSize.getTransaction());
+				transactionsMap.put(transactionSize.getTransaction().getTxId(), transactionSize.getTransaction());
 				
 			}
 			// return assembled message
-			return new BlockMessage(header, transactions);
+			return new BlockMessage(header, transactions, transactionsMap);
 		
 		} catch (Exception ex) {
 			throw new BitcoinMessageSerializerException("Exception", ex);

@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bitcoinj.core.VarInt;
+import org.gmagnotta.bitcoin.message.impl.HashedTransaction;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.wire.Utils;
 
 public class TransactionSerializer {
@@ -51,9 +53,14 @@ public class TransactionSerializer {
 		
 		long lockTime = Utils.readUint32LE(payload, lastIndex);
 		
-		Transaction transaction = new Transaction(version, txInputs, txOutputs, lockTime);
+		// increment lastIndex with lockTime size
+		lastIndex += 4;
 		
-		return new TransactionSize(lastIndex + 4, transaction);
+		Sha256Hash txId = Sha256Hash.wrap(Sha256Hash.hashTwice(payload, offset, lastIndex-offset));
+		
+		HashedTransaction transaction = new HashedTransaction(version, txInputs, txOutputs, lockTime, txId);
+		
+		return new TransactionSize(lastIndex, transaction);
 	}
 	
 	public byte[] serialize(Transaction transaction) {
