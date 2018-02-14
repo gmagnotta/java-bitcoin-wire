@@ -8,6 +8,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.message.impl.HashedTransaction;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BlockHeadersSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
@@ -196,13 +197,19 @@ public class Utils {
 
 	}
 	
-	public static Sha256Hash calculateMerkleRoot(List<byte[]> arrayByteList) {
+	/**
+	 * The parameter of this method represents a list of hashes. It requires a first hash of elements
+	 * 
+	 * @param arrayByteList
+	 * @return
+	 */
+	public static Sha256Hash calculateMerkleRoot(List<Sha256Hash> arrayByteList) {
 		
-		if (arrayByteList.size() == 2) {
+		if (arrayByteList.size() == 1) {
 			
-			Sha256Hash d1 = Sha256Hash.twiceOf(arrayByteList.get(0));
+			Sha256Hash d1 = arrayByteList.get(0);
 			
-			Sha256Hash d2 = Sha256Hash.twiceOf(arrayByteList.get(1));
+			Sha256Hash d2 = arrayByteList.get(0);
 			
 			byte[] concat = Arrays.concatenate(d1.getBytes(), d2.getBytes());
 			
@@ -210,19 +217,31 @@ public class Utils {
 			
 		}
 		
-		List<byte[]> hashList = new ArrayList<byte[]>();
+		if (arrayByteList.size() == 2) {
+			
+			Sha256Hash d1 = arrayByteList.get(0);
+			
+			Sha256Hash d2 = arrayByteList.get(1);
+			
+			byte[] concat = Arrays.concatenate(d1.getBytes(), d2.getBytes());
+			
+			return Sha256Hash.twiceOf(concat);
+			
+		}
+		
+		List<Sha256Hash> hashList = new ArrayList<Sha256Hash>();
 		
 		int len = arrayByteList.size() % 2 == 0 ? arrayByteList.size() : arrayByteList.size() + 1;
 		
 		for (int i = 0; i < (len / 2); i++) {
 			
-			Sha256Hash d1 = Sha256Hash.twiceOf(arrayByteList.get(i * 2));
+			Sha256Hash d1 = arrayByteList.get(i * 2);
 			
-			Sha256Hash d2 = Sha256Hash.twiceOf(arrayByteList.get(i * 2 +1 > (arrayByteList.size() - 1)? i*2 : i*2+1));
+			Sha256Hash d2 = arrayByteList.get(i * 2 +1 > (arrayByteList.size() - 1)? i*2 : i*2+1);
 			
 			byte[] concat = Arrays.concatenate(d1.getBytes(), d2.getBytes());
 			
-			hashList.add(concat);
+			hashList.add(Sha256Hash.twiceOf(concat));
 			
 		}
 		
@@ -234,11 +253,21 @@ public class Utils {
 		
 		TransactionSerializer transactionSerializer = new TransactionSerializer();
 		
-		List<byte[]> hashList = new ArrayList<byte[]>();
+		List<Sha256Hash> hashList = new ArrayList<Sha256Hash>();
 		
 		for (Transaction transaction : txList) {
 			
-			hashList.add(transactionSerializer.serialize(transaction));
+			if (transaction instanceof HashedTransaction) {
+				
+				HashedTransaction hashedTransaction = (HashedTransaction) transaction;
+				
+				hashList.add(hashedTransaction.getTxId());
+				
+			} else {
+			
+				hashList.add(Sha256Hash.twiceOf(transactionSerializer.serialize(transaction)));
+			
+			}
 			
 		}
 		

@@ -171,39 +171,39 @@ public class UtilsTest {
 		
 		byte[] b4 = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 5 };
 		
-		List<byte[]> byteArray = new ArrayList<byte[]>();
+		List<Sha256Hash> byteArray = new ArrayList<Sha256Hash>();
 		
-		byteArray.add(b1);
-		byteArray.add(b2);
+		byteArray.add(Sha256Hash.twiceOf(b1));
+		byteArray.add(Sha256Hash.twiceOf(b2));
 		
 		Assert.assertEquals(Sha256Hash.wrap("c0388915402ecbd34cef70695d8579522d27cd30f19ab2e3166e94057ea624cb"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray));
 		
 		// 3 elements
-		List<byte[]> byteArray2 = new ArrayList<byte[]>();
+		List<Sha256Hash> byteArray2 = new ArrayList<Sha256Hash>();
 		
-		byteArray2.add(b1);
-		byteArray2.add(b2);
-		byteArray2.add(b3);
+		byteArray2.add(Sha256Hash.twiceOf(b1));
+		byteArray2.add(Sha256Hash.twiceOf(b2));
+		byteArray2.add(Sha256Hash.twiceOf(b3));
 		
 		Assert.assertEquals(Sha256Hash.wrap("286335b36c76f4d491530e74ab5441a4bf3a0bb8996514d85ffe795d97e7397e"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray2));
 		
 		// 4 elements as before
-		List<byte[]> byteArray3 = new ArrayList<byte[]>();
+		List<Sha256Hash> byteArray3 = new ArrayList<Sha256Hash>();
 		
-		byteArray3.add(b1);
-		byteArray3.add(b2);
-		byteArray3.add(b3);
-		byteArray3.add(b3);
+		byteArray3.add(Sha256Hash.twiceOf(b1));
+		byteArray3.add(Sha256Hash.twiceOf(b2));
+		byteArray3.add(Sha256Hash.twiceOf(b3));
+		byteArray3.add(Sha256Hash.twiceOf(b3));
 		
 		Assert.assertEquals(Sha256Hash.wrap("286335b36c76f4d491530e74ab5441a4bf3a0bb8996514d85ffe795d97e7397e"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray3));
 		
 		// 4 elements different
-		List<byte[]> byteArray4 = new ArrayList<byte[]>();
+		List<Sha256Hash> byteArray4 = new ArrayList<Sha256Hash>();
 		
-		byteArray4.add(b1);
-		byteArray4.add(b2);
-		byteArray4.add(b3);
-		byteArray4.add(b4);
+		byteArray4.add(Sha256Hash.twiceOf(b1));
+		byteArray4.add(Sha256Hash.twiceOf(b2));
+		byteArray4.add(Sha256Hash.twiceOf(b3));
+		byteArray4.add(Sha256Hash.twiceOf(b4));
 		
 		Assert.assertEquals(Sha256Hash.wrap("42b43e54045bcd104dc66f096d1475cc42d2517812871f7d58cdb4cc12b02d92"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray4));
 	}
