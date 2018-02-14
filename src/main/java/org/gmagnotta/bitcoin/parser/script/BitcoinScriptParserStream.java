@@ -3,6 +3,8 @@ package org.gmagnotta.bitcoin.parser.script;
 import java.io.InputStream;
 import java.util.Stack;
 
+import org.gmagnotta.bitcoin.script.BitcoinScript;
+
 public class BitcoinScriptParserStream implements Context {
 
 	private ScriptState scriptState;
