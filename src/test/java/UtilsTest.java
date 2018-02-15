@@ -171,12 +171,19 @@ public class UtilsTest {
 		
 		byte[] b4 = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 5 };
 		
-		List<Sha256Hash> byteArray = new ArrayList<Sha256Hash>();
 		
-		byteArray.add(Sha256Hash.twiceOf(b1));
-		byteArray.add(Sha256Hash.twiceOf(b2));
+		List<Sha256Hash> byteArray0 = new ArrayList<Sha256Hash>();
 		
-		Assert.assertEquals(Sha256Hash.wrap("c0388915402ecbd34cef70695d8579522d27cd30f19ab2e3166e94057ea624cb"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray));
+		byteArray0.add(Sha256Hash.twiceOf(b1));
+		
+		Assert.assertEquals(Sha256Hash.twiceOf(b1), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray0));
+		
+		List<Sha256Hash> byteArray1 = new ArrayList<Sha256Hash>();
+		
+		byteArray1.add(Sha256Hash.twiceOf(b1));
+		byteArray1.add(Sha256Hash.twiceOf(b2));
+		
+		Assert.assertEquals(Sha256Hash.wrap("c0388915402ecbd34cef70695d8579522d27cd30f19ab2e3166e94057ea624cb"), org.gmagnotta.bitcoin.utils.Utils.calculateMerkleRoot(byteArray1));
 		
 		// 3 elements
 		List<Sha256Hash> byteArray2 = new ArrayList<Sha256Hash>();

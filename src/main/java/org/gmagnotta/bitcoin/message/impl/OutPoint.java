@@ -19,5 +19,10 @@ public class OutPoint {
 	public long getIndex() {
 		return index;
 	}
+	
+	@Override
+	public String toString() {
+		return String.format("Hash: %s, index %d", hash, index);
+	}
 
 }

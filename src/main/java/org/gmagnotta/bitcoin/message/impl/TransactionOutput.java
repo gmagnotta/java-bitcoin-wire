@@ -2,6 +2,8 @@ package org.gmagnotta.bitcoin.message.impl;
 
 import java.math.BigInteger;
 
+import org.spongycastle.util.encoders.Hex;
+
 public class TransactionOutput {
 	
 	private BigInteger value;
@@ -20,4 +22,8 @@ public class TransactionOutput {
 		return pkScript;
 	}
 	
+	@Override
+	public String toString() {
+		return String.format("Value: %d, pkScript %s", value.longValue(), Hex.toHexString(pkScript));
+	}
 }

@@ -32,4 +32,9 @@ public class Transaction {
 		return lockTime;
 	}
 	
+	@Override
+	public String toString() {
+		return String.format("Version: %d, input: %s, output: %s, lockTime %d", version, transactionInput, transactionOutput, lockTime);
+	}
+	
 }

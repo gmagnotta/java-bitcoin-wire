@@ -13,9 +13,13 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.utils.Utils;
+import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
+import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 public class BlockChainSQLiteImpl implements BlockChain {
 
@@ -592,6 +596,13 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		}
 
 		return bits;
+	}
+
+	@Override
+	public Transaction getTransaction(String hash) {
+		
+		return null;
+		
 	}
 	
 //	@Override

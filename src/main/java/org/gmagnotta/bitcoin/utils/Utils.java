@@ -207,25 +207,7 @@ public class Utils {
 		
 		if (arrayByteList.size() == 1) {
 			
-			Sha256Hash d1 = arrayByteList.get(0);
-			
-			Sha256Hash d2 = arrayByteList.get(0);
-			
-			byte[] concat = Arrays.concatenate(d1.getBytes(), d2.getBytes());
-			
-			return Sha256Hash.twiceOf(concat);
-			
-		}
-		
-		if (arrayByteList.size() == 2) {
-			
-			Sha256Hash d1 = arrayByteList.get(0);
-			
-			Sha256Hash d2 = arrayByteList.get(1);
-			
-			byte[] concat = Arrays.concatenate(d1.getBytes(), d2.getBytes());
-			
-			return Sha256Hash.twiceOf(concat);
+			return arrayByteList.get(0);
 			
 		}
 		

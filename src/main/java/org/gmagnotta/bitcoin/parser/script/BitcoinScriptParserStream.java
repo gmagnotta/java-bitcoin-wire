@@ -35,7 +35,7 @@ public class BitcoinScriptParserStream implements Context {
 			
 		}
 		
-		return new BitcoinScript();
+		return null;
 		
 	}
 

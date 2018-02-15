@@ -18,9 +18,9 @@ public class BitcoinScriptParserTest {
 	@Test
 	public void testFromBytes() throws Exception {
 		
-		BitcoinScriptParserStream bitcoinScriptParserStream = new BitcoinScriptParserStream(new ByteArrayInputStream(script));
-		
-		BitcoinScript bitcoinscript = bitcoinScriptParserStream.getBitcoinScript();
+//		BitcoinScriptParserStream bitcoinScriptParserStream = new BitcoinScriptParserStream(new ByteArrayInputStream(script));
+//		
+//		BitcoinScript bitcoinscript = bitcoinScriptParserStream.getBitcoinScript();
 		
 	}
 }
