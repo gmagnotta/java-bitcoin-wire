@@ -171,6 +171,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						
 						BlockMessage block = downloadBlocks(bitcoinPeer, invMessage.getInventoryVectors().get(0).getHash().getReversed());
 						
+						LOGGER.info("Starting calculating merkle tree");
+						
 						Sha256Hash calculatedMerkleRoot = Utils.calculateMerkleRootTransaction(block.getTxns()).getReversed();
 						
 						LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
