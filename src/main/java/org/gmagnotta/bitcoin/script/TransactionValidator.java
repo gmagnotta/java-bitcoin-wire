@@ -49,9 +49,9 @@ public class TransactionValidator {
 				
 			}
 		
-			byte[] top = stack.pop();
+			if (stack.isEmpty()) return false;
 			
-			if (ArrayUtils.isEmpty(top)) {
+			if (ArrayUtils.isEmpty(stack.pop())) {
 				return false;
 			}
 			

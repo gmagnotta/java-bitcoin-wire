@@ -370,9 +370,9 @@ public enum OpCode {
 				@Override
 				public void doOperation(Stack<byte[]> stack) {
 					byte[] top = stack.pop();
-					Sha256Hash hash = Sha256Hash.of(Utils.reverseBytesClone(top));
+					Sha256Hash hash = Sha256Hash.of(top);
 					
-					stack.push(Utils.reverseBytesClone(Utils.hash160(hash.getBytes())));
+					stack.push(Utils.hash160(hash.getBytes()));
 				}
 				
 			};
@@ -387,6 +387,23 @@ public enum OpCode {
 					if (!Arrays.areEqual(first, second)) {
 						throw new Exception("Transaction invalid!");
 					}
+				}
+				
+			};
+		case OP_CHECKSIG:
+			return new EmptyOperation(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack) throws Exception {
+					
+					byte[] pubKey = stack.pop();
+					byte[] signature = stack.pop();
+					
+					if (signature.length == 0) {
+						stack.push(new byte[] { 0 });
+					}
+					
+					
 				}
 				
 			};
