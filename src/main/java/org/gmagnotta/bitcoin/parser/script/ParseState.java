@@ -1,6 +1,6 @@
 package org.gmagnotta.bitcoin.parser.script;
 
-public class ParseState implements ScriptState {
+public class ParseState implements ScriptParserState {
 	
 	private Context context;
 	
@@ -9,10 +9,19 @@ public class ParseState implements ScriptState {
 	}
 
 	@Override
-	public void process(byte buffer) {
+	public void parse(byte buffer) {
+		
 		try {
 		
-			Opcode opcode = Opcode.fromByte(buffer);
+			OpCode opcode = OpCode.fromByte(buffer);
+			
+			if (opcode.hasParameters()) {
+				ScriptParserState state = opcode.getScriptState(context);
+				context.setNextParserState(state);
+			} else {
+				context.add(opcode.getOperation());
+			}
+			
 		
 		} catch (Exception e) {
 			

@@ -16,7 +16,7 @@ import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.utils.Utils;
 import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
-import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSize;
+import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionDeserializedWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;

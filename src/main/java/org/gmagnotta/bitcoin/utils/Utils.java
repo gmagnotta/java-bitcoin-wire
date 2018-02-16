@@ -5,10 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
-import org.gmagnotta.bitcoin.message.impl.HashedTransaction;
+import org.gmagnotta.bitcoin.message.impl.DeserializedTransaction;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BlockHeadersSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
@@ -239,9 +240,9 @@ public class Utils {
 		
 		for (Transaction transaction : txList) {
 			
-			if (transaction instanceof HashedTransaction) {
+			if (transaction instanceof DeserializedTransaction) {
 				
-				HashedTransaction hashedTransaction = (HashedTransaction) transaction;
+				DeserializedTransaction hashedTransaction = (DeserializedTransaction) transaction;
 				
 				hashList.add(hashedTransaction.getTxId());
 				
@@ -256,5 +257,13 @@ public class Utils {
 		return calculateMerkleRoot(hashList);
 		
 	}
+
+	public static byte[] hash160(byte[] input) {
+        byte[] out = new byte[20];
+        RIPEMD160Digest rDigest = new RIPEMD160Digest();
+        rDigest.update(input, 0, input.length);
+        rDigest.doFinal(out, 0);
+        return out;
+    }
 	
 }

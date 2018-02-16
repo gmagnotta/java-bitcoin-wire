@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bitcoinj.core.VarInt;
-import org.gmagnotta.bitcoin.message.impl.HashedTransaction;
+import org.gmagnotta.bitcoin.message.impl.DeserializedTransaction;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
@@ -14,7 +14,7 @@ import org.gmagnotta.bitcoin.wire.Utils;
 
 public class TransactionSerializer {
 	
-	public TransactionSize deserialize(byte[] payload, int offset, int lenght) {
+	public TransactionDeserializedWrapper deserialize(byte[] payload, int offset, int lenght) {
 		
 		// read version
 		long version = Utils.readSint32LE(payload, offset + 0);
@@ -58,9 +58,9 @@ public class TransactionSerializer {
 		
 		Sha256Hash txId = Sha256Hash.wrap(Sha256Hash.hashTwice(payload, offset, lastIndex-offset));
 		
-		HashedTransaction transaction = new HashedTransaction(version, txInputs, txOutputs, lockTime, txId);
+		DeserializedTransaction transaction = new DeserializedTransaction(version, txInputs, txOutputs, lockTime, txId, lastIndex-offset);
 		
-		return new TransactionSize(lastIndex, transaction);
+		return new TransactionDeserializedWrapper(lastIndex, transaction);
 	}
 	
 	public byte[] serialize(Transaction transaction) {

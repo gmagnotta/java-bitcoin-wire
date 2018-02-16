@@ -34,12 +34,13 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 			
 				TransactionSerializer transactionSerializer = new TransactionSerializer();
 				
-				TransactionSize transactionSize = transactionSerializer.deserialize(payload, lastIndex, payload.length);
+				TransactionDeserializedWrapper transactionWrapper = transactionSerializer.deserialize(payload, lastIndex, payload.length);
+				transactionWrapper.setNumberInBlock(i);
 			
-				lastIndex = (int) transactionSize.getSize();
+				lastIndex = (int) transactionWrapper.getSize();
 				
-				transactions.add(transactionSize.getTransaction());
-				transactionsMap.put(transactionSize.getTransaction().getTxId(), transactionSize.getTransaction());
+				transactions.add(transactionWrapper.getTransaction());
+				transactionsMap.put(transactionWrapper.getTransaction().getTxId(), transactionWrapper.getTransaction());
 				
 			}
 			// return assembled message

@@ -1,56 +1,54 @@
 package org.gmagnotta.bitcoin.parser.script;
 
 import java.io.InputStream;
-import java.util.Stack;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.script.BitcoinScript;
+import org.gmagnotta.bitcoin.script.ScriptItem;
 
 public class BitcoinScriptParserStream implements Context {
 
-	private ScriptState scriptState;
+	private ScriptParserState scriptParserState;
 	private InputStream inputStream;
-	private boolean isComplete;
-	private Stack<byte[]> stack;
+	private List<ScriptItem> items;
+	private TransactionInput transactionInput;
 	
-	public BitcoinScriptParserStream(InputStream inputStream) {
+	public BitcoinScriptParserStream(InputStream inputStream, TransactionInput transactionInput) {
 		this.inputStream = inputStream;
-		this.scriptState = new ParseState(this);
-		this.isComplete = false;
-		this.stack = new Stack<byte[]>();
+		this.transactionInput = transactionInput;
+		this.scriptParserState = new ParseState(this);
+		this.items = new ArrayList<ScriptItem>();
 	}
 	
 	public BitcoinScript getBitcoinScript() throws Exception {
 		
-		while (!isComplete) {
+		while (true) {
 			
 			int input = inputStream.read();
 			
 			if (input == -1) {
 				
-				throw new Exception();
+				break;
 				
 			}
 			
-			scriptState.process((byte) input);
+			scriptParserState.parse((byte) input);
 			
 		}
 		
-		return null;
+		return new BitcoinScript(items, transactionInput);
 		
 	}
 
 	@Override
-	public void setNetxtState(ScriptState scriptState) {
-		this.scriptState = scriptState;
+	public void setNextParserState(ScriptParserState scriptState) {
+		this.scriptParserState = scriptState;
 	}
 
 	@Override
-	public void push(byte[] item) {
-		stack.push(item);
-	}
-
-	@Override
-	public byte[] pop() {
-		return stack.pop();
+	public void add(ScriptItem item) {
+		items.add(item);
 	}
 }

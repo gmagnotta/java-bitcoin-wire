@@ -1,5 +1,9 @@
 package org.gmagnotta.bitcoin.script;
 
-public class ScriptItem {
+import java.util.Stack;
+
+public interface ScriptItem {
+
+	public void doOperation(Stack<byte[]> stack) throws Exception;
 
 }
