@@ -11,18 +11,15 @@ import java.util.List;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
-import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.utils.Utils;
-import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
-import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionDeserializedWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 public class BlockChainSQLiteImpl implements BlockChain {
-
+	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BlockChainSQLiteImpl.class);
 
 	public static final String CREATE_HEADER_TABLE = "create table blockHeader (hash text not null, number integer not null, version integer not null, prevBlock text not null, merkleRoot text not null, timestamp integer not null, bits integer not null, nonce integer not null, txnCount integer not null, primary key (hash));";
@@ -55,17 +52,19 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 //	public static final String RETRIEVE_LONGEST_HEADER = "select number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount from blockHeader where number = (select max(number) from blockHeader) order by timestamp asc limit 1";
 	
-	public static final String RETRIEVE_LOWEST_NUMBER = "select coalesce(min(bits), ?) as bits from bestChain where number >= ? and number <= ? and bits != ? ;";
-	
 	protected BasicDataSource dataSource;
 
 	private BlockChainParameters blockChainParameters;
+	
+	private BlockCache blockCache;
 	
 	public BlockChainSQLiteImpl(BlockChainParameters blockChainParameters, BasicDataSource dataSource) {
 
 		this.blockChainParameters = blockChainParameters;
 
 		this.dataSource = dataSource;
+		
+		this.blockCache = new BlockCache(blockChainParameters.getDifficultyAdjustmentInterval());
 
 	}
 	
@@ -215,13 +214,27 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	@Override
 	public ValidatedBlockHeader getBlockHeader(int number) {
 		
+		ValidatedBlockHeader header = blockCache.getBlockHeader(number);
+		
+		if (header != null) {
+			return header;
+		}
+		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
 		QueryRunner queryRunner = new QueryRunner(dataSource);
 
 		try {
 			
-			return queryRunner.query(RETRIEVE_BY_NUMBER, handler, number);
+			header = queryRunner.query(RETRIEVE_BY_NUMBER, handler, number);
+			
+			if (header != null) {
+				
+				blockCache.putBlockHeader(number, header.getHash().toString(), header);
+			
+			}
+			
+			return header;
 			
 		} catch (SQLException e) {
 
@@ -235,12 +248,29 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	@Override
 	public ValidatedBlockHeader getBlockHeader(String hash) {
 		
+		ValidatedBlockHeader header = blockCache.getBlockHeader(hash);
+		
+		if (header != null) {
+			return header;
+		}
+		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
 		QueryRunner queryRunner = new QueryRunner(dataSource);
 
 		try {
-			return queryRunner.query(RETRIEVE_BY_HASH, handler, hash);
+			
+			header = queryRunner.query(RETRIEVE_BY_HASH, handler, hash);
+			
+			if (header != null) {
+			
+				blockCache.putBlockHeader((int) header.getNumber(), header.getHash().toString(), header);
+			
+				
+			}
+
+			return header;
+			
 		} catch (SQLException e) {
 
 			LOGGER.error("Exception!", e);
@@ -252,13 +282,27 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	private ValidatedBlockHeader getBlockHeaderFromAll(String hash) {
 		
+		ValidatedBlockHeader header = blockCache.getBlockHeader(hash);
+		
+		if (header != null) {
+			return header;
+		}
+		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
 		QueryRunner queryRunner = new QueryRunner(dataSource);
 
 		try {
 			
-			return queryRunner.query(RETRIEVE_BY_HASH_ALL, handler, hash);
+			header = queryRunner.query(RETRIEVE_BY_HASH_ALL, handler, hash);
+			
+			if (header != null) {
+				
+				blockCache.putBlockHeader((int) header.getNumber(), header.getHash().toString(), header);
+
+			}
+			
+			return header;
 			
 		} catch (SQLException e) {
 
@@ -335,7 +379,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 				
 			}
 			
-			int currentTarget = (int) getNextWorkRequired(previousHeader, this, receivedHeader, blockChainParameters);
+			int currentTarget = (int) Utils.getNextWorkRequired(previousHeader.getNumber(), this, receivedHeader, blockChainParameters);
 			
 			if (!Utils.isShaMatchesTarget(receivedHeaderHash, currentTarget)) {
 
@@ -374,8 +418,11 @@ public class BlockChainSQLiteImpl implements BlockChain {
 					blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount(),
 					(previous.getNumber() + 1));
 			
-//			LOGGER.info("Inserted {}", hash);
-		
+			ValidatedBlockHeader v = new ValidatedBlockHeader(blockHeader.getVersion(), blockHeader.getPrevBlock(), blockHeader.getMerkleRoot(),
+					blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount(), Sha256Hash.wrap(hash), previous.getNumber() + 1);
+			
+			blockCache.putBlockHeader((int) previous.getNumber() + 1, hash, v);
+			
 	}
 
 	public List<Integer> getDuplicatedBlockNumber() {
@@ -489,115 +536,6 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		
 	}
 	
-	private long getNextWorkRequired(ValidatedBlockHeader pindexLast, BlockChain blockchain, BlockHeader pblock,
-			BlockChainParameters blockChainParameters) {
-
-		if ((pindexLast.getNumber() + 1) % blockChainParameters.getDifficultyAdjustmentInterval() != 0) {
-
-			if (blockChainParameters.getAllowMinDifficultyBlocks()) {
-
-				// Special difficulty rule for testnet:
-				// If the new block's timestamp is more than 2* 10 minutes
-				// then allow mining of a min-difficulty block.
-				if (pblock.getTimestamp() > pindexLast.getTimestamp()
-						+ blockChainParameters.getTargetSpacing() * 2) {
-
-					return org.gmagnotta.bitcoin.utils.Utils.compact(blockChainParameters.getPowLimit());
-
-				} else {
-
-					// Return the last non-special-min-difficulty-rules-block
-//					long pindex = pindexLast.getNumber();
-//					while (pindex % blockChainParameters.getDifficultyAdjustmentInterval() != 0 &&
-//							blockchain.getBlockHeader((int) pindex).getBits() == org.gmagnotta.bitcoin.utils.Utils.compact(blockChainParameters.getPowLimit())) {
-//						pindex--;
-//					}
-//					
-//					return blockchain.getBlockHeader((int) pindex).getBits();
-					
-					// If block is multiple of maxadjustment return bits
-					if ((pindexLast.getNumber() % blockChainParameters.getDifficultyAdjustmentInterval()) == 0) {
-						return pindexLast.getBits();
-					}
-					
-					return getBestNumber(pindexLast.getNumber(), blockChainParameters.getDifficultyAdjustmentInterval(),
-							org.gmagnotta.bitcoin.utils.Utils.compact(blockChainParameters.getPowLimit())
-							);
-
-				}
-
-			}
-
-			return pindexLast.getBits();
-
-		}
-
-		// Go back by what we want to be 14 days worth of blocks
-		long nHeightFirst = pindexLast.getNumber() - (blockChainParameters.getDifficultyAdjustmentInterval() - 1);
-
-		BlockHeader pindexFirst = blockchain.getBlockHeader((int) nHeightFirst);
-
-		return org.gmagnotta.bitcoin.utils.Utils.calculateNextWorkRequired(pindexLast, pindexFirst.getTimestamp(), blockChainParameters);
-
-	}
-	
-	private long getBestNumber(long index, long interval, long bits) {
-
-		PreparedStatement statement = null;
-		Connection connection = null;
-		
-		try {
-
-			connection = dataSource.getConnection();
-			
-			statement = connection.prepareStatement(RETRIEVE_LOWEST_NUMBER);
-			statement.setInt(1, (int) bits);
-			statement.setInt(2, (int) (Math.floorDiv(index, interval) * interval));
-			statement.setInt(3, (int) index);
-			statement.setInt(4, (int) bits);
-
-			ResultSet rs = statement.executeQuery();
-
-			if (rs.next()) {
-				
-				return rs.getInt("bits");
-				
-			}
-
-			statement.close();
-			connection.close();
-
-		} catch (Exception ex) {
-			
-			LOGGER.error("Exception", ex);
-
-		} finally {
-
-			if (statement != null) {
-
-				try {
-					statement.close();
-				} catch (SQLException e) {
-					LOGGER.error("Exception!", e);
-				}
-
-			}
-			
-			if (connection != null) {
-
-				try {
-					connection.close();
-				} catch (SQLException e) {
-					LOGGER.error("Exception!", e);
-				}
-
-			}
-
-		}
-
-		return bits;
-	}
-
 	@Override
 	public Transaction getTransaction(String hash) {
 		
