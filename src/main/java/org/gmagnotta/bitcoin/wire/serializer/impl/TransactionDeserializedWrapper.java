@@ -6,7 +6,6 @@ public class TransactionDeserializedWrapper {
 	
 	private long size;
 	private DeserializedTransaction transaction;
-	private long numberInBlock = -1;
 	
 	public TransactionDeserializedWrapper(long size, DeserializedTransaction transaction) {
 		this.size = size;
@@ -21,11 +20,4 @@ public class TransactionDeserializedWrapper {
 		return transaction;
 	}
 	
-	public void setNumberInBlock(long numberInBlock) {
-		this.numberInBlock = numberInBlock;
-	}
-	
-	public long getNumberInBlock() {
-		return numberInBlock;
-	}
 }

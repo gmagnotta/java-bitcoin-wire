@@ -35,7 +35,6 @@ public class BitcoinBlockMessageSerializer implements BitcoinMessageSerializer {
 				TransactionSerializer transactionSerializer = new TransactionSerializer();
 				
 				TransactionDeserializedWrapper transactionWrapper = transactionSerializer.deserialize(payload, lastIndex, payload.length);
-				transactionWrapper.setNumberInBlock(i);
 			
 				lastIndex = (int) transactionWrapper.getSize();
 				
