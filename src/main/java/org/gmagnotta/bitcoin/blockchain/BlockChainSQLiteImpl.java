@@ -12,17 +12,27 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.message.impl.TransactionInput;
+import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 public class BlockChainSQLiteImpl implements BlockChain {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BlockChainSQLiteImpl.class);
 
 	public static final String CREATE_HEADER_TABLE = "create table blockHeader (hash text not null, number integer not null, version integer not null, prevBlock text not null, merkleRoot text not null, timestamp integer not null, bits integer not null, nonce integer not null, txnCount integer not null, primary key (hash));";
+	
+	public static final String CREATE_TRANSACTION_TABLE = "create table tx (hash text not null, idx integer not null, version integer not null, lockTime integer not null, block text not null, foreign key (block) references blockHeader(hash), primary key (hash));";
+	
+	public static final String CREATE_TXOUT_TABLE = "create table tx_out (value integer not null, idx integer not null, pkScript text not null, tx text not null, foreign key (tx) references tx(hash), primary key (value, pkScript, tx));";
+	
+	public static final String CREATE_TXIN_TABLE = "create table tx_in (prevTx string not null, prevIdx integer not null, idx integer not null, signatureScript text not null, sequence integer not null, tx text not null, foreign key (tx) references tx(hash));";
 	
 	public static final String CREATE_BESTCHAIN_VIEW = "create view bestChain(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) as WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS ( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (select hash from blockHeader where number = (select max(number) from blockHeader) order by timestamp asc limit 1) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT * from header;";
 
@@ -39,6 +49,12 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	public static final String RETRIEVE_HEADER_FROM_TO = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where number >= ? order by number asc limit ?;";
 	
 	public static final String HEADER_INSERT = "insert into blockHeader (hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txnCount, number) values (?,?,?,?,?,?,?,?,?);";
+	
+	public static final String TRANSACTION_INSERT = "insert into tx(hash, idx, version, lockTime, block) values (?, ?, ?, ?, ?);";
+	
+	public static final String TRANSACTION_OUT_INSERT = "insert into tx_out(value, idx, pkScript, tx) values (?, ?, ?, ?);";
+	
+	public static final String TRANSACTION_INPUT_INSERT = "insert into tx_in(prevTx, prevIdx, idx, signatureScript, sequence, tx) values (?, ?, ?, ?, ?, ?);";
 	
 //	public static final String INDEX_FROM_HASH = "select number from bestChain where hash = ?;";
 	
@@ -408,8 +424,65 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		}
 
 	}
+
+	@Override
+	public boolean addBlock(BlockMessage blockMessage) {
+
+		try {
+
+			Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils
+					.computeBlockHeaderHash(blockMessage.getBlockHeader()).getReversed();
+
+			BlockHeader header = blockMessage.getBlockHeader();
+
+			if (getBlockHeaderFromAll(receivedHeaderHash.toString()) == null) {
+
+				LOGGER.warn("Blockchain doesn't contains block {}", header);
+
+				return false;
+
+			}
+
+			List<Transaction> txs = blockMessage.getTxns();
+
+			for (int i = 0; i < txs.size(); i++) {
+
+				Transaction tx = txs.get(i);
+
+				insertTransaction(Utils.calculateTransactionHash(tx).toReversedString(), i, tx,
+						receivedHeaderHash.toString());
+
+				List<TransactionOutput> outputs = tx.getTransactionOutput();
+
+				for (int out = 0; out < outputs.size(); out++) {
+
+					insertTransactionOutput(outputs.get(out), out,
+							Utils.calculateTransactionHash(tx).toReversedString());
+
+				}
+
+				List<TransactionInput> inputs = tx.getTransactionInput();
+
+				for (int in = 0; in < inputs.size(); in++) {
+
+					insertTransactionInput(inputs.get(in), in, Utils.calculateTransactionHash(tx).toReversedString());
+
+				}
+
+			}
+
+			return true;
+
+		} catch (Exception ex) {
+
+			LOGGER.error("Exception!", ex);
+
+			return false;
+		}
+
+	}
 	
-	public void insertHeader(BlockHeader blockHeader, String hash, ValidatedBlockHeader previous) throws Exception {
+	private void insertHeader(BlockHeader blockHeader, String hash, ValidatedBlockHeader previous) throws Exception {
 		
 		QueryRunner run = new QueryRunner(dataSource);
 		
@@ -423,6 +496,34 @@ public class BlockChainSQLiteImpl implements BlockChain {
 			
 			blockCache.putBlockHeader((int) previous.getNumber() + 1, hash, v);
 			
+	}
+
+	private void insertTransaction(String txHash, long idx, Transaction transaction, String blockHeaderHash)
+			throws Exception {
+
+		QueryRunner run = new QueryRunner(dataSource);
+
+		run.update(TRANSACTION_INSERT, txHash, idx, transaction.getVersion(), transaction.getLockTime(),
+				blockHeaderHash);
+
+	}
+
+	private void insertTransactionOutput(TransactionOutput txout, long idx, String transactionHash) throws Exception {
+
+		QueryRunner run = new QueryRunner(dataSource);
+
+		run.update(TRANSACTION_OUT_INSERT, txout.getValue(), idx, Hex.toHexString(txout.getPkScript()),
+				transactionHash);
+
+	}
+
+	private void insertTransactionInput(TransactionInput txIn, long idx, String transactionHash) throws Exception {
+
+		QueryRunner run = new QueryRunner(dataSource);
+
+		run.update(TRANSACTION_INPUT_INSERT, txIn.getPreviousOutput().getHash(), txIn.getPreviousOutput().getIndex(),
+				idx, Hex.toHexString(txIn.getSignatureScript()), txIn.getSequence(), transactionHash);
+
 	}
 
 	public List<Integer> getDuplicatedBlockNumber() {

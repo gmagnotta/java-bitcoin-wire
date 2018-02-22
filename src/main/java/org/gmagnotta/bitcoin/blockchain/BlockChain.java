@@ -3,6 +3,7 @@ package org.gmagnotta.bitcoin.blockchain;
 import java.util.List;
 
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
+import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 
@@ -52,6 +53,13 @@ public interface BlockChain {
 	 * @param header
 	 */
 	public boolean addBlockHeader(BlockHeader header);
+	
+	/**
+	 * Add the complete block to the blockChain
+	 * @param blockMessage
+	 * @return
+	 */
+	public boolean addBlock(BlockMessage blockMessage);
 	
 	/**
 	 * 
