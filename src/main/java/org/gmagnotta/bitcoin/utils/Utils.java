@@ -259,11 +259,25 @@ public class Utils {
 	}
 
 	public static byte[] hash160(byte[] input) {
-        byte[] out = new byte[20];
-        RIPEMD160Digest rDigest = new RIPEMD160Digest();
-        rDigest.update(input, 0, input.length);
-        rDigest.doFinal(out, 0);
-        return out;
-    }
+		byte[] out = new byte[20];
+		RIPEMD160Digest rDigest = new RIPEMD160Digest();
+		rDigest.update(input, 0, input.length);
+		rDigest.doFinal(out, 0);
+		return out;
+	}
+	
+	public static Sha256Hash calculateTransactionHash(Transaction transaction) throws Exception {
+		
+		if (transaction instanceof DeserializedTransaction) {
+			
+			DeserializedTransaction d = (DeserializedTransaction) transaction;
+			
+			return d.getTxId();
+			
+		}
+		
+		throw new Exception();
+		
+	}
 	
 }
