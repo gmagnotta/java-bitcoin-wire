@@ -1,6 +1,7 @@
 package org.gmagnotta.bitcoin.script;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import java.util.Stack;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -29,23 +30,54 @@ public class TransactionValidator {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean isValid(Transaction transaction) throws Exception {
+	public boolean isValid(final Transaction transaction) throws Exception {
 		
-		for (TransactionInput i : transaction.getTransactionInput()) {
+		List<TransactionInput> txInputs = transaction.getTransactionInput();
+		
+		for (int index = 0; index < txInputs.size(); index++) {
 			
-			Transaction previousTx = blockChain.getTransaction(i.getPreviousOutput().getHash().toString());
+			final TransactionInput txInput = txInputs.get(index);
 			
-			TransactionOutput previousOut = previousTx.getTransactionOutput().get((int) i.getPreviousOutput().getIndex());
+			final int indexCopy = index;
 			
-			byte[] b = Arrays.concatenate(i.getSignatureScript(), previousOut.getPkScript());
+			Transaction txPrev = blockChain.getTransaction(txInput.getPreviousOutput().getHash().toString());
 			
-			BitcoinScriptParserStream bitcoinScriptParserStream = new BitcoinScriptParserStream(new ByteArrayInputStream(b), i);
+			final TransactionOutput previousOut = txPrev.getTransactionOutput().get((int) txInput.getPreviousOutput().getIndex());
+			
+			// To verify a transaction, the scriptSig executed followed by the scriptPubKey
+			byte[] b = Arrays.concatenate(txInput.getScriptSig(), previousOut.getScriptPubKey());
+			
+			BitcoinScriptParserStream bitcoinScriptParserStream = new BitcoinScriptParserStream(new ByteArrayInputStream(b));
 			
 			BitcoinScript script = bitcoinScriptParserStream.getBitcoinScript();
 			
+			ScriptContext scriptContext = new ScriptContext() {
+				
+				@Override
+				public TransactionOutput getTransactionOutput() {
+					return previousOut;
+				}
+				
+				@Override
+				public TransactionInput getTransactionInput() {
+					return txInput;
+				}
+				
+				@Override
+				public long getIndex() {
+					return indexCopy;
+				}
+
+				@Override
+				public Transaction getTransaction() {
+					return transaction;
+				}
+				
+			};
+			
 			for (ScriptItem scriptItem : script.getItems()) {
 				
-				scriptItem.doOperation(stack);
+				scriptItem.doOperation(stack, scriptContext);
 				
 			}
 		

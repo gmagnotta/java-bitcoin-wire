@@ -11,6 +11,8 @@ import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.DeserializedTransaction;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.message.impl.TransactionInput;
+import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BlockHeadersSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
 import org.spongycastle.util.Arrays;
@@ -277,6 +279,28 @@ public class Utils {
 		}
 		
 		throw new Exception();
+		
+	}
+	
+	public static Transaction cloneTransaction(Transaction transaction) {
+		
+		List<TransactionOutput> outputs = transaction.getTransactionOutput();
+		List<TransactionOutput> outputsCopy = new ArrayList<TransactionOutput>();
+		
+		for (TransactionOutput out : outputs) {
+			outputsCopy.add(new TransactionOutput(out.getValue(), Arrays.clone(out.getScriptPubKey())));
+		}
+		
+		List<TransactionInput> inputs = transaction.getTransactionInput();
+		List<TransactionInput> inputsCopy = new ArrayList<TransactionInput>();
+		
+		for (TransactionInput in : inputs) {
+			
+			inputsCopy.add(new TransactionInput(in.getPreviousOutput(), Arrays.clone(in.getScriptSig()), in.getSequence()));
+			
+		}
+		
+		return new Transaction(transaction.getVersion(), inputsCopy, outputsCopy, transaction.getLockTime());
 		
 	}
 	

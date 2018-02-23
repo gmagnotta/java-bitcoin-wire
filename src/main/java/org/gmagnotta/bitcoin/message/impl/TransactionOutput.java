@@ -7,23 +7,23 @@ import org.spongycastle.util.encoders.Hex;
 public class TransactionOutput {
 	
 	private BigInteger value;
-	private byte[] pkScript;
+	private byte[] scriptPubKey;
 
-	public TransactionOutput(BigInteger value, byte[] pkScript) {
+	public TransactionOutput(BigInteger value, byte[] scriptPubKey) {
 		this.value = value;
-		this.pkScript = pkScript;
+		this.scriptPubKey = scriptPubKey;
 	}
 
 	public BigInteger getValue() {
 		return value;
 	}
 
-	public byte[] getPkScript() {
-		return pkScript;
+	public byte[] getScriptPubKey() {
+		return scriptPubKey;
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("Value: %d, pkScript %s", value.longValue(), Hex.toHexString(pkScript));
+		return String.format("Value: %d, scriptPubKey %s", value.longValue(), Hex.toHexString(scriptPubKey));
 	}
 }

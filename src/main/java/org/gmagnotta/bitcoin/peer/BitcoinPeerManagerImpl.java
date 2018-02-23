@@ -180,7 +180,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						if (calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
 						
 							LOGGER.info("Calculated merkle root is the same as header. Adding to BC");
-							blockChain.addBlockHeader(block.getBlockHeader());
+							blockChain.addBlock(block);
 							
 						} else {
 							
@@ -346,7 +346,27 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
 				
-				blockChain.addBlockHeader(b);
+				if (blockChain.addBlockHeader(b)) {
+					
+					BlockMessage block = downloadBlocks(bitcoinPeer, org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed());
+					
+					LOGGER.info("Starting calculating merkle tree");
+					
+					Sha256Hash calculatedMerkleRoot = Utils.calculateMerkleRootTransaction(block.getTxns()).getReversed();
+					
+					LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
+					
+					if (calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
+					
+						LOGGER.info("Calculated merkle root is the same as header. Adding to BC");
+						blockChain.addBlock(block);
+						
+					} else {
+						
+						LOGGER.error("Calculated merkle root is different from the header! Skipping block");
+						
+					}
+				}
 				
 				lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed(); 
 

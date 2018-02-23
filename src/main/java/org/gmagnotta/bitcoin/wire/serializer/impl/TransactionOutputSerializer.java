@@ -28,15 +28,15 @@ public class TransactionOutputSerializer {
 	
 	public byte[] serialize(TransactionOutput transactionOutput) {
 		
-		VarInt pkScriptLen = new VarInt(transactionOutput.getPkScript().length);
+		VarInt pkScriptLen = new VarInt(transactionOutput.getScriptPubKey().length);
 		
-		ByteBuffer buffer = ByteBuffer.allocate(8 + pkScriptLen.getSizeInBytes() + transactionOutput.getPkScript().length);
+		ByteBuffer buffer = ByteBuffer.allocate(8 + pkScriptLen.getSizeInBytes() + transactionOutput.getScriptPubKey().length);
 		
 		buffer.put(Utils.writeInt64LE(transactionOutput.getValue().longValue()));
 		
 		buffer.put(pkScriptLen.encode());
 		
-		buffer.put(transactionOutput.getPkScript());
+		buffer.put(transactionOutput.getScriptPubKey());
 		
 		return buffer.array();
 		

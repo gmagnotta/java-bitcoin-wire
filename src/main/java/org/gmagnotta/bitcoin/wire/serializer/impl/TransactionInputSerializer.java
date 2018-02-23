@@ -33,16 +33,16 @@ public class TransactionInputSerializer {
 		
 		OutPoint previousOutput = transactionInput.getPreviousOutput();
 
-		VarInt scriptLen = new VarInt(transactionInput.getSignatureScript().length);
+		VarInt scriptLen = new VarInt(transactionInput.getScriptSig().length);
 
-		ByteBuffer buffer = ByteBuffer.allocate(32 + 4 + scriptLen.getSizeInBytes() + transactionInput.getSignatureScript().length + 4);
+		ByteBuffer buffer = ByteBuffer.allocate(32 + 4 + scriptLen.getSizeInBytes() + transactionInput.getScriptSig().length + 4);
 		
 		buffer.put(previousOutput.getHash().getReversedBytes());
 		buffer.put(Utils.writeInt32LE(previousOutput.getIndex()));
 		
 		buffer.put(scriptLen.encode());
 		
-		buffer.put(transactionInput.getSignatureScript());
+		buffer.put(transactionInput.getScriptSig());
 		
 		buffer.put(Utils.writeInt32LE(transactionInput.getSequence()));
 		

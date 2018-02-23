@@ -30,9 +30,9 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String CREATE_TRANSACTION_TABLE = "create table tx (hash text not null, idx integer not null, version integer not null, lockTime integer not null, block text not null, foreign key (block) references blockHeader(hash), primary key (hash));";
 	
-	public static final String CREATE_TXOUT_TABLE = "create table tx_out (value integer not null, idx integer not null, pkScript text not null, tx text not null, foreign key (tx) references tx(hash), primary key (value, pkScript, tx));";
+	public static final String CREATE_TXOUT_TABLE = "create table tx_out (value integer not null, idx integer not null, scriptPubKey text not null, tx text not null, foreign key (tx) references tx(hash), primary key (value, scriptPubKey, tx));";
 	
-	public static final String CREATE_TXIN_TABLE = "create table tx_in (prevTx string not null, prevIdx integer not null, idx integer not null, signatureScript text not null, sequence integer not null, tx text not null, foreign key (tx) references tx(hash));";
+	public static final String CREATE_TXIN_TABLE = "create table tx_in (prevTx string not null, prevIdx integer not null, idx integer not null, scriptSig text not null, sequence integer not null, tx text not null, foreign key (tx) references tx(hash));";
 	
 	public static final String CREATE_BESTCHAIN_VIEW = "create view bestChain(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) as WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS ( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (select hash from blockHeader where number = (select max(number) from blockHeader) order by timestamp asc limit 1) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT * from header;";
 
@@ -52,9 +52,9 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String TRANSACTION_INSERT = "insert into tx(hash, idx, version, lockTime, block) values (?, ?, ?, ?, ?);";
 	
-	public static final String TRANSACTION_OUT_INSERT = "insert into tx_out(value, idx, pkScript, tx) values (?, ?, ?, ?);";
+	public static final String TRANSACTION_OUT_INSERT = "insert into tx_out(value, idx, scriptPubKey, tx) values (?, ?, ?, ?);";
 	
-	public static final String TRANSACTION_INPUT_INSERT = "insert into tx_in(prevTx, prevIdx, idx, signatureScript, sequence, tx) values (?, ?, ?, ?, ?, ?);";
+	public static final String TRANSACTION_INPUT_INSERT = "insert into tx_in(prevTx, prevIdx, idx, scriptSig, sequence, tx) values (?, ?, ?, ?, ?, ?);";
 	
 //	public static final String INDEX_FROM_HASH = "select number from bestChain where hash = ?;";
 	
@@ -512,7 +512,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 		QueryRunner run = new QueryRunner(dataSource);
 
-		run.update(TRANSACTION_OUT_INSERT, txout.getValue(), idx, Hex.toHexString(txout.getPkScript()),
+		run.update(TRANSACTION_OUT_INSERT, txout.getValue(), idx, Hex.toHexString(txout.getScriptPubKey()),
 				transactionHash);
 
 	}
@@ -522,7 +522,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		QueryRunner run = new QueryRunner(dataSource);
 
 		run.update(TRANSACTION_INPUT_INSERT, txIn.getPreviousOutput().getHash(), txIn.getPreviousOutput().getIndex(),
-				idx, Hex.toHexString(txIn.getSignatureScript()), txIn.getSequence(), transactionHash);
+				idx, Hex.toHexString(txIn.getScriptSig()), txIn.getSequence(), transactionHash);
 
 	}
 

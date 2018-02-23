@@ -5,12 +5,12 @@ import org.spongycastle.util.encoders.Hex;
 public class TransactionInput {
 	
 	private OutPoint previousOutput;
-	private byte[] signatureScript;
+	private byte[] scriptSig;
 	private long sequence;
 	
-	public TransactionInput(OutPoint previousOutput, byte[] signatureScript, long sequence) {
+	public TransactionInput(OutPoint previousOutput, byte[] scriptSig, long sequence) {
 		this.previousOutput = previousOutput;
-		this.signatureScript = signatureScript;
+		this.scriptSig = scriptSig;
 		this.sequence = sequence;
 	}
 
@@ -18,8 +18,8 @@ public class TransactionInput {
 		return previousOutput;
 	}
 
-	public byte[] getSignatureScript() {
-		return signatureScript;
+	public byte[] getScriptSig() {
+		return scriptSig;
 	}
 
 	public long getSequence() {
@@ -27,7 +27,7 @@ public class TransactionInput {
 	}
 	
 	public String toString() {
-		return String.format("OutPoint: %s, signatureScript %s, sequence %d", previousOutput, Hex.toHexString(signatureScript), sequence);
+		return String.format("OutPoint: %s, scriptSig %s, sequence %d", previousOutput, Hex.toHexString(scriptSig), sequence);
 	}
 	
 }

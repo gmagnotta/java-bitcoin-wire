@@ -1,8 +1,14 @@
 package org.gmagnotta.bitcoin.parser.script;
 
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Stack;
 
+import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.message.impl.TransactionInput;
+import org.gmagnotta.bitcoin.script.BitcoinScript;
+import org.gmagnotta.bitcoin.script.BitcoinScriptSerializer;
+import org.gmagnotta.bitcoin.script.ScriptContext;
 import org.gmagnotta.bitcoin.script.ScriptItem;
 import org.gmagnotta.bitcoin.script.impl.EmptyOperation;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
@@ -358,7 +364,7 @@ public enum OpCode {
 			return new EmptyOperation(this) {
 				
 				@Override
-				public void doOperation(Stack<byte[]> stack) {
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) {
 					byte[] top = stack.peek();
 					stack.push(top);
 				}
@@ -368,7 +374,7 @@ public enum OpCode {
 			return new EmptyOperation(this) {
 				
 				@Override
-				public void doOperation(Stack<byte[]> stack) {
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) {
 					byte[] top = stack.pop();
 					Sha256Hash hash = Sha256Hash.of(top);
 					
@@ -380,7 +386,7 @@ public enum OpCode {
 			return new EmptyOperation(this) {
 				
 				@Override
-				public void doOperation(Stack<byte[]> stack) throws Exception {
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
 					byte[] first = stack.pop();
 					byte[] second = stack.pop();
 					
@@ -393,9 +399,13 @@ public enum OpCode {
 		case OP_CHECKSIG:
 			return new EmptyOperation(this) {
 				
+				// check http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
+				// check https://en.bitcoin.it/w/images/en/7/70/Bitcoin_OpCheckSig_InDetail.png
+				
 				@Override
-				public void doOperation(Stack<byte[]> stack) throws Exception {
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
 					
+					// 1. the public key and the signature are popped from the stack
 					byte[] pubKey = stack.pop();
 					byte[] signature = stack.pop();
 					
@@ -403,6 +413,30 @@ public enum OpCode {
 						stack.push(new byte[] { 0 });
 					}
 					
+					// 2. 
+					byte[] b = scriptContext.getTransactionOutput().getScriptPubKey();
+					
+					// 4. remove op_codeseparator from subscript
+					BitcoinScriptParserStream bitcoinScriptParserStream = new BitcoinScriptParserStream(new ByteArrayInputStream(b));
+					
+					BitcoinScript script = bitcoinScriptParserStream.getBitcoinScript();
+					
+					int index = script.indexOf(new EmptyOperation(OP_CODESEPARATOR));
+					
+					byte[] b2 = new BitcoinScriptSerializer().serialize(script);
+					
+					// 5. extract hashtype from signature
+					
+					int hashTypeCode = signature[70];
+					signature = Arrays.copyOfRange(signature, 0, 69);
+					
+					Transaction txNew = org.gmagnotta.bitcoin.utils.Utils.cloneTransaction(scriptContext.getTransaction());
+					
+					for (TransactionInput txIn : txNew.getTransactionInput()) {
+						
+//						txIn.
+						
+					}
 					
 				}
 				
