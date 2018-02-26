@@ -30,6 +30,10 @@ public class TransactionInput {
 		return sequence;
 	}
 	
+	public void setSequence(long sequence) {
+		this.sequence = sequence;
+	}
+	
 	public String toString() {
 		return String.format("OutPoint: %s, scriptSig %s, sequence %d", previousOutput, Hex.toHexString(scriptSig), sequence);
 	}

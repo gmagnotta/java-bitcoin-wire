@@ -23,9 +23,18 @@ public class Transaction {
 	public List<TransactionInput> getTransactionInput() {
 		return transactionInput;
 	}
+	
+	public void setTransactionInput(List<TransactionInput> transactionInputs) {
+		this.transactionInput = transactionInputs;
+	}
 
 	public List<TransactionOutput> getTransactionOutput() {
 		return transactionOutput;
+	}
+	
+	
+	public void setTransactionOutput(List<TransactionOutput> transactionOutputs) {
+		this.transactionOutput = transactionOutputs;
 	}
 
 	public long getLockTime() {

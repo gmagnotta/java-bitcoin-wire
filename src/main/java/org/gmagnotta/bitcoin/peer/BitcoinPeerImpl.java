@@ -406,14 +406,14 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	@Override
 	public BitcoinHeadersMessage sendGetHeaders(BitcoinGetHeadersMessage bitcoinGetHeadersMessage) throws Exception {
 
-		return (BitcoinHeadersMessage) sendRecvMessage(bitcoinGetHeadersMessage, BitcoinCommand.HEADERS, 60000);
+		return (BitcoinHeadersMessage) sendRecvMessage(bitcoinGetHeadersMessage, BitcoinCommand.HEADERS, 60000*2);
 		
 	}
 
 	@Override
 	public BlockMessage sendGetData(BitcoinGetDataMessage bitcoinGetDataMessage) throws Exception {
 
-		return (BlockMessage) sendRecvMessage(bitcoinGetDataMessage, BitcoinCommand.BLOCK, 60000);
+		return (BlockMessage) sendRecvMessage(bitcoinGetDataMessage, BitcoinCommand.BLOCK, 60000*2);
 		
 	}
 

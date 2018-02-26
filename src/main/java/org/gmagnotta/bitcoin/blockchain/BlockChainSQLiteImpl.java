@@ -1,5 +1,6 @@
 package org.gmagnotta.bitcoin.blockchain;
 
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +14,7 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
+import org.gmagnotta.bitcoin.message.impl.OutPoint;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
@@ -55,6 +57,12 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	public static final String TRANSACTION_OUT_INSERT = "insert into tx_out(value, idx, scriptPubKey, tx) values (?, ?, ?, ?);";
 	
 	public static final String TRANSACTION_INPUT_INSERT = "insert into tx_in(prevTx, prevIdx, idx, scriptSig, sequence, tx) values (?, ?, ?, ?, ?, ?);";
+	
+	public static final String TRANSACTION_RETRIEVE = "select * from tx t where t.hash = ?";
+	
+	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? order by idx asc";
+	
+	public static final String TRANSACTION_OUTPUT_RETRIEVE = "select * from tx_out o where o.tx = ? order by idx asc";
 	
 //	public static final String INDEX_FROM_HASH = "select number from bestChain where hash = ?;";
 	
@@ -163,6 +171,73 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
+	private ResultSetHandler<Transaction> createTransactionResultSetHandler() {
+
+		return new ResultSetHandler<Transaction>() {
+
+			@Override
+			public Transaction handle(ResultSet rs) throws SQLException {
+
+				if (rs.next()) {
+
+					return transactionFromResultSet(rs);
+
+				}
+
+				return null;
+			}
+		};
+
+	}
+	
+	private ResultSetHandler<List<TransactionInput>> createListTransactionInputResultSetHandler() {
+
+		return new ResultSetHandler<List<TransactionInput>>() {
+
+			@Override
+			public List<TransactionInput> handle(ResultSet rs) throws SQLException {
+				
+				List<TransactionInput> list = new ArrayList<TransactionInput>();
+
+				while (rs.next()) {
+
+					TransactionInput header = transactionInputFromResultSet(rs);
+					
+					list.add(header);
+
+				}
+
+				return list;
+			}
+			
+		};
+
+	}
+	
+	private ResultSetHandler<List<TransactionOutput>> createListTransactionOutputResultSetHandler() {
+
+		return new ResultSetHandler<List<TransactionOutput>>() {
+
+			@Override
+			public List<TransactionOutput> handle(ResultSet rs) throws SQLException {
+				
+				List<TransactionOutput> list = new ArrayList<TransactionOutput>();
+
+				while (rs.next()) {
+
+					TransactionOutput header = transactionOutputFromResultSet(rs);
+					
+					list.add(header);
+
+				}
+
+				return list;
+			}
+			
+		};
+
+	}
+	
 	private ResultSetHandler<List<Sha256Hash>> createListBlockHeaderHashesResultSetHandler() {
 
 		return new ResultSetHandler<List<Sha256Hash>>() {
@@ -224,6 +299,40 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 		return new ValidatedBlockHeader(rs.getLong("version"), prevBlock, merkleRoot, rs.getLong("timestamp"),
 				rs.getLong("bits"), rs.getLong("nonce"), rs.getLong("txncount"), hash, rs.getLong("number"));
+
+	}
+	
+	private TransactionInput transactionInputFromResultSet(ResultSet rs) throws SQLException {
+
+		Sha256Hash prevtx = Sha256Hash.wrap(rs.getString("prevTx"));
+		long prevIdx = rs.getLong("prevIdx");
+		byte[] scriptSig = Hex.decode(rs.getString("scriptSig"));
+		long sequence = rs.getLong("sequence");
+
+		OutPoint outPoint = new OutPoint(prevtx, prevIdx);
+		
+		return new TransactionInput(outPoint, scriptSig, sequence);
+
+	}
+	
+	private TransactionOutput transactionOutputFromResultSet(ResultSet rs) throws SQLException {
+
+		BigInteger value = BigInteger.valueOf(rs.getLong("value"));
+		byte[] scriptPubKey = Hex.decode(rs.getString("scriptPubKey"));
+
+		return new TransactionOutput(value, scriptPubKey);
+
+	}
+	
+	private Transaction transactionFromResultSet(ResultSet rs) throws SQLException {
+
+//		Sha256Hash prevBlock = Sha256Hash.wrap(rs.getString("hash"));
+//		long idx = rs.getLong("idx");
+		long version = rs.getLong("version");
+		long lockTime = rs.getLong("lockTime");
+//		Sha256Hash block = Sha256Hash.wrap(rs.getString("block"));
+
+		return new Transaction(version, null, null, lockTime);
 
 	}
 
@@ -521,7 +630,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 		QueryRunner run = new QueryRunner(dataSource);
 
-		run.update(TRANSACTION_INPUT_INSERT, txIn.getPreviousOutput().getHash(), txIn.getPreviousOutput().getIndex(),
+		run.update(TRANSACTION_INPUT_INSERT, txIn.getPreviousOutput().getHash().toString(), txIn.getPreviousOutput().getIndex(),
 				idx, Hex.toHexString(txIn.getScriptSig()), txIn.getSequence(), transactionHash);
 
 	}
@@ -640,7 +749,32 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	@Override
 	public Transaction getTransaction(String hash) {
 		
-		return null;
+		ResultSetHandler<Transaction> handler = createTransactionResultSetHandler();
+
+		QueryRunner queryRunner = new QueryRunner(dataSource);
+
+		try {
+			
+			List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_RETRIEVE, createListTransactionInputResultSetHandler(), hash);
+			
+			List<TransactionOutput> txOutput = queryRunner.query(TRANSACTION_OUTPUT_RETRIEVE, createListTransactionOutputResultSetHandler(), hash);
+			
+			Transaction tx = queryRunner.query(TRANSACTION_RETRIEVE, handler, hash);
+			
+			if (tx == null) return null;
+			
+			tx.setTransactionOutput(txOutput);
+			
+			tx.setTransactionInput(txInput);
+			
+			return tx;
+			
+		} catch (SQLException e) {
+
+			LOGGER.error("Exception!", e);
+
+			return null;
+		}
 		
 	}
 	

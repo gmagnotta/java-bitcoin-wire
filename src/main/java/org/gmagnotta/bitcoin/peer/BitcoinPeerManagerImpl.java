@@ -26,6 +26,8 @@ import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
+import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.script.TransactionValidator;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
@@ -357,6 +359,20 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
 					
 					if (calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
+						
+						// check all txs...
+						
+						final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
+						
+						for (Transaction tx : block.getTxns()) {
+							
+							if (!scriptEngine.isValid(tx)) {
+								
+								throw new Exception("tx is not valid: " + tx);
+								
+							}
+							
+						}
 					
 						LOGGER.info("Calculated merkle root is the same as header. Adding to BC");
 						blockChain.addBlock(block);

@@ -18,9 +18,11 @@ public class TransactionValidator {
 	
 	private BlockChain blockChain;
 	private Stack<byte[]> stack;
+	private BlockMessage blockMessage;
 	
 	public TransactionValidator(BlockChain blockChain, BlockMessage blockMessage) {
 		this.blockChain = blockChain;
+		this.blockMessage = blockMessage;
 		this.stack = new Stack<byte[]>();
 	}
 	
@@ -40,7 +42,19 @@ public class TransactionValidator {
 			
 			final int indexCopy = index;
 			
+			if ("0000000000000000000000000000000000000000000000000000000000000000".equals(txInput.getPreviousOutput().getHash().toString())) {
+				return true;
+			}
+			
 			Transaction txPrev = blockChain.getTransaction(txInput.getPreviousOutput().getHash().toString());
+			
+			if (txPrev == null) {
+				// search transaction in block
+				
+				txPrev = blockMessage.getIndexedTxns().get(txInput.getPreviousOutput().getHash().getReversed());
+				
+				if (txPrev == null) throw new Exception("cannot find " + txInput.getPreviousOutput().getHash().toString());
+			}
 			
 			final TransactionOutput previousOut = txPrev.getTransactionOutput().get((int) txInput.getPreviousOutput().getIndex());
 			

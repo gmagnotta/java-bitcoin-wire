@@ -35,6 +35,22 @@ public class BitcoinScript {
 		return -1;
 	}
 	
+	public int lastIndexOf(ScriptItem scriptItem) {
+		
+		for (int index = (items.size() - 1); index > -1; index--) {
+			
+			ScriptItem item = items.get(index);
+			
+			if (item.equals(scriptItem)) {
+				return index;
+			}
+			
+		}
+		
+		return -1;
+		
+	}
+	
 	public BitcoinScript subScript(int index) {
 		
 		List<ScriptItem> newItems = items.subList(index, items.size());

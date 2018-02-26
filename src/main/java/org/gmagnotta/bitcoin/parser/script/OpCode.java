@@ -2,6 +2,7 @@ package org.gmagnotta.bitcoin.parser.script;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
 
@@ -12,6 +13,7 @@ import org.bitcoinj.script.Script.VerifyFlag;
 import org.bouncycastle.util.encoders.Hex;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
+import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.script.BitcoinScript;
 import org.gmagnotta.bitcoin.script.BitcoinScriptSerializer;
 import org.gmagnotta.bitcoin.script.ScriptContext;
@@ -428,9 +430,17 @@ public enum OpCode {
 					
 					BitcoinScript script = bitcoinScriptParserStream.getBitcoinScript();
 					
-					int index = script.indexOf(new EmptyOperation(OP_CODESEPARATOR));
-					
-					byte[] b2 = new BitcoinScriptSerializer().serialize(script);
+					int index = script.lastIndexOf(new EmptyOperation(OP_CODESEPARATOR));
+					byte[] subscript;
+					if (index != -1) {
+						
+						subscript = new BitcoinScriptSerializer().serialize(script.subScript(index+1));
+						
+					} else {
+						
+						subscript = new BitcoinScriptSerializer().serialize(script);
+
+					}
 					
 					// 5. extract hashtype from signature
 					
@@ -438,21 +448,55 @@ public enum OpCode {
 					signature = Arrays.copyOfRange(signature, 0, signature.length-1);
 					
 					// 6. copy transaction
-					Transaction txNew = org.gmagnotta.bitcoin.utils.Utils.cloneTransaction(scriptContext.getTransaction());
+					Transaction txCopy = org.gmagnotta.bitcoin.utils.Utils.cloneTransaction(scriptContext.getTransaction());
 					
 					// 7.set all txin scripts in txcopy to empty
 					
-					for (TransactionInput in : txNew.getTransactionInput()) {
+					for (TransactionInput in : txCopy.getTransactionInput()) {
 						in.setScriptSig(new byte[] {});
 					}
 					
 					// 8. copy subscript into the current txin script
-					TransactionInput txIn = txNew.getTransactionInput().get((int) scriptContext.getIndex());
+					TransactionInput txIn = txCopy.getTransactionInput().get((int) scriptContext.getIndex());
 
-					txIn.setScriptSig(b2);
+					txIn.setScriptSig(subscript);
+					
+					// Check hashType
+					
+					if (hashTypeCode == 2) {
+						
+						// SIGHASH_NONE
+						
+						txCopy.setTransactionOutput(new ArrayList<TransactionOutput>());
+						
+						for (int idx = 0; idx < txCopy.getTransactionInput().size(); idx++) {
+							
+							if (idx != scriptContext.getIndex()) {
+							
+								TransactionInput input = txCopy.getTransactionInput().get(idx);
+								
+								input.setSequence(0);
+							
+							}
+							
+						}
+						
+					} else if (hashTypeCode == 3) {
+						
+						// SIGHASH_SINGLE
+						throw new Exception("SIGHASH_SINGLE not yet implemented!");
+						
+					} else if (hashTypeCode == 128) {
+					
+						// SIGHASH_ANYONECANPAY
+						throw new Exception("SIGHASH_ANYONECANPAY not yet implemented!");
+						
+					}
+					
+					// SIGHASH_ALL
 					
 					// 9a. serialize txcopy
-					byte[] txNewSerialized = new TransactionSerializer().serialize(txNew);
+					byte[] txNewSerialized = new TransactionSerializer().serialize(txCopy);
 					
 					// 9b . append 4 bytes hashTypeCode
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();
