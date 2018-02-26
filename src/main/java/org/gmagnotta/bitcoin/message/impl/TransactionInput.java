@@ -21,6 +21,10 @@ public class TransactionInput {
 	public byte[] getScriptSig() {
 		return scriptSig;
 	}
+	
+	public void setScriptSig(byte[] scriptSig) {
+		this.scriptSig = scriptSig;
+	}
 
 	public long getSequence() {
 		return sequence;

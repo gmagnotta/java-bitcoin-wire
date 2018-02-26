@@ -1,9 +1,15 @@
 package org.gmagnotta.bitcoin.parser.script;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Stack;
 
+import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.ECKey.ECDSASignature;
+import org.bitcoinj.crypto.TransactionSignature;
+import org.bitcoinj.script.Script.VerifyFlag;
+import org.bouncycastle.util.encoders.Hex;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.script.BitcoinScript;
@@ -13,6 +19,7 @@ import org.gmagnotta.bitcoin.script.ScriptItem;
 import org.gmagnotta.bitcoin.script.impl.EmptyOperation;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.utils.Utils;
+import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
 import org.spongycastle.util.Arrays;
 
 public enum OpCode {
@@ -427,15 +434,44 @@ public enum OpCode {
 					
 					// 5. extract hashtype from signature
 					
-					int hashTypeCode = signature[70];
-					signature = Arrays.copyOfRange(signature, 0, 69);
+					int hashTypeCode = signature[signature.length-1];
+					signature = Arrays.copyOfRange(signature, 0, signature.length-1);
 					
+					// 6. copy transaction
 					Transaction txNew = org.gmagnotta.bitcoin.utils.Utils.cloneTransaction(scriptContext.getTransaction());
 					
-					for (TransactionInput txIn : txNew.getTransactionInput()) {
-						
-//						txIn.
-						
+					// 7.set all txin scripts in txcopy to empty
+					
+					for (TransactionInput in : txNew.getTransactionInput()) {
+						in.setScriptSig(new byte[] {});
+					}
+					
+					// 8. copy subscript into the current txin script
+					TransactionInput txIn = txNew.getTransactionInput().get((int) scriptContext.getIndex());
+
+					txIn.setScriptSig(b2);
+					
+					// 9a. serialize txcopy
+					byte[] txNewSerialized = new TransactionSerializer().serialize(txNew);
+					
+					// 9b . append 4 bytes hashTypeCode
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					baos.write(txNewSerialized);
+					baos.write(org.gmagnotta.bitcoin.wire.Utils.writeInt32LE(hashTypeCode));
+					
+					byte[] toSign = baos.toByteArray();
+					
+					// 10. verify signature
+					Sha256Hash twice = Sha256Hash.twiceOf(toSign);
+					
+					ECKey key = ECKey.fromPublicOnly(pubKey);
+					
+					boolean ok = key.verify(org.bitcoinj.core.Sha256Hash.wrap(twice.getBytes()), ECDSASignature.decodeFromDER(signature));
+					
+					if (ok) {
+						stack.push(new byte[] { 1 });
+					} else {
+						stack.push(new byte[] { });
 					}
 					
 				}

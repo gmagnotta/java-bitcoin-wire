@@ -2,6 +2,12 @@ package org.gmagnotta.bitcoin.script;
 
 import java.util.List;
 
+/**
+ * Represents a Bitcoin Script
+ * 
+ * @author giuseppe
+ *
+ */
 public class BitcoinScript {
 	
 	private List<ScriptItem> items;

@@ -10,6 +10,7 @@ import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.DeserializedTransaction;
+import org.gmagnotta.bitcoin.message.impl.OutPoint;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
@@ -282,25 +283,40 @@ public class Utils {
 		
 	}
 	
+	/**
+	 * Utility method that creates a clone of the input transaction.
+	 * Helpful to create a clone and modify it in order to create signature
+	 * 
+	 * @param transaction
+	 * @return
+	 */
 	public static Transaction cloneTransaction(Transaction transaction) {
 		
-		List<TransactionOutput> outputs = transaction.getTransactionOutput();
 		List<TransactionOutput> outputsCopy = new ArrayList<TransactionOutput>();
 		
-		for (TransactionOutput out : outputs) {
-			outputsCopy.add(new TransactionOutput(out.getValue(), Arrays.clone(out.getScriptPubKey())));
+		for (TransactionOutput out : transaction.getTransactionOutput()) {
+			outputsCopy.add(cloneTransactionOutput(out));
 		}
 		
-		List<TransactionInput> inputs = transaction.getTransactionInput();
 		List<TransactionInput> inputsCopy = new ArrayList<TransactionInput>();
 		
-		for (TransactionInput in : inputs) {
-			
-			inputsCopy.add(new TransactionInput(in.getPreviousOutput(), Arrays.clone(in.getScriptSig()), in.getSequence()));
-			
+		for (TransactionInput in : transaction.getTransactionInput()) {
+			inputsCopy.add(cloneTransactionInput(in));
 		}
 		
 		return new Transaction(transaction.getVersion(), inputsCopy, outputsCopy, transaction.getLockTime());
+		
+	}
+	
+	public static TransactionOutput cloneTransactionOutput(TransactionOutput transactionOutput) {
+		
+		return new TransactionOutput(transactionOutput.getValue(), Arrays.clone(transactionOutput.getScriptPubKey()));
+		
+	}
+	
+	public static TransactionInput cloneTransactionInput(TransactionInput transactionInput) {
+		
+		return new TransactionInput(transactionInput.getPreviousOutput(), Arrays.clone(transactionInput.getScriptSig()), transactionInput.getSequence());
 		
 	}
 	
