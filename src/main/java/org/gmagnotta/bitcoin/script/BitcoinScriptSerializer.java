@@ -5,8 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 import org.gmagnotta.bitcoin.parser.script.BitcoinScriptParserStream;
-import org.gmagnotta.bitcoin.script.impl.Element;
-import org.gmagnotta.bitcoin.script.impl.EmptyOperation;
 
 public class BitcoinScriptSerializer {
 	
@@ -20,26 +18,15 @@ public class BitcoinScriptSerializer {
 	
 	public byte[] serialize(BitcoinScript bitcoinScript) throws Exception {
 		
-		List<ScriptItem> items = bitcoinScript.getItems();
+		List<ScriptElement> items = bitcoinScript.getElements();
 		
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		
 		for (int index = 0; index < items.size(); index++) {
 			
-			ScriptItem item = items.get(index);
+			ScriptElement item = items.get(index);
 			
-			if (item instanceof Element) {
-				
-				Element el = (Element) item;
-				
-				byteArrayOutputStream.write(el.getOpCode().getValue());
-				byteArrayOutputStream.write(((Element) item).getData());
-				
-			} else if (item instanceof EmptyOperation) {
-				
-				byteArrayOutputStream.write(item.getOpCode().getValue());
-				
-			}
+			byteArrayOutputStream.write(item.getOpCode().getSerializer().serialize(item));
 			
 		}
 		

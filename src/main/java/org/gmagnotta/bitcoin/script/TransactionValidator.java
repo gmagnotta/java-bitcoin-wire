@@ -89,7 +89,7 @@ public class TransactionValidator {
 				
 			};
 			
-			for (ScriptItem scriptItem : script.getItems()) {
+			for (ScriptElement scriptItem : script.getElements()) {
 				
 				scriptItem.doOperation(stack, scriptContext);
 				

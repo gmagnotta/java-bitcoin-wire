@@ -1,9 +1,8 @@
 package org.gmagnotta.bitcoin.wire.serializer;
 
-import java.io.ByteArrayInputStream;
-
-import org.gmagnotta.bitcoin.parser.script.BitcoinScriptParserStream;
 import org.gmagnotta.bitcoin.script.BitcoinScript;
+import org.gmagnotta.bitcoin.script.BitcoinScriptSerializer;
+import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
@@ -18,9 +17,11 @@ public class BitcoinScriptParserTest {
 	@Test
 	public void testFromBytes() throws Exception {
 		
-//		BitcoinScriptParserStream bitcoinScriptParserStream = new BitcoinScriptParserStream(new ByteArrayInputStream(script));
-//		
-//		BitcoinScript bitcoinscript = bitcoinScriptParserStream.getBitcoinScript();
+		BitcoinScriptSerializer bitcoinScriptSerializer = new BitcoinScriptSerializer();
+
+		BitcoinScript bitcoinscript = bitcoinScriptSerializer.deserialize(script, 0);
+		
+		Assert.assertArrayEquals(script, bitcoinScriptSerializer.serialize(bitcoinscript));
 		
 	}
 }

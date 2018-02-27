@@ -8,17 +8,15 @@ import java.util.Stack;
 
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.ECKey.ECDSASignature;
-import org.bitcoinj.crypto.TransactionSignature;
-import org.bitcoinj.script.Script.VerifyFlag;
-import org.bouncycastle.util.encoders.Hex;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
+import org.gmagnotta.bitcoin.script.BitcoinPayloadScriptElementSerializer;
 import org.gmagnotta.bitcoin.script.BitcoinScript;
+import org.gmagnotta.bitcoin.script.BitcoinScriptItemSerializer;
 import org.gmagnotta.bitcoin.script.BitcoinScriptSerializer;
 import org.gmagnotta.bitcoin.script.ScriptContext;
-import org.gmagnotta.bitcoin.script.ScriptItem;
-import org.gmagnotta.bitcoin.script.impl.EmptyOperation;
+import org.gmagnotta.bitcoin.script.ScriptElement;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.utils.Utils;
 import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
@@ -163,7 +161,7 @@ public enum OpCode {
 	OP_CHECKMULTISIGVERIFY((byte)0xaf);
 	
 	private byte value;
-	private boolean hasParameters;
+	private boolean requiresParameters;
 	
 	private OpCode(byte value) {
 		this(value, false);
@@ -171,7 +169,7 @@ public enum OpCode {
 	
 	private OpCode(byte value, boolean hasParameters) {
 		this.value = value;
-		this.hasParameters = hasParameters;
+		this.requiresParameters = hasParameters;
 	}
 	
 	private static HashMap<Byte, OpCode> OPCODES_MAP = new HashMap<Byte, OpCode>();
@@ -191,7 +189,7 @@ public enum OpCode {
 		
 		OpCode opcode = OPCODES_MAP.get(value);
 		
-		if (opcode == null) throw new Exception("Operation does not exists");
+		if (opcode == null) throw new Exception("Operation " + value + " does not exists");
 		
 		return opcode;
 		
@@ -201,17 +199,226 @@ public enum OpCode {
 		return value;
 	}
 	
-	public boolean hasParameters() {
-		return hasParameters;
+	public boolean requiresParameters() {
+		return requiresParameters;
+	}
+	
+	public BitcoinScriptItemSerializer getSerializer() {
+		switch (this) {
+		case NA_1:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_2:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_3:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_4:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_5:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_6:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_7:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_8:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_9:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_10:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_11:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_12:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_13:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_14:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_15:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_16:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_17:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_18:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_19:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_20:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_21:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_22:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_23:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_24:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_25:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_26:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_27:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_28:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_29:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_30:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_31:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_32:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_33:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_34:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_35:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_36:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_37:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_38:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_39:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_40:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_41:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_42:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_43:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_44:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_45:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_46:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_47:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_48:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_49:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_50:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_51:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_52:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_53:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_54:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_55:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_56:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_57:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_58:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_59:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_60:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_61:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_62:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_63:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_64:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_65:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_66:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_67:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_68:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_69:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_70:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_71:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_72:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_73:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_74:
+			return new BitcoinPayloadScriptElementSerializer();
+		case NA_75:
+			return new BitcoinPayloadScriptElementSerializer();
+		case OP_PUSHDATA1:
+			return new BitcoinScriptItemSerializer() {
+				
+				@Override
+				public byte[] serialize(ScriptElement scriptElement) throws Exception {
+					
+					ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+					
+					byteArrayOutputStream.write(scriptElement.getOpCode().value);
+					byteArrayOutputStream.write((byte)scriptElement.getPayload().length);
+					byteArrayOutputStream.write(scriptElement.getPayload());
+					
+					return byteArrayOutputStream.toByteArray();
+					
+				}
+			};
+		case OP_PUSHDATA2:
+			return new BitcoinScriptItemSerializer() {
+				
+				@Override
+				public byte[] serialize(ScriptElement scriptElement) throws Exception {
+					
+					ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+					
+					byteArrayOutputStream.write(scriptElement.getOpCode().value);
+					byteArrayOutputStream.write(org.gmagnotta.bitcoin.wire.Utils.writeInt16LE(scriptElement.getPayload().length));
+					byteArrayOutputStream.write(scriptElement.getPayload());
+					
+					return byteArrayOutputStream.toByteArray();
+					
+				}
+			};
+		case OP_PUSHDATA4:
+			return new BitcoinScriptItemSerializer() {
+				
+				@Override
+				public byte[] serialize(ScriptElement scriptElement) throws Exception {
+					
+					ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+					
+					byteArrayOutputStream.write(scriptElement.getOpCode().value);
+					byteArrayOutputStream.write(org.gmagnotta.bitcoin.wire.Utils.writeInt32LE(scriptElement.getPayload().length));
+					byteArrayOutputStream.write(scriptElement.getPayload());
+					
+					return byteArrayOutputStream.toByteArray();
+					
+				}
+			};
+		default:
+			return new BitcoinScriptItemSerializer() {
+				
+				@Override
+				public byte[] serialize(ScriptElement scriptElement) {
+					
+					return new byte[] { scriptElement.getOpCode().value };
+					
+				}
+			};
+		}
 	}
 	
 	public ScriptParserState getScriptState(Context context) {
 
 		switch (this) {
-		case OP_PUSHDATA1:
-			return new ReadDataState(context, this, 1);
-		case OP_PUSHDATA2:
-			return new ReadDataState(context, this, 2);
 		case NA_1:
 			return new ReadDataState(context, this, 1);
 		case NA_2:
@@ -362,15 +569,21 @@ public enum OpCode {
 			return new ReadDataState(context, this, 74);
 		case NA_75:
 			return new ReadDataState(context, this, 75);
+		case OP_PUSHDATA1:
+			return new IntermediateReadDataState(context, this, 1);
+		case OP_PUSHDATA2:
+			return new IntermediateReadDataState(context, this, 2);
+		case OP_PUSHDATA4:
+			return new IntermediateReadDataState(context, this, 4);
 		default:
 			return null;
 		}
 	}
 	
-	public ScriptItem getOperation() {
+	public ScriptElement getScriptElement() throws Exception {
 		switch(this) {
 		case OP_DUP:
-			return new EmptyOperation(this) {
+			return new ScriptElement(this) {
 				
 				@Override
 				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) {
@@ -380,7 +593,7 @@ public enum OpCode {
 				
 			};
 		case OP_HASH160:
-			return new EmptyOperation(this) {
+			return new ScriptElement(this) {
 				
 				@Override
 				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) {
@@ -392,7 +605,7 @@ public enum OpCode {
 				
 			};
 		case OP_EQUALVERIFY:
-			return new EmptyOperation(this) {
+			return new ScriptElement(this) {
 				
 				@Override
 				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
@@ -406,7 +619,7 @@ public enum OpCode {
 				
 			};
 		case OP_CHECKSIG:
-			return new EmptyOperation(this) {
+			return new ScriptElement(this) {
 				
 				// check http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
 				// check https://en.bitcoin.it/w/images/en/7/70/Bitcoin_OpCheckSig_InDetail.png
@@ -430,7 +643,7 @@ public enum OpCode {
 					
 					BitcoinScript script = bitcoinScriptParserStream.getBitcoinScript();
 					
-					int index = script.lastIndexOf(new EmptyOperation(OP_CODESEPARATOR));
+					int index = script.lastIndexOf(new ScriptElement(OP_CODESEPARATOR));
 					byte[] subscript;
 					if (index != -1) {
 						
@@ -521,7 +734,7 @@ public enum OpCode {
 				}
 				
 			};
-		default: return new EmptyOperation(this);
+		default: throw new Exception("Not yet implemented!");
 		}
 	}
 	

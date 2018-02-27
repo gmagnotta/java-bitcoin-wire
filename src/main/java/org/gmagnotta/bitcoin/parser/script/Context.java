@@ -1,11 +1,11 @@
 package org.gmagnotta.bitcoin.parser.script;
 
-import org.gmagnotta.bitcoin.script.ScriptItem;
+import org.gmagnotta.bitcoin.script.ScriptElement;
 
 public interface Context {
 
 	public void setNextParserState(ScriptParserState scriptParserState);
 	
-	public void add(ScriptItem item);
+	public void add(ScriptElement element);
 	
 }

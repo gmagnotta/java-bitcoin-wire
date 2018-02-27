@@ -3,30 +3,28 @@ package org.gmagnotta.bitcoin.script;
 import java.util.List;
 
 /**
- * Represents a Bitcoin Script
+ * This class represents a Bitcoin Script
  * 
- * @author giuseppe
- *
  */
 public class BitcoinScript {
 	
-	private List<ScriptItem> items;
+	private List<ScriptElement> elements;
 	
-	public BitcoinScript(List<ScriptItem> items) {
-		this.items = items;
+	public BitcoinScript(List<ScriptElement> elements) {
+		this.elements = elements;
 	}
 	
-	public List<ScriptItem> getItems() {
-		return items;
+	public List<ScriptElement> getElements() {
+		return elements;
 	}
 	
-	public int indexOf(ScriptItem scriptItem) {
+	public int indexOf(ScriptElement scriptElement) {
 		
-		for (int index = 0; index < items.size(); index++) {
+		for (int index = 0; index < elements.size(); index++) {
 			
-			ScriptItem item = items.get(index);
+			ScriptElement item = elements.get(index);
 			
-			if (item.equals(scriptItem)) {
+			if (item.equals(scriptElement)) {
 				return index;
 			}
 			
@@ -35,13 +33,13 @@ public class BitcoinScript {
 		return -1;
 	}
 	
-	public int lastIndexOf(ScriptItem scriptItem) {
+	public int lastIndexOf(ScriptElement scriptElement) {
 		
-		for (int index = (items.size() - 1); index > -1; index--) {
+		for (int index = (elements.size() - 1); index > -1; index--) {
 			
-			ScriptItem item = items.get(index);
+			ScriptElement item = elements.get(index);
 			
-			if (item.equals(scriptItem)) {
+			if (item.equals(scriptElement)) {
 				return index;
 			}
 			
@@ -53,9 +51,9 @@ public class BitcoinScript {
 	
 	public BitcoinScript subScript(int index) {
 		
-		List<ScriptItem> newItems = items.subList(index, items.size());
+		List<ScriptElement> newElements = elements.subList(index, elements.size());
 		
-		return new BitcoinScript(newItems);
+		return new BitcoinScript(newElements);
 		
 	}
 
@@ -63,7 +61,7 @@ public class BitcoinScript {
 	public String toString() {
 		
 		String str = "Script: ";
-		for (ScriptItem i : items) {
+		for (ScriptElement i : elements) {
 			str += " " + i;
 		}
 		

@@ -2,21 +2,24 @@ package org.gmagnotta.bitcoin.parser.script;
 
 import java.nio.ByteBuffer;
 
-import org.gmagnotta.bitcoin.script.impl.Element;
+import org.gmagnotta.bitcoin.script.ScriptElement;
 
+/**
+ * This state is used to implement the "next opcode bytes is data to be pushed onto the stack"
+ */
 public class ReadDataState implements ScriptParserState {
 	
 	private int read = 0;
-	private int amount;
+	private long amount;
 	private ByteBuffer byteBuffer;
 	private Context context;
 	private OpCode opCode;
 	
-	public ReadDataState(Context context, OpCode opcode, int amount) {
+	public ReadDataState(Context context, OpCode opcode, long amount) {
 		this.context = context;
 		this.opCode = opcode;
 		this.amount = amount;
-		this.byteBuffer = ByteBuffer.allocate(amount);
+		this.byteBuffer = ByteBuffer.allocate((int)amount);
 	}
 	
 	@Override
@@ -24,7 +27,7 @@ public class ReadDataState implements ScriptParserState {
 		
 		if (read == amount) {
 			
-			context.add(new Element(opCode, byteBuffer.array()));
+			context.add(new ScriptElement(opCode, byteBuffer.array()));
 			context.setNextParserState(new ParseState(context));
 			
 		} else {
@@ -34,7 +37,7 @@ public class ReadDataState implements ScriptParserState {
 			
 			if (read == amount) {
 				
-				context.add(new Element(opCode, byteBuffer.array()));
+				context.add(new ScriptElement(opCode, byteBuffer.array()));
 				context.setNextParserState(new ParseState(context));
 				
 			}

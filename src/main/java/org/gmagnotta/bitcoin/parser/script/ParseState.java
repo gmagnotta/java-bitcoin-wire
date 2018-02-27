@@ -9,24 +9,17 @@ public class ParseState implements ScriptParserState {
 	}
 
 	@Override
-	public void parse(byte buffer) {
+	public void parse(byte buffer) throws Exception {
 		
-		try {
+		OpCode opcode = OpCode.fromByte(buffer);
 		
-			OpCode opcode = OpCode.fromByte(buffer);
-			
-			if (opcode.hasParameters()) {
-				ScriptParserState state = opcode.getScriptState(context);
-				context.setNextParserState(state);
-			} else {
-				context.add(opcode.getOperation());
-			}
-			
-		
-		} catch (Exception e) {
-			
+		if (opcode.requiresParameters()) {
+			ScriptParserState state = opcode.getScriptState(context);
+			context.setNextParserState(state);
+		} else {
+			context.add(opcode.getScriptElement());
 		}
-		
+	
 	}
 
 }

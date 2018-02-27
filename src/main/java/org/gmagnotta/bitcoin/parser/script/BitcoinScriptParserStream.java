@@ -5,18 +5,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.gmagnotta.bitcoin.script.BitcoinScript;
-import org.gmagnotta.bitcoin.script.ScriptItem;
+import org.gmagnotta.bitcoin.script.ScriptElement;
 
 public class BitcoinScriptParserStream implements Context {
 
 	private ScriptParserState scriptParserState;
 	private InputStream inputStream;
-	private List<ScriptItem> items;
+	private List<ScriptElement> elements;
 	
 	public BitcoinScriptParserStream(InputStream inputStream) {
 		this.inputStream = inputStream;
 		this.scriptParserState = new ParseState(this);
-		this.items = new ArrayList<ScriptItem>();
+		this.elements = new ArrayList<ScriptElement>();
 	}
 	
 	public BitcoinScript getBitcoinScript() throws Exception {
@@ -35,7 +35,7 @@ public class BitcoinScriptParserStream implements Context {
 			
 		}
 		
-		return new BitcoinScript(items);
+		return new BitcoinScript(elements);
 		
 	}
 
@@ -45,7 +45,7 @@ public class BitcoinScriptParserStream implements Context {
 	}
 
 	@Override
-	public void add(ScriptItem item) {
-		items.add(item);
+	public void add(ScriptElement element) {
+		elements.add(element);
 	}
 }
