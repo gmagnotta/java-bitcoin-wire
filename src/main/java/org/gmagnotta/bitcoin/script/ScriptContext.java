@@ -13,4 +13,8 @@ public interface ScriptContext {
 	public TransactionOutput getTransactionOutput();
 	
 	public Transaction getTransaction();
+	
+	public TransactionValidatorStatus getTransactionValidatorStatus();
+	
+	public void setTransactionValidatorStatus(TransactionValidatorStatus transactionValidatorStatus);
 }

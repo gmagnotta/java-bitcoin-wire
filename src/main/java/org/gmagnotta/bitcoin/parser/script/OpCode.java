@@ -4,12 +4,16 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Stack;
+import java.util.concurrent.Executors;
 
 import org.gmagnotta.bitcoin.script.BitcoinPayloadScriptElementSerializer;
 import org.gmagnotta.bitcoin.script.BitcoinScriptItemSerializer;
+import org.gmagnotta.bitcoin.script.IfBranchTransactionValidatorStatus;
 import org.gmagnotta.bitcoin.script.PayloadScriptElement;
 import org.gmagnotta.bitcoin.script.ScriptContext;
 import org.gmagnotta.bitcoin.script.ScriptElement;
+import org.gmagnotta.bitcoin.script.TransactionValidatorStatus;
+import org.gmagnotta.bitcoin.script.TransactionValidatorStatus.TransactionValidatorStatusEnum;
 import org.gmagnotta.bitcoin.script.impl.OpCheckSig;
 import org.gmagnotta.bitcoin.script.impl.OpEqual;
 import org.gmagnotta.bitcoin.script.impl.OpNumEqual;
@@ -838,23 +842,66 @@ public enum OpCode {
 				@Override
 				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
 					
-					byte[] top = stack.peek();
+					TransactionValidatorStatus transactionValidatorStatus = scriptContext.getTransactionValidatorStatus();
+					
+					if (!TransactionValidatorStatusEnum.SEQUENTIAL.equals(transactionValidatorStatus.getTransactionValidatorStatusEnum())) {
+						throw new Exception("Invalid script state for IF!");
+					}
+					
+					byte[] top = stack.pop();
 					
 					BigInteger value = new BigInteger(top);
 					
 					if (!BigInteger.ZERO.equals(value)) {
-						stack.pop();
+						
+						// proceed
+						scriptContext.setTransactionValidatorStatus(new IfBranchTransactionValidatorStatus(true));
+						
 					} else {
-						throw new Exception("Transaction is invalid because top stack is zero");
+						
+						// jump to ELSE
+						scriptContext.setTransactionValidatorStatus(new IfBranchTransactionValidatorStatus(false));
+						
 					}
 					
 				}
 				
 			};
 		case OP_NOTIF:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					TransactionValidatorStatus transactionValidatorStatus = scriptContext.getTransactionValidatorStatus();
+					
+					if (!TransactionValidatorStatusEnum.SEQUENTIAL.equals(transactionValidatorStatus.getTransactionValidatorStatusEnum())) {
+						throw new Exception("Invalid script state for IF!");
+					}
+					
+					byte[] top = stack.pop();
+					
+					BigInteger value = new BigInteger(top);
+					
+					if (!BigInteger.ZERO.equals(value)) {
+						
+						// proceed
+						scriptContext.setTransactionValidatorStatus(new IfBranchTransactionValidatorStatus(false));
+						
+					} else {
+						
+						// jump to ELSE
+						scriptContext.setTransactionValidatorStatus(new IfBranchTransactionValidatorStatus(true));
+						
+					}
+					
+				}
+				
+			};
 		case OP_ELSE:
+			return new ScriptElement(this);
 		case OP_ENDIF:
-			throw new Exception("Not yet implemented!");
+			return new ScriptElement(this);
 		case OP_VERIFY:
 			return new OpVerify(this);
 		case OP_RETURN:

@@ -11,19 +11,21 @@ import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.parser.script.BitcoinScriptParserStream;
-import org.gmagnotta.bitcoin.parser.script.OpCode;
 import org.spongycastle.util.Arrays;
+import org.spongycastle.util.encoders.Hex;
 
 public class TransactionValidator {
 	
 	private BlockChain blockChain;
 	private Stack<byte[]> stack;
 	private BlockMessage blockMessage;
+	private TransactionValidatorStatus transactionValidatorStatus;
 	
 	public TransactionValidator(BlockChain blockChain, BlockMessage blockMessage) {
 		this.blockChain = blockChain;
 		this.blockMessage = blockMessage;
 		this.stack = new Stack<byte[]>();
+		this.transactionValidatorStatus = new SequentialTransactionValidatorStatus();
 	}
 	
 	/**
@@ -86,12 +88,23 @@ public class TransactionValidator {
 				public Transaction getTransaction() {
 					return transaction;
 				}
+
+				@Override
+				public TransactionValidatorStatus getTransactionValidatorStatus() {
+					return transactionValidatorStatus;
+				}
+
+				@Override
+				public void setTransactionValidatorStatus(TransactionValidatorStatus transactionValidatorStatus) {
+					TransactionValidator.this.transactionValidatorStatus = transactionValidatorStatus;
+					
+				}
 				
 			};
 			
-			for (ScriptElement scriptItem : script.getElements()) {
+			for (ScriptElement scriptElement : script.getElements()) {
 				
-				scriptItem.doOperation(stack, scriptContext);
+				transactionValidatorStatus.executeScript(scriptElement, stack, scriptContext);
 				
 			}
 			

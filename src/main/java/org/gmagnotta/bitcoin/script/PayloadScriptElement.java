@@ -37,7 +37,7 @@ public class PayloadScriptElement extends ScriptElement {
 	
 	@Override
 	public String toString() {
-		return getOpCode().name() + Hex.toHexString(payload);
+		return getOpCode().name() + " " + Hex.toHexString(payload);
 	}
 
 }
