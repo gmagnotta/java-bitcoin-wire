@@ -1,31 +1,26 @@
 package org.gmagnotta.bitcoin.parser.script;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Stack;
 
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.ECKey.ECDSASignature;
-import org.gmagnotta.bitcoin.message.impl.Transaction;
-import org.gmagnotta.bitcoin.message.impl.TransactionInput;
-import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.script.BitcoinPayloadScriptElementSerializer;
-import org.gmagnotta.bitcoin.script.BitcoinScript;
 import org.gmagnotta.bitcoin.script.BitcoinScriptItemSerializer;
-import org.gmagnotta.bitcoin.script.BitcoinScriptSerializer;
+import org.gmagnotta.bitcoin.script.PayloadScriptElement;
 import org.gmagnotta.bitcoin.script.ScriptContext;
 import org.gmagnotta.bitcoin.script.ScriptElement;
 import org.gmagnotta.bitcoin.script.impl.OpCheckSig;
-import org.gmagnotta.bitcoin.script.impl.OpDup;
-import org.gmagnotta.bitcoin.script.impl.OpEqualVerify;
-import org.gmagnotta.bitcoin.script.impl.OpHash160;
+import org.gmagnotta.bitcoin.script.impl.OpEqual;
+import org.gmagnotta.bitcoin.script.impl.OpNumEqual;
+import org.gmagnotta.bitcoin.script.impl.OpVerify;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.utils.Utils;
-import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
-import org.spongycastle.util.Arrays;
+import org.spongycastle.util.encoders.Hex;
 
+/**
+ * All valid opcodes that can be used in Bitcoin Script
+ */
 public enum OpCode {
 	
 	// CONSTANTS
@@ -141,6 +136,12 @@ public enum OpCode {
 	// STACK
 	OP_TOALTSTACK((byte)0x6b),
 	OP_FROMALTSTACK((byte)0x6c),
+	OP_2DROP((byte)0x6d),
+	OP_2DUP((byte)0x6e),
+	OP_3DUP((byte)0x6f),
+	OP_2OVER((byte)0x70),
+	OP_2ROT((byte)0x71),
+	OP_2SWAP((byte)0x72),
 	OP_IFDUP((byte)0x73),
 	OP_DEPTH((byte)0x74),
 	OP_DROP((byte)0x75),
@@ -148,9 +149,54 @@ public enum OpCode {
 	OP_NIP((byte)0x77),
 	OP_OVER((byte)0x78),
 	OP_PICK((byte)0x79),
+	OP_ROLL((byte)0x7a),
+	OP_ROT((byte)0x7b),
+	OP_SWAP((byte)0x7c),
+	OP_TUCK((byte)0x7d),
+	
+	// SPLICE
+//	OP_CAT((byte)0x7e),
+//	OP_SUBSTR((byte)0x7f),
+//	OP_LEFT((byte)0x80),
+//	OP_RIGHT((byte)0x81),
+	OP_SIZE((byte)0x82),
 	
 	// BITWISE LOGIC
+//	OP_INVERT((byte)0x83),
+//	OP_AND((byte)0x84),
+//	OP_OR((byte)0x85),
+//	OP_XOR((byte)0x86),
+	OP_EQUAL((byte)0x87),
 	OP_EQUALVERIFY((byte)0x88),
+	
+	// ARITHMETIC
+	OP_1ADD((byte)0x8b),
+	OP_1SUB((byte)0x8c),
+//	OP_2MUL((byte)0x8d),
+//	OP_2DIV((byte)0x8e),
+	OP_NEGATE((byte)0x8f),
+	OP_ABS((byte)0x90),
+	OP_NOT((byte)0x91),
+	OP_0NOTEQUAL((byte)0x92),
+	OP_ADD((byte)0x93),
+	OP_SUB((byte)0x94),
+//	OP_MUL((byte)0x95),
+//	OP_DIV((byte)0x96),
+//	OP_MOD((byte)0x97),
+//	OP_LSHIFT((byte)0x98),
+//	OP_RSHIFT((byte)0x99),
+	OP_BOOLAND((byte)0x9a),
+	OP_BOOLOR((byte)0x9b),
+	OP_NUMEQUAL((byte)0x9c),
+	OP_NUMEQUALVERIFY((byte)0x9d),
+	OP_NUMNOTEQUAL((byte)0x9e),
+	OP_LESSTHAN((byte)0x9f),
+	OP_GREATERTHAN((byte)0xa0),
+	OP_LESSTHANOREQUAL((byte)0xa1),
+	OP_GREATERTHANOREQUAL((byte)0xa2),
+	OP_MIN((byte)0xa3),
+	OP_MAX((byte)0xa4),
+	OP_WITHIN((byte)0xa5),
 	
 	// CRYPTO
 	OP_RIPEMD160((byte)0xa6),
@@ -162,20 +208,31 @@ public enum OpCode {
 	OP_CHECKSIG((byte)0xac),
 	OP_CHECKSIGVERIFY((byte)0xad),
 	OP_CHECKMULTISIG((byte)0xae),
-	OP_CHECKMULTISIGVERIFY((byte)0xaf);
+	OP_CHECKMULTISIGVERIFY((byte)0xaf),
+	
+	// LOCKTIME
+	OP_CHECKLOCKTIMEVERIFY ((byte)0xb1),
+	OP_CHECKSEQUENCEVERIFY ((byte)0xb2);
 	
 	private byte value;
 	private boolean requiresParameters;
 	
+	/**
+	 * Construct a new OpCode without any required parameter
+	 */
 	private OpCode(byte value) {
 		this(value, false);
 	}
-	
+
+	/**
+	 * Construct a new OpCode and specify if it requires parameters during parsing
+	 */
 	private OpCode(byte value, boolean hasParameters) {
 		this.value = value;
 		this.requiresParameters = hasParameters;
 	}
 	
+	/** The map of all the opcodes */
 	private static HashMap<Byte, OpCode> OPCODES_MAP = new HashMap<Byte, OpCode>();
 	
 	/* static block to initialize map for all elements */
@@ -189,20 +246,33 @@ public enum OpCode {
 		
 	}
 	
+	/**
+	 * Retrieve the corresponding OpCode from the requested byte or throw an Exception if the opcode is not valid
+	 * 
+	 * @param value
+	 * @return
+	 * @throws Exception
+	 */
 	public static OpCode fromByte(byte value) throws Exception {
 		
 		OpCode opcode = OPCODES_MAP.get(value);
 		
-		if (opcode == null) throw new Exception("Operation " + value + " does not exists");
+		if (opcode == null) throw new Exception("OpCode " + Hex.toHexString(new byte[] { value }) + " does not exists");
 		
 		return opcode;
 		
 	}
 	
+	/**
+	 * Return the byte value of this OpCode
+	 */
 	public byte getValue() {
 		return value;
 	}
-	
+
+	/**
+	 * Return true if the OpCode requires other parameters
+	 */
 	public boolean requiresParameters() {
 		return requiresParameters;
 	}
@@ -365,11 +435,13 @@ public enum OpCode {
 				@Override
 				public byte[] serialize(ScriptElement scriptElement) throws Exception {
 					
+					PayloadScriptElement payloadScriptElement = (PayloadScriptElement) scriptElement;
+					
 					ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 					
 					byteArrayOutputStream.write(scriptElement.getOpCode().value);
-					byteArrayOutputStream.write((byte)scriptElement.getPayload().length);
-					byteArrayOutputStream.write(scriptElement.getPayload());
+					byteArrayOutputStream.write((byte)payloadScriptElement.getPayload().length);
+					byteArrayOutputStream.write(payloadScriptElement.getPayload());
 					
 					return byteArrayOutputStream.toByteArray();
 					
@@ -381,11 +453,13 @@ public enum OpCode {
 				@Override
 				public byte[] serialize(ScriptElement scriptElement) throws Exception {
 					
+					PayloadScriptElement payloadScriptElement = (PayloadScriptElement) scriptElement;
+					
 					ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 					
 					byteArrayOutputStream.write(scriptElement.getOpCode().value);
-					byteArrayOutputStream.write(org.gmagnotta.bitcoin.wire.Utils.writeInt16LE(scriptElement.getPayload().length));
-					byteArrayOutputStream.write(scriptElement.getPayload());
+					byteArrayOutputStream.write(org.gmagnotta.bitcoin.wire.Utils.writeInt16LE(payloadScriptElement.getPayload().length));
+					byteArrayOutputStream.write(payloadScriptElement.getPayload());
 					
 					return byteArrayOutputStream.toByteArray();
 					
@@ -397,11 +471,13 @@ public enum OpCode {
 				@Override
 				public byte[] serialize(ScriptElement scriptElement) throws Exception {
 					
+					PayloadScriptElement payloadScriptElement = (PayloadScriptElement) scriptElement;
+					
 					ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 					
 					byteArrayOutputStream.write(scriptElement.getOpCode().value);
-					byteArrayOutputStream.write(org.gmagnotta.bitcoin.wire.Utils.writeInt32LE(scriptElement.getPayload().length));
-					byteArrayOutputStream.write(scriptElement.getPayload());
+					byteArrayOutputStream.write(org.gmagnotta.bitcoin.wire.Utils.writeInt32LE(payloadScriptElement.getPayload().length));
+					byteArrayOutputStream.write(payloadScriptElement.getPayload());
 					
 					return byteArrayOutputStream.toByteArray();
 					
@@ -420,7 +496,10 @@ public enum OpCode {
 		}
 	}
 	
-	public ScriptParserState getScriptState(Context context) {
+	/**
+	 * Return the corresponsing ScriptParserState for OpCodes that requires additional parameters
+	 */
+	public ScriptParserState getScriptParserState(Context context) {
 
 		switch (this) {
 		case NA_1:
@@ -584,16 +663,631 @@ public enum OpCode {
 		}
 	}
 	
+	/**
+	 * Returns the ScriptElement of the corresponding OpCode that does not requires parameters
+	 */
 	public ScriptElement getScriptElement() throws Exception {
 		switch(this) {
-		case OP_DUP:
-			return new OpDup(this);
-		case OP_HASH160:
-			return new OpHash160(this);
+		case OP_FALSE:
+			return new PayloadScriptElement(this, new byte[] {}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_1NEGATE:
+			return new PayloadScriptElement(this, new byte[] {(byte)-1}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_TRUE:
+			return new PayloadScriptElement(this, new byte[] {(byte)1}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_2:
+			return new PayloadScriptElement(this, new byte[] {(byte)2}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_3:
+			return new PayloadScriptElement(this, new byte[] {(byte)3}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_4:
+			return new PayloadScriptElement(this, new byte[] {(byte)4}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_5:
+			return new PayloadScriptElement(this, new byte[] {(byte)5}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_6:
+			return new PayloadScriptElement(this, new byte[] {(byte)6}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_7:
+			return new PayloadScriptElement(this, new byte[] {(byte)7}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_8:
+			return new PayloadScriptElement(this, new byte[] {(byte)8}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_9:
+			return new PayloadScriptElement(this, new byte[] {(byte)9}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_10:
+			return new PayloadScriptElement(this, new byte[] {(byte)10}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_11:
+			return new PayloadScriptElement(this, new byte[] {(byte)11}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_12:
+			return new PayloadScriptElement(this, new byte[] {(byte)12}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_13:
+			return new PayloadScriptElement(this, new byte[] {(byte)13}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_14:
+			return new PayloadScriptElement(this, new byte[] {(byte)14}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_15:
+			return new PayloadScriptElement(this, new byte[] {(byte)15}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_16:
+			return new PayloadScriptElement(this, new byte[] {(byte)16}) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					stack.push(getPayload());
+				}
+				
+			};
+		case OP_NOP:
+			return new ScriptElement(this);
+		case OP_IF:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.peek();
+					
+					BigInteger value = new BigInteger(top);
+					
+					if (!BigInteger.ZERO.equals(value)) {
+						stack.pop();
+					} else {
+						throw new Exception("Transaction is invalid because top stack is zero");
+					}
+					
+				}
+				
+			};
+		case OP_NOTIF:
+		case OP_ELSE:
+		case OP_ENDIF:
+			throw new Exception("Not yet implemented!");
+		case OP_VERIFY:
+			return new OpVerify(this);
+		case OP_RETURN:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					throw new Exception("Transaction is invalid because OP_RETURN");
+					
+				}
+				
+			};
+		case OP_EQUAL:
+			return new OpEqual(this);
 		case OP_EQUALVERIFY:
-			return new OpEqualVerify(this);
+			return new OpEqual(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					super.doOperation(stack, scriptContext);
+					
+					// fake
+					OpVerify opVerify = new OpVerify(OpCode.OP_VERIFY);
+					opVerify.doOperation(stack, scriptContext);
+					
+				}
+				
+			};
+		case OP_1ADD:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					
+					BigInteger value = new BigInteger(top);
+					
+					value = value.add(BigInteger.ONE);
+					
+					stack.push(value.toByteArray());
+					
+				}
+				
+			};
+		case OP_1SUB:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					
+					BigInteger value = new BigInteger(top);
+					
+					value = value.subtract(BigInteger.ONE);
+					
+					stack.push(value.toByteArray());
+					
+				}
+				
+			};
+		case OP_NEGATE:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					
+					BigInteger value = new BigInteger(top);
+					
+					value = value.negate();
+					
+					stack.push(value.toByteArray());
+					
+				}
+				
+			};
+		case OP_ABS:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					
+					BigInteger value = new BigInteger(top);
+					
+					value = value.abs();
+					
+					stack.push(value.toByteArray());
+					
+				}
+				
+			};
+		case OP_NOT:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					
+					BigInteger value = new BigInteger(top);
+					
+					if (BigInteger.ZERO.equals(value) ||
+							BigInteger.ONE.equals(value)) {
+						value = value.negate();
+						stack.push(value.toByteArray());
+					} else {
+						stack.push(new byte[] {0});
+					}
+					
+				}
+				
+			};
+		case OP_0NOTEQUAL:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					
+					BigInteger value = new BigInteger(top);
+					
+					if (BigInteger.ZERO.equals(value)) {
+						stack.push(new byte[] {0});
+					} else {
+						stack.push(new byte[] {1});
+					}
+					
+				}
+				
+			};
+		case OP_ADD:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					BigInteger valueA = new BigInteger(a);
+					BigInteger valueB = new BigInteger(b);
+					
+					stack.push(valueA.add(valueB).toByteArray());
+					
+				}
+				
+			};
+		case OP_SUB:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					BigInteger valueA = new BigInteger(a);
+					BigInteger valueB = new BigInteger(b);
+					
+					stack.push(valueA.subtract(valueB).toByteArray());
+					
+				}
+				
+			};
+		case OP_BOOLAND:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					String first = String.valueOf(a);
+					String second = String.valueOf(b);
+					
+					if (!"".equals(first) &&
+							!"".equals(second)) {
+						stack.push(new byte[] {1});
+					} else {
+						stack.push(new byte[] {0});
+					}
+					
+				}
+				
+			};
+		case OP_BOOLOR:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					String first = String.valueOf(a);
+					String second = String.valueOf(b);
+					
+					if (!"".equals(first) ||
+							!"".equals(second)) {
+						stack.push(new byte[] {1});
+					} else {
+						stack.push(new byte[] {0});
+					}
+					
+				}
+				
+			};
+		case OP_NUMEQUAL:
+			return new OpNumEqual(this);
+		case OP_NUMEQUALVERIFY:
+			return new OpNumEqual(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					super.doOperation(stack, scriptContext);
+					
+					OpVerify opVerify = new OpVerify(OpCode.OP_VERIFY);
+					opVerify.doOperation(stack, scriptContext);
+					
+				}
+				
+			};
+		case OP_NUMNOTEQUAL:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					BigInteger first = new BigInteger(a);
+					BigInteger second = new BigInteger(b);
+					
+					if (!first.equals(second)) {
+						stack.push(new byte[] {1});
+					} else {
+						stack.push(new byte[] {0});
+					}
+					
+				}
+				
+			};
+		case OP_LESSTHAN:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					BigInteger first = new BigInteger(a);
+					BigInteger second = new BigInteger(b);
+					
+					if (first.compareTo(second) < 0) {
+						stack.push(new byte[] {1});
+					} else {
+						stack.push(new byte[] {0});
+					}
+					
+				}
+				
+			};
+		case OP_GREATERTHAN:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					BigInteger first = new BigInteger(a);
+					BigInteger second = new BigInteger(b);
+					
+					if (first.compareTo(second) > 0) {
+						stack.push(new byte[] {1});
+					} else {
+						stack.push(new byte[] {0});
+					}
+					
+				}
+				
+			};
+		case OP_LESSTHANOREQUAL:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					BigInteger first = new BigInteger(a);
+					BigInteger second = new BigInteger(b);
+					
+					if (first.compareTo(second) <= 0) {
+						stack.push(new byte[] {1});
+					} else {
+						stack.push(new byte[] {0});
+					}
+					
+				}
+				
+			};
+		case OP_GREATERTHANOREQUAL:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] a = stack.pop();
+					byte[] b = stack.pop();
+					
+					BigInteger first = new BigInteger(a);
+					BigInteger second = new BigInteger(b);
+					
+					if (first.compareTo(second) >= 0) {
+						stack.push(new byte[] {1});
+					} else {
+						stack.push(new byte[] {0});
+					}
+					
+				}
+				
+			};
+		case OP_DUP:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.peek();
+					stack.push(top);
+					
+				}
+				
+			};
+		case OP_RIPEMD160:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					
+					stack.push(Utils.hash160(top));
+					
+				}
+				
+			};
+		case OP_SHA1:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					
+					stack.push(Utils.sha1(top));
+					
+				}
+				
+			};
+		case OP_SHA256:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					stack.push(Sha256Hash.of(top).getBytes());
+					
+				}
+				
+			};
+		case OP_HASH160:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					Sha256Hash hash = Sha256Hash.of(top);
+					
+					stack.push(Utils.hash160(hash.getBytes()));
+					
+				}
+				
+			};
+		case OP_HASH256:
+			return new ScriptElement(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					byte[] top = stack.pop();
+					Sha256Hash hash = Sha256Hash.twiceOf(top);
+					
+					stack.push(hash.getBytes());
+					
+				}
+				
+			};
+		case OP_CODESEPARATOR:
+			return new ScriptElement(this);
 		case OP_CHECKSIG:
 			return new OpCheckSig(this);
+		case OP_CHECKSIGVERIFY:
+			return new OpCheckSig(this) {
+				
+				@Override
+				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
+					
+					// do OpChecksig
+					super.doOperation(stack, scriptContext);
+					
+					// Create fake opVerify
+					OpVerify opVerify = new OpVerify(OpCode.OP_VERIFY);
+					opVerify.doOperation(stack, scriptContext);
+				}
+			};
+			
 		default: throw new Exception("Not yet implemented!");
 		}
 	}

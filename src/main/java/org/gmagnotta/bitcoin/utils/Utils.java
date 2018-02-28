@@ -16,6 +16,7 @@ import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.wire.serializer.impl.BlockHeadersSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionSerializer;
+import org.spongycastle.crypto.digests.SHA1Digest;
 import org.spongycastle.util.Arrays;
 
 public class Utils {
@@ -259,6 +260,14 @@ public class Utils {
 		
 		return calculateMerkleRoot(hashList);
 		
+	}
+	
+	public static byte[] sha1(byte[] input) {
+		byte[] out = new byte[20];
+		SHA1Digest rDigest = new SHA1Digest();
+		rDigest.update(input, 0, input.length);
+		rDigest.doFinal(out, 0);
+		return out;
 	}
 
 	public static byte[] hash160(byte[] input) {

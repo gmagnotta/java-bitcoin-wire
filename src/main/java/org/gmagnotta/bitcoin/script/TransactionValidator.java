@@ -94,7 +94,10 @@ public class TransactionValidator {
 				scriptItem.doOperation(stack, scriptContext);
 				
 			}
-		
+			
+			// False is zero or negative zero (using any number of bytes) or an empty array, and True is anything else.
+			// A transaction is valid if nothing in the combined script triggers failure and the top stack item is True (non-zero) when the script exits
+			
 			if (stack.isEmpty()) return false;
 			
 			if (ArrayUtils.isEmpty(stack.pop())) {
