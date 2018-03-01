@@ -9,6 +9,9 @@ import org.gmagnotta.bitcoin.script.ScriptElement;
 
 public class BitcoinScriptParserStream implements Context {
 
+	// Maximum script length in bytes
+	private static final int MAX_SCRIPT_SIZE = 10000;
+	
 	private ScriptParserState scriptParserState;
 	private InputStream inputStream;
 	private List<ScriptElement> elements;
@@ -21,14 +24,28 @@ public class BitcoinScriptParserStream implements Context {
 	
 	public BitcoinScript getBitcoinScript() throws Exception {
 		
+		int read = 0;
+		
 		while (true) {
 			
 			int input = inputStream.read();
 			
 			if (input == -1) {
 				
+				if (scriptParserState.isStillExpectingData()) {
+					throw new Exception("Uncomplete script!");
+					
+				}
+				
 				break;
 				
+			} else {
+				
+				read++;
+
+				if (read > MAX_SCRIPT_SIZE) {
+					throw new Exception("Script lenght is bigger than maximum allowed");
+				}
 			}
 			
 			scriptParserState.parse((byte) input);

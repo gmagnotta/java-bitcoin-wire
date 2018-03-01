@@ -27,6 +27,9 @@ public class ReadDataState implements ScriptParserState {
 	@Override
 	public void parse(byte value) {
 		
+		byteBuffer.put((byte)value);
+		read++;
+		
 		if (read == amount) {
 			
 			context.add(new PayloadScriptElement(opCode, byteBuffer.array()) {
@@ -37,25 +40,13 @@ public class ReadDataState implements ScriptParserState {
 			});
 			context.setNextParserState(new ByteParseState(context));
 			
-		} else {
-			
-			byteBuffer.put((byte)value);
-			read++;
-			
-			if (read == amount) {
-				
-				context.add(new PayloadScriptElement(opCode, byteBuffer.array()) {
-					@Override
-					public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-						stack.push(getPayload());
-					}
-				});
-				context.setNextParserState(new ByteParseState(context));
-				
-			}
-			
 		}
-		
+			
+	}
+
+	@Override
+	public boolean isStillExpectingData() {
+		return !(read == amount);
 	}
 
 }

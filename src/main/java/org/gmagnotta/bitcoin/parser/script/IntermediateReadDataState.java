@@ -2,7 +2,6 @@ package org.gmagnotta.bitcoin.parser.script;
 
 import java.nio.ByteBuffer;
 
-import org.gmagnotta.bitcoin.script.ScriptElement;
 import org.gmagnotta.bitcoin.wire.Utils;
 
 /**
@@ -26,43 +25,38 @@ public class IntermediateReadDataState implements ScriptParserState {
 	@Override
 	public void parse(byte value) {
 		
+		byteBuffer.put((byte)value);
+		read++;
+		
 		if (read == amount) {
 			
-			// interpret amount
+			byte[] array = byteBuffer.array();
 			
-			context.setNextParserState(new ReadDataState(context, opCode, 1));
+			long size = 0;
 			
-		} else {
-			
-			byteBuffer.put((byte)value);
-			read++;
-			
-			if (read == amount) {
+			if (array.length == 1) {
 				
-				byte[] array = byteBuffer.array();
+				size = array[0];
 				
-				long size = 0;
+			} else if (array.length == 2) {
 				
-				if (array.length == 1) {
-					
-					size = array[0];
-					
-				} else if (array.length == 2) {
-					
-					size = Utils.readUint16LE(array, 0);
-					
-				} else if (array.length == 4) {
-					
-					size = Utils.readUint32LE(array, 0);
-					
-				}
+				size = Utils.readUint16LE(array, 0);
 				
-				context.setNextParserState(new ReadDataState(context, opCode, size));
+			} else if (array.length == 4) {
+				
+				size = Utils.readUint32LE(array, 0);
 				
 			}
 			
+			context.setNextParserState(new ReadDataState(context, opCode, size));
+			
 		}
-		
+			
+	}
+
+	@Override
+	public boolean isStillExpectingData() {
+		return !(read == amount);
 	}
 
 }

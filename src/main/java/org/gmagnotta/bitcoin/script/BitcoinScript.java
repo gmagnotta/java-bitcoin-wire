@@ -60,7 +60,7 @@ public class BitcoinScript {
 	@Override
 	public String toString() {
 		
-		String str = "Script: ";
+		String str = "Script:";
 		for (ScriptElement i : elements) {
 			str += " " + i;
 		}

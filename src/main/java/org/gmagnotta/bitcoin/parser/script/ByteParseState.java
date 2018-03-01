@@ -25,4 +25,9 @@ public class ByteParseState implements ScriptParserState {
 	
 	}
 
+	@Override
+	public boolean isStillExpectingData() {
+		return false;
+	}
+
 }

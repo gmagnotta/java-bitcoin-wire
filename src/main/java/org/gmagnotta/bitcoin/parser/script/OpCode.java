@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Stack;
-import java.util.concurrent.Executors;
 
 import org.gmagnotta.bitcoin.script.BitcoinPayloadScriptElementSerializer;
 import org.gmagnotta.bitcoin.script.BitcoinScriptItemSerializer;
@@ -284,155 +283,155 @@ public enum OpCode {
 	public BitcoinScriptItemSerializer getSerializer() {
 		switch (this) {
 		case NA_1:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(1);
 		case NA_2:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(2);
 		case NA_3:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(3);
 		case NA_4:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(4);
 		case NA_5:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(5);
 		case NA_6:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(6);
 		case NA_7:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(7);
 		case NA_8:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(8);
 		case NA_9:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(9);
 		case NA_10:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(10);
 		case NA_11:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(11);
 		case NA_12:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(12);
 		case NA_13:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(13);
 		case NA_14:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(14);
 		case NA_15:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(15);
 		case NA_16:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(16);
 		case NA_17:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(17);
 		case NA_18:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(18);
 		case NA_19:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(19);
 		case NA_20:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(20);
 		case NA_21:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(21);
 		case NA_22:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(22);
 		case NA_23:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(23);
 		case NA_24:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(24);
 		case NA_25:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(25);
 		case NA_26:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(26);
 		case NA_27:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(27);
 		case NA_28:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(28);
 		case NA_29:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(29);
 		case NA_30:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(30);
 		case NA_31:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(31);
 		case NA_32:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(32);
 		case NA_33:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(33);
 		case NA_34:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(34);
 		case NA_35:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(35);
 		case NA_36:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(36);
 		case NA_37:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(37);
 		case NA_38:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(38);
 		case NA_39:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(39);
 		case NA_40:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(40);
 		case NA_41:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(41);
 		case NA_42:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(42);
 		case NA_43:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(43);
 		case NA_44:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(44);
 		case NA_45:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(45);
 		case NA_46:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(46);
 		case NA_47:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(47);
 		case NA_48:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(48);
 		case NA_49:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(49);
 		case NA_50:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(50);
 		case NA_51:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(51);
 		case NA_52:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(52);
 		case NA_53:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(53);
 		case NA_54:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(54);
 		case NA_55:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(55);
 		case NA_56:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(56);
 		case NA_57:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(57);
 		case NA_58:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(58);
 		case NA_59:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(59);
 		case NA_60:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(60);
 		case NA_61:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(61);
 		case NA_62:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(62);
 		case NA_63:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(63);
 		case NA_64:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(64);
 		case NA_65:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(65);
 		case NA_66:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(66);
 		case NA_67:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(67);
 		case NA_68:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(68);
 		case NA_69:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(69);
 		case NA_70:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(70);
 		case NA_71:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(71);
 		case NA_72:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(72);
 		case NA_73:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(73);
 		case NA_74:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(74);
 		case NA_75:
-			return new BitcoinPayloadScriptElementSerializer();
+			return new BitcoinPayloadScriptElementSerializer(75);
 		case OP_PUSHDATA1:
 			return new BitcoinScriptItemSerializer() {
 				
