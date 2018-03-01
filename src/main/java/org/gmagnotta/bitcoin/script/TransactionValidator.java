@@ -38,6 +38,9 @@ public class TransactionValidator {
 		
 		List<TransactionInput> txInputs = transaction.getTransactionInput();
 		
+		/*
+		 * We check all transaction inputs
+		 */
 		for (int index = 0; index < txInputs.size(); index++) {
 			
 			final TransactionInput txInput = txInputs.get(index);
@@ -48,11 +51,21 @@ public class TransactionValidator {
 				return true;
 			}
 			
+			// Check that input is not already spent in persisted BC
+			if (blockChain.isTransactionInputAlreadySpent(txInput)) {
+				
+				throw new Exception("Transaction input already spent!");
+				
+			}
+			
+			// Check that input is not already spent in persisted BC in receiving block
+			
+			// Fetch input transaction
 			Transaction txPrev = blockChain.getTransaction(txInput.getPreviousOutput().getHash().toString());
 			
 			if (txPrev == null) {
-				// search transaction in block
 				
+				// search transaction in block
 				txPrev = blockMessage.getIndexedTxns().get(txInput.getPreviousOutput().getHash().getReversed());
 				
 				if (txPrev == null) throw new Exception("cannot find " + txInput.getPreviousOutput().getHash().toString());

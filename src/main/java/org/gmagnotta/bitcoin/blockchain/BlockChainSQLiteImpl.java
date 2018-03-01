@@ -32,7 +32,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String CREATE_TRANSACTION_TABLE = "create table tx (hash text not null, idx integer not null, version integer not null, lockTime integer not null, block text not null, foreign key (block) references blockHeader(hash), primary key (hash));";
 	
-	public static final String CREATE_TXOUT_TABLE = "create table tx_out (value integer not null, idx integer not null, scriptPubKey text not null, tx text not null, foreign key (tx) references tx(hash), primary key (value, scriptPubKey, tx));";
+	public static final String CREATE_TXOUT_TABLE = "create table tx_out (value integer not null, idx integer not null, scriptPubKey text not null, tx text not null, foreign key (tx) references tx(hash));";
 	
 	public static final String CREATE_TXIN_TABLE = "create table tx_in (prevTx string not null, prevIdx integer not null, idx integer not null, scriptSig text not null, sequence integer not null, tx text not null, foreign key (tx) references tx(hash));";
 	
@@ -61,6 +61,8 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	public static final String TRANSACTION_RETRIEVE = "select * from tx t where t.hash = ?";
 	
 	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? order by idx asc";
+	
+	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select txin.* from tx_in txin where prevTx = ? and prevIdx = ?";
 	
 	public static final String TRANSACTION_OUTPUT_RETRIEVE = "select * from tx_out o where o.tx = ? order by idx asc";
 	
@@ -776,6 +778,25 @@ public class BlockChainSQLiteImpl implements BlockChain {
 			return null;
 		}
 		
+	}
+	
+	@Override
+	public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput) {
+		
+		QueryRunner queryRunner = new QueryRunner(dataSource);
+
+		try {
+			
+			List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_ALREADY_SPENT, createListTransactionInputResultSetHandler(), transactionInput.getPreviousOutput().getHash(), transactionInput.getPreviousOutput().getIndex());
+			
+			return txInput.size() > 0;
+			
+		} catch (SQLException e) {
+
+			LOGGER.error("Exception!", e);
+
+			return false;
+		}		
 	}
 	
 //	@Override

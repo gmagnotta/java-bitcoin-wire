@@ -5,6 +5,7 @@ import java.util.List;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 
 /**
@@ -67,5 +68,7 @@ public interface BlockChain {
 	 * @return
 	 */
 	public Transaction getTransaction(String hash);
+
+	boolean isTransactionInputAlreadySpent(TransactionInput transactionInput);
 	
 }
