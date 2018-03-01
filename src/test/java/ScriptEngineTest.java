@@ -5,6 +5,7 @@ import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
+import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.script.TransactionValidator;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionDeserializedWrapper;
@@ -88,6 +89,12 @@ public class ScriptEngineTest {
 
 			@Override
 			public boolean addBlock(BlockMessage blockMessage) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput) {
 				// TODO Auto-generated method stub
 				return false;
 			}
