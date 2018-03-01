@@ -32,13 +32,8 @@ public class ReadDataState implements ScriptParserState {
 		
 		if (read == amount) {
 			
-			context.add(new PayloadScriptElement(opCode, byteBuffer.array()) {
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-			});
-			context.setNextParserState(new ByteParseState(context));
+			context.add(new PayloadScriptElement(opCode, (int) amount, byteBuffer.array()));
+			context.setNextParserState(new OpCodeParseState(context));
 			
 		}
 			

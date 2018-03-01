@@ -1,10 +1,10 @@
 package org.gmagnotta.bitcoin.parser.script;
 
-public class ByteParseState implements ScriptParserState {
+public class OpCodeParseState implements ScriptParserState {
 	
 	private Context context;
 	
-	public ByteParseState(Context context) {
+	public OpCodeParseState(Context context) {
 		this.context = context;
 	}
 
@@ -27,6 +27,7 @@ public class ByteParseState implements ScriptParserState {
 
 	@Override
 	public boolean isStillExpectingData() {
+		//TODO create an internal state for if-else-endif if there is an unclosed, etc
 		return false;
 	}
 

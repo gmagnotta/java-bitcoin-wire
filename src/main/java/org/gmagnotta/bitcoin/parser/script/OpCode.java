@@ -672,167 +672,41 @@ public enum OpCode {
 	public ScriptElement getScriptElement() throws Exception {
 		switch(this) {
 		case OP_FALSE:
-			return new PayloadScriptElement(this, new byte[] {}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 0, new byte[] {});
 		case OP_1NEGATE:
-			return new PayloadScriptElement(this, new byte[] {(byte)-1}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)-1});
 		case OP_TRUE:
-			return new PayloadScriptElement(this, new byte[] {(byte)1}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)1});
 		case OP_2:
-			return new PayloadScriptElement(this, new byte[] {(byte)2}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)2});
 		case OP_3:
-			return new PayloadScriptElement(this, new byte[] {(byte)3}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)3});
 		case OP_4:
-			return new PayloadScriptElement(this, new byte[] {(byte)4}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)4});
 		case OP_5:
-			return new PayloadScriptElement(this, new byte[] {(byte)5}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)5});
 		case OP_6:
-			return new PayloadScriptElement(this, new byte[] {(byte)6}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)6});
 		case OP_7:
-			return new PayloadScriptElement(this, new byte[] {(byte)7}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)7});
 		case OP_8:
-			return new PayloadScriptElement(this, new byte[] {(byte)8}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)8});
 		case OP_9:
-			return new PayloadScriptElement(this, new byte[] {(byte)9}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)9});
 		case OP_10:
-			return new PayloadScriptElement(this, new byte[] {(byte)10}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)10});
 		case OP_11:
-			return new PayloadScriptElement(this, new byte[] {(byte)11}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)11});
 		case OP_12:
-			return new PayloadScriptElement(this, new byte[] {(byte)12}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)12});
 		case OP_13:
-			return new PayloadScriptElement(this, new byte[] {(byte)13}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)13});
 		case OP_14:
-			return new PayloadScriptElement(this, new byte[] {(byte)14}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)14});
 		case OP_15:
-			return new PayloadScriptElement(this, new byte[] {(byte)15}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)15});
 		case OP_16:
-			return new PayloadScriptElement(this, new byte[] {(byte)16}) {
-				
-				@Override
-				public void doOperation(Stack<byte[]> stack, ScriptContext scriptContext) throws Exception {
-					stack.push(getPayload());
-				}
-				
-			};
+			return new PayloadScriptElement(this, 1, new byte[] {(byte)16});
 		case OP_NOP:
 			return new ScriptElement(this);
 		case OP_IF:

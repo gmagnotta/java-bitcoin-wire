@@ -18,7 +18,7 @@ public class BitcoinScriptParserStream implements Context {
 	
 	public BitcoinScriptParserStream(InputStream inputStream) {
 		this.inputStream = inputStream;
-		this.scriptParserState = new ByteParseState(this);
+		this.scriptParserState = new OpCodeParseState(this);
 		this.elements = new ArrayList<ScriptElement>();
 	}
 	
