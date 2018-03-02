@@ -348,8 +348,13 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
 				
-				if (blockChain.addBlockHeader(b)) {
+				blockChain.getTransactionManager().startTransaction();
+				
+				try {
 					
+					LOGGER.info("Adding block header {}", b);
+					blockChain.addBlockHeader(b);
+				
 					BlockMessage block = downloadBlocks(bitcoinPeer, org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed());
 					
 					LOGGER.info("Starting calculating merkle tree");
@@ -358,37 +363,43 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					
 					LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
 					
-					if (calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
+					if (!calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
+						throw new Exception("Calculated merkle root is different from the header! Skipping block");
+					}
 						
-						// check all txs...
+					// check all txs...
+					final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
+					
+					for (Transaction tx : block.getTxns()) {
 						
-						final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
-						
-						for (Transaction tx : block.getTxns()) {
+						if (!scriptEngine.isValid(tx)) {
 							
-							if (!scriptEngine.isValid(tx)) {
-								
-								throw new Exception("tx is not valid: " + tx);
-								
-							}
+							throw new Exception("tx is not valid: " + tx);
 							
 						}
-					
-						LOGGER.info("Calculated merkle root is the same as header. Adding to BC");
-						blockChain.addBlock(block);
-						
-					} else {
-						
-						LOGGER.error("Calculated merkle root is different from the header! Skipping block");
 						
 					}
-				}
 				
-				lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed(); 
+					LOGGER.info("Calculated merkle root is the same as header. Adding to BC");
+					blockChain.addBlock(block);
+						
+					// do commit
+					blockChain.getTransactionManager().commitTransaction();
+					
+					lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed(); 
 
-				if (Thread.interrupted()) {
-					LOGGER.warn("Interrupted!");
+					if (Thread.interrupted()) {
+						LOGGER.warn("Interrupted!");
+						return;
+					}
+					
+				} catch (Exception ex) {
+					
+					LOGGER.error("Exception while adding block, rollback", ex);
+					blockChain.getTransactionManager().rollbackTransaction();
+					
 					return;
+					
 				}
 				
 			}
@@ -605,6 +616,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					LOGGER.error("Exception while sync", ex);
 					
 					onConnectionClosed(bitcoinPeer);
+					
+					System.exit(-1);
 					
 				} finally {
 					

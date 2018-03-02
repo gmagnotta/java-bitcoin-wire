@@ -12,7 +12,6 @@ import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.parser.script.BitcoinScriptParserStream;
 import org.spongycastle.util.Arrays;
-import org.spongycastle.util.encoders.Hex;
 
 public class TransactionValidator {
 	
@@ -52,7 +51,7 @@ public class TransactionValidator {
 			}
 			
 			// Check that input is not already spent in persisted BC
-			if (blockChain.isTransactionInputAlreadySpent(txInput)) {
+			if (blockChain.isTransactionInputAlreadySpent(txInput, blockMessage.getBlockHeader().getPrevBlock())) {
 				
 				throw new Exception("Transaction input already spent!");
 				

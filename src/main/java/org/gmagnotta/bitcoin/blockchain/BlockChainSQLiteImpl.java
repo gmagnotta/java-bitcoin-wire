@@ -9,9 +9,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
+import org.gmagnotta.bitcoin.TransactionAwareBasicDataSource;
+import org.gmagnotta.bitcoin.TransactionAwareQueryRunner;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.OutPoint;
@@ -30,11 +31,11 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	public static final String CREATE_HEADER_TABLE = "create table blockHeader (hash text not null, number integer not null, version integer not null, prevBlock text not null, merkleRoot text not null, timestamp integer not null, bits integer not null, nonce integer not null, txnCount integer not null, primary key (hash));";
 	
-	public static final String CREATE_TRANSACTION_TABLE = "create table tx (hash text not null, idx integer not null, version integer not null, lockTime integer not null, block text not null, foreign key (block) references blockHeader(hash), primary key (hash));";
+	public static final String CREATE_TRANSACTION_TABLE = "create table tx (hash text not null, idx integer not null, version integer not null, lockTime integer not null, block text not null REFERENCES blockHeader(hash) DEFERRABLE INITIALLY DEFERRED, primary key (hash, block));";
 	
-	public static final String CREATE_TXOUT_TABLE = "create table tx_out (value integer not null, idx integer not null, scriptPubKey text not null, tx text not null, foreign key (tx) references tx(hash));";
+	public static final String CREATE_TXOUT_TABLE = "create table tx_out (value integer not null, idx integer not null, scriptPubKey text not null, tx text not null, block text not null, foreign key (tx, block) references tx(hash, block) DEFERRABLE INITIALLY DEFERRED);";
 	
-	public static final String CREATE_TXIN_TABLE = "create table tx_in (prevTx string not null, prevIdx integer not null, idx integer not null, scriptSig text not null, sequence integer not null, tx text not null, foreign key (tx) references tx(hash));";
+	public static final String CREATE_TXIN_TABLE = "create table tx_in (prevTx string not null, prevIdx integer not null, idx integer not null, scriptSig text not null, sequence integer not null, tx text not null, block text not null, foreign key (tx, block) references tx(hash, block) DEFERRABLE INITIALLY DEFERRED);";
 	
 	public static final String CREATE_BESTCHAIN_VIEW = "create view bestChain(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) as WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS ( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (select hash from blockHeader where number = (select max(number) from blockHeader) order by timestamp asc limit 1) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT * from header;";
 
@@ -54,15 +55,15 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String TRANSACTION_INSERT = "insert into tx(hash, idx, version, lockTime, block) values (?, ?, ?, ?, ?);";
 	
-	public static final String TRANSACTION_OUT_INSERT = "insert into tx_out(value, idx, scriptPubKey, tx) values (?, ?, ?, ?);";
+	public static final String TRANSACTION_OUT_INSERT = "insert into tx_out(value, idx, scriptPubKey, tx, block) values (?, ?, ?, ?, ?);";
 	
-	public static final String TRANSACTION_INPUT_INSERT = "insert into tx_in(prevTx, prevIdx, idx, scriptSig, sequence, tx) values (?, ?, ?, ?, ?, ?);";
+	public static final String TRANSACTION_INPUT_INSERT = "insert into tx_in(prevTx, prevIdx, idx, scriptSig, sequence, tx, block) values (?, ?, ?, ?, ?, ?, ?);";
 	
 	public static final String TRANSACTION_RETRIEVE = "select * from tx t where t.hash = ?";
 	
 	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? order by idx asc";
 	
-	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select txin.* from tx_in txin where prevTx = ? and prevIdx = ?";
+	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select i.* from tx_in i where (i.tx, i.block) in (select t.hash, t.block from tx t where t.block in ( WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS 	( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount	from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT hash from header ) ) and i.prevTx = ? and i.prevIdx = ?";
 	
 	public static final String TRANSACTION_OUTPUT_RETRIEVE = "select * from tx_out o where o.tx = ? order by idx asc";
 	
@@ -78,13 +79,13 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 //	public static final String RETRIEVE_LONGEST_HEADER = "select number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount from blockHeader where number = (select max(number) from blockHeader) order by timestamp asc limit 1";
 	
-	protected BasicDataSource dataSource;
+	protected TransactionAwareBasicDataSource dataSource;
 
 	private BlockChainParameters blockChainParameters;
 	
 	private BlockCache blockCache;
 	
-	public BlockChainSQLiteImpl(BlockChainParameters blockChainParameters, BasicDataSource dataSource) {
+	public BlockChainSQLiteImpl(BlockChainParameters blockChainParameters, TransactionAwareBasicDataSource dataSource) {
 
 		this.blockChainParameters = blockChainParameters;
 
@@ -349,7 +350,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
-		QueryRunner queryRunner = new QueryRunner(dataSource);
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
 		try {
 			
@@ -383,7 +384,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
-		QueryRunner queryRunner = new QueryRunner(dataSource);
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
 		try {
 			
@@ -417,7 +418,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
-		QueryRunner queryRunner = new QueryRunner(dataSource);
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
 		try {
 			
@@ -445,7 +446,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 		ResultSetHandler<List<Sha256Hash>> handler = createListBlockHeaderHashesResultSetHandler();
 
-		QueryRunner queryRunner = new QueryRunner(dataSource);
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
 		try {
 			
@@ -465,7 +466,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 		ResultSetHandler<List<ValidatedBlockHeader>> handler = createListBlockHeaderResultSetHandler();
 
-		QueryRunner queryRunner = new QueryRunner(dataSource);
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
 		try {
 			
@@ -481,7 +482,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 
 	@Override
-	public boolean addBlockHeader(BlockHeader receivedHeader) {
+	public void addBlockHeader(BlockHeader receivedHeader) throws Exception {
 		
 		// compute hash of received header
 		Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(receivedHeader);
@@ -489,113 +490,80 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		// Check if it is already present
 		if (getBlockHeaderFromAll(receivedHeaderHash.toReversedString()) != null) {
 
-			LOGGER.warn("Blockchain already contains block {}", receivedHeader);
-			
-			return false;
+			throw new Exception("Blockchain already contains block " + receivedHeader);
 
-		} else {
-
-			// Retrieve previous header referenced
-			ValidatedBlockHeader previousHeader = getBlockHeaderFromAll(receivedHeader.getPrevBlock().toString());
+		} 
+		
+		// Retrieve previous header referenced
+		ValidatedBlockHeader previousHeader = getBlockHeaderFromAll(receivedHeader.getPrevBlock().toString());
+		
+		if (previousHeader == null) {
 			
-			if (previousHeader == null) {
-				
-				LOGGER.error("BlockHeader {} references an unknown block {}", receivedHeader, receivedHeader.getPrevBlock().toString());
-				
-				return false;
-				
-			}
-			
-			int currentTarget = (int) Utils.getNextWorkRequired(previousHeader.getNumber(), this, receivedHeader, blockChainParameters);
-			
-			if (!Utils.isShaMatchesTarget(receivedHeaderHash, currentTarget)) {
-
-				LOGGER.error("Block Header {} doesn't match expected target {}!", receivedHeaderHash, currentTarget);
-
-				return false;
-
-			}
-			
-			try {
-				
-				insertHeader(receivedHeader, receivedHeaderHash.toReversedString(), previousHeader);
-				
-				LOGGER.info("Inserted header {}", receivedHeader);
-				
-				return true;
-				
-			} catch (Exception e) {
-				
-				LOGGER.error("Exception!", e);
-				
-				return false;
-				
-			}
+			throw new Exception("BlockHeader " + receivedHeader + " references an unknown block " + receivedHeader.getPrevBlock().toString());
 			
 		}
+		
+		int currentTarget = (int) Utils.getNextWorkRequired(previousHeader.getNumber(), this, receivedHeader, blockChainParameters);
+		
+		if (!Utils.isShaMatchesTarget(receivedHeaderHash, currentTarget)) {
 
+			throw new Exception("Block Header " + receivedHeaderHash + " doesn't match expected target" + currentTarget);
+
+		}
+		
+		insertHeader(receivedHeader, receivedHeaderHash.toReversedString(), previousHeader);
+		
+		LOGGER.info("Inserted header {}", receivedHeader);
+		
 	}
 
 	@Override
-	public boolean addBlock(BlockMessage blockMessage) {
+	public void addBlock(BlockMessage blockMessage) throws Exception {
 
-		try {
+		Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils
+				.computeBlockHeaderHash(blockMessage.getBlockHeader()).getReversed();
 
-			Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils
-					.computeBlockHeaderHash(blockMessage.getBlockHeader()).getReversed();
+		BlockHeader header = blockMessage.getBlockHeader();
 
-			BlockHeader header = blockMessage.getBlockHeader();
+		if (getBlockHeaderFromAll(receivedHeaderHash.toString()) == null) {
 
-			if (getBlockHeaderFromAll(receivedHeaderHash.toString()) == null) {
+			throw new Exception("Blockchain doesn't contains block " + header);
 
-				LOGGER.warn("Blockchain doesn't contains block {}", header);
+		}
 
-				return false;
+		List<Transaction> txs = blockMessage.getTxns();
 
-			}
+		for (int i = 0; i < txs.size(); i++) {
 
-			List<Transaction> txs = blockMessage.getTxns();
+			Transaction tx = txs.get(i);
 
-			for (int i = 0; i < txs.size(); i++) {
+			List<TransactionOutput> outputs = tx.getTransactionOutput();
 
-				Transaction tx = txs.get(i);
+			for (int out = 0; out < outputs.size(); out++) {
 
-				insertTransaction(Utils.calculateTransactionHash(tx).toReversedString(), i, tx,
-						receivedHeaderHash.toString());
-
-				List<TransactionOutput> outputs = tx.getTransactionOutput();
-
-				for (int out = 0; out < outputs.size(); out++) {
-
-					insertTransactionOutput(outputs.get(out), out,
-							Utils.calculateTransactionHash(tx).toReversedString());
-
-				}
-
-				List<TransactionInput> inputs = tx.getTransactionInput();
-
-				for (int in = 0; in < inputs.size(); in++) {
-
-					insertTransactionInput(inputs.get(in), in, Utils.calculateTransactionHash(tx).toReversedString());
-
-				}
+				insertTransactionOutput(outputs.get(out), out,
+						Utils.calculateTransactionHash(tx).toReversedString(), receivedHeaderHash.toString());
 
 			}
 
-			return true;
+			List<TransactionInput> inputs = tx.getTransactionInput();
 
-		} catch (Exception ex) {
+			for (int in = 0; in < inputs.size(); in++) {
 
-			LOGGER.error("Exception!", ex);
+				insertTransactionInput(inputs.get(in), in, Utils.calculateTransactionHash(tx).toReversedString(), receivedHeaderHash.toString());
 
-			return false;
+			}
+
+			insertTransaction(Utils.calculateTransactionHash(tx).toReversedString(), i, tx,
+					receivedHeaderHash.toString());
+
 		}
 
 	}
 	
 	private void insertHeader(BlockHeader blockHeader, String hash, ValidatedBlockHeader previous) throws Exception {
 		
-		QueryRunner run = new QueryRunner(dataSource);
+		QueryRunner run = new TransactionAwareQueryRunner(dataSource);
 		
 			run.update(HEADER_INSERT, hash,
 					blockHeader.getVersion(), blockHeader.getPrevBlock().toString(), blockHeader.getMerkleRoot().toString(),
@@ -612,28 +580,28 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	private void insertTransaction(String txHash, long idx, Transaction transaction, String blockHeaderHash)
 			throws Exception {
 
-		QueryRunner run = new QueryRunner(dataSource);
+		QueryRunner run = new TransactionAwareQueryRunner(dataSource);
 
 		run.update(TRANSACTION_INSERT, txHash, idx, transaction.getVersion(), transaction.getLockTime(),
 				blockHeaderHash);
 
 	}
 
-	private void insertTransactionOutput(TransactionOutput txout, long idx, String transactionHash) throws Exception {
+	private void insertTransactionOutput(TransactionOutput txout, long idx, String transactionHash, String blockHash) throws Exception {
 
-		QueryRunner run = new QueryRunner(dataSource);
+		QueryRunner run = new TransactionAwareQueryRunner(dataSource);
 
 		run.update(TRANSACTION_OUT_INSERT, txout.getValue(), idx, Hex.toHexString(txout.getScriptPubKey()),
-				transactionHash);
+				transactionHash, blockHash);
 
 	}
 
-	private void insertTransactionInput(TransactionInput txIn, long idx, String transactionHash) throws Exception {
+	private void insertTransactionInput(TransactionInput txIn, long idx, String transactionHash, String blockHash) throws Exception {
 
-		QueryRunner run = new QueryRunner(dataSource);
+		QueryRunner run = new TransactionAwareQueryRunner(dataSource);
 
 		run.update(TRANSACTION_INPUT_INSERT, txIn.getPreviousOutput().getHash().toString(), txIn.getPreviousOutput().getIndex(),
-				idx, Hex.toHexString(txIn.getScriptSig()), txIn.getSequence(), transactionHash);
+				idx, Hex.toHexString(txIn.getScriptSig()), txIn.getSequence(), transactionHash, blockHash);
 
 	}
 
@@ -753,7 +721,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		
 		ResultSetHandler<Transaction> handler = createTransactionResultSetHandler();
 
-		QueryRunner queryRunner = new QueryRunner(dataSource);
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
 		try {
 			
@@ -781,22 +749,19 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 	
 	@Override
-	public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput) {
+	public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput, Sha256Hash previousBlock) throws Exception {
 		
-		QueryRunner queryRunner = new QueryRunner(dataSource);
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
-		try {
+		List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_ALREADY_SPENT, createListTransactionInputResultSetHandler(), previousBlock.toString(), transactionInput.getPreviousOutput().getHash(), transactionInput.getPreviousOutput().getIndex());
+		
+		return txInput.size() > 0;
 			
-			List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_ALREADY_SPENT, createListTransactionInputResultSetHandler(), transactionInput.getPreviousOutput().getHash(), transactionInput.getPreviousOutput().getIndex());
-			
-			return txInput.size() > 0;
-			
-		} catch (SQLException e) {
+	}
 
-			LOGGER.error("Exception!", e);
-
-			return false;
-		}		
+	@Override
+	public TransactionManager getTransactionManager() {
+		return dataSource;
 	}
 	
 //	@Override

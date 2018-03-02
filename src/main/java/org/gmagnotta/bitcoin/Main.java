@@ -9,7 +9,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainSQLiteImpl;
 import org.gmagnotta.bitcoin.peer.BitcoinPeer;
@@ -28,7 +27,7 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 		
-		org.gmagnotta.log.LogEventCollector.getInstance().setLogLevelThreshold(LogLevel.DEBUG);
+		org.gmagnotta.log.LogEventCollector.getInstance().setLogLevelThreshold(LogLevel.INFO);
 		
 		org.gmagnotta.log.LogEventCollector.getInstance().addLogEventWriter(new ConsoleLogEventWriter());
 		
@@ -68,7 +67,7 @@ public class Main {
 			
 		}
 		
-		final BasicDataSource dataSource = new BasicDataSource();
+		final TransactionAwareBasicDataSource dataSource = new TransactionAwareBasicDataSource();
 
 		dataSource.setDriverClassName("org.sqlite.JDBC");
 		

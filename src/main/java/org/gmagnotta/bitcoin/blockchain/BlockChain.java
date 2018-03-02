@@ -50,17 +50,17 @@ public interface BlockChain {
 	
 	
 	/**
-	 * Add the blockheader to the blockchain
+	 * Add the blockheader to the blockchain or throw Exception in case the block can't be connected
 	 * @param header
 	 */
-	public boolean addBlockHeader(BlockHeader header);
+	public void addBlockHeader(BlockHeader header) throws Exception;
 	
 	/**
 	 * Add the complete block to the blockChain
 	 * @param blockMessage
 	 * @return
 	 */
-	public boolean addBlock(BlockMessage blockMessage);
+	public void addBlock(BlockMessage blockMessage) throws Exception;
 	
 	/**
 	 * 
@@ -69,6 +69,19 @@ public interface BlockChain {
 	 */
 	public Transaction getTransaction(String hash);
 
-	boolean isTransactionInputAlreadySpent(TransactionInput transactionInput);
+	/**
+	 * Check if a TransactionInput is already spent
+	 * @param transactionInput
+	 * @return
+	 * @throws Exception 
+	 */
+	boolean isTransactionInputAlreadySpent(TransactionInput transactionInput, Sha256Hash previousBlock) throws Exception;
+	
+	/**
+	 * Return transaction manager
+	 * @return
+	 */
+	public TransactionManager getTransactionManager();
+
 	
 }

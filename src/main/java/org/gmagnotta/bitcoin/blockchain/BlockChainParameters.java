@@ -70,7 +70,7 @@ public enum BlockChainParameters {
 
 			10 * 60,
 			
-			new String[]{"52.225.217.168"},
+			new String[]{"52.225.217.168", "52.167.211.151", "52.225.218.133"},
 			
 			19000
 
