@@ -63,7 +63,9 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? order by idx asc";
 	
-	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select i.* from tx_in i where (i.tx, i.block) in (select t.hash, t.block from tx t where t.block in ( WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS 	( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount	from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT hash from header ) ) and i.prevTx = ? and i.prevIdx = ?";
+	public static final String TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE = "CREATE TEMPORARY TABLE IF NOT EXISTS unspent AS select i.* from tx_in i where (i.tx, i.block) in (select t.hash, t.block from tx t where t.block in ( WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS 	( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount	from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT hash from header ) )";
+	
+	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select i.* from unspent i where i.prevTx = ? and i.prevIdx = ?";
 	
 	public static final String TRANSACTION_OUTPUT_RETRIEVE = "select * from tx_out o where o.tx = ? order by idx asc";
 	
@@ -752,8 +754,13 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput, Sha256Hash previousBlock) throws Exception {
 		
 		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
+		
+		// CREATE TEMP TABLE IF NOT EXISTS
+		PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement(TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE);
+		s.setString(1, previousBlock.toString());
+		s.executeUpdate();
 
-		List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_ALREADY_SPENT, createListTransactionInputResultSetHandler(), previousBlock.toString(), transactionInput.getPreviousOutput().getHash(), transactionInput.getPreviousOutput().getIndex());
+		List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_ALREADY_SPENT, createListTransactionInputResultSetHandler(), transactionInput.getPreviousOutput().getHash(), transactionInput.getPreviousOutput().getIndex());
 		
 		return txInput.size() > 0;
 			
