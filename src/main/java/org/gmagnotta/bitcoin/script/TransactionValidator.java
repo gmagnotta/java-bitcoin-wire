@@ -1,6 +1,7 @@
 package org.gmagnotta.bitcoin.script;
 
 import java.io.ByteArrayInputStream;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Stack;
 
@@ -37,6 +38,8 @@ public class TransactionValidator {
 		
 		List<TransactionInput> txInputs = transaction.getTransactionInput();
 		
+		BigInteger totalInputs = BigInteger.ZERO;
+		
 		/*
 		 * We check all transaction inputs
 		 */
@@ -71,6 +74,9 @@ public class TransactionValidator {
 			}
 			
 			final TransactionOutput previousOut = txPrev.getTransactionOutput().get((int) txInput.getPreviousOutput().getIndex());
+			
+			// Sum partial input
+			totalInputs = totalInputs.add(previousOut.getValue());
 			
 			// To verify a transaction, the scriptSig executed followed by the scriptPubKey
 			byte[] b = Arrays.concatenate(txInput.getScriptSig(), previousOut.getScriptPubKey());
@@ -131,7 +137,19 @@ public class TransactionValidator {
 			
 		}
 		
-		return true;
+		// Sum all outputs
+		List<TransactionOutput> txOutputs = transaction.getTransactionOutput();
+		
+		BigInteger totalOutputs = BigInteger.ZERO;
+		
+		for (int index = 0; index < txOutputs.size(); index++) {
+			
+			totalOutputs = totalOutputs.add(txOutputs.get(index).getValue());
+			
+		}
+		
+		// Tx is valid if outputs are less or equal to input
+		return (totalOutputs.compareTo(totalInputs) <= 0);
 		
 	}
 
