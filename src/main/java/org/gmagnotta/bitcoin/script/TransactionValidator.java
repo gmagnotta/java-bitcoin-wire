@@ -12,9 +12,13 @@ import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
 import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.parser.script.BitcoinScriptParserStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.Arrays;
 
 public class TransactionValidator {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TransactionValidator.class);
 	
 	private BlockChain blockChain;
 	private Stack<byte[]> stack;
@@ -36,6 +40,8 @@ public class TransactionValidator {
 	 */
 	public boolean isValid(final Transaction transaction) throws Exception {
 		
+		LOGGER.debug("Validating tx {}", transaction);
+		
 		List<TransactionInput> txInputs = transaction.getTransactionInput();
 		
 		BigInteger totalInputs = BigInteger.ZERO;
@@ -53,7 +59,8 @@ public class TransactionValidator {
 				return true;
 			}
 			
-			// Check that input is not already spent in persisted BC
+			// 
+			LOGGER.debug("Check that input is not already spent in persisted BC");
 			if (blockChain.isTransactionInputAlreadySpent(txInput, blockMessage.getBlockHeader().getPrevBlock())) {
 				
 				throw new Exception("Transaction input already spent!");
@@ -62,7 +69,7 @@ public class TransactionValidator {
 			
 			// Check that input is not already spent in persisted BC in receiving block
 			
-			// Fetch input transaction
+			LOGGER.debug("Fetch input transaction");
 			Transaction txPrev = blockChain.getTransaction(txInput.getPreviousOutput().getHash().toString());
 			
 			if (txPrev == null) {
@@ -83,6 +90,7 @@ public class TransactionValidator {
 			
 			BitcoinScriptParserStream bitcoinScriptParserStream = new BitcoinScriptParserStream(new ByteArrayInputStream(b));
 			
+			LOGGER.debug("Parsing script");
 			BitcoinScript script = bitcoinScriptParserStream.getBitcoinScript();
 			
 			ScriptContext scriptContext = new ScriptContext() {
@@ -120,11 +128,14 @@ public class TransactionValidator {
 				
 			};
 			
+			LOGGER.debug("Executing script");
 			for (ScriptElement scriptElement : script.getElements()) {
 				
 				transactionValidatorStatus.executeScript(scriptElement, stack, scriptContext);
 				
 			}
+			
+			LOGGER.debug("Done executing");
 			
 			// False is zero or negative zero (using any number of bytes) or an empty array, and True is anything else.
 			// A transaction is valid if nothing in the combined script triggers failure and the top stack item is True (non-zero) when the script exits
@@ -142,6 +153,7 @@ public class TransactionValidator {
 		
 		BigInteger totalOutputs = BigInteger.ZERO;
 		
+		LOGGER.debug("Sum all outputs");
 		for (int index = 0; index < txOutputs.size(); index++) {
 			
 			totalOutputs = totalOutputs.add(txOutputs.get(index).getValue());
