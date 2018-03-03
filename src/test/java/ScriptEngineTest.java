@@ -1,6 +1,7 @@
 import java.util.List;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
+import org.gmagnotta.bitcoin.blockchain.TransactionManager;
 import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
@@ -82,23 +83,30 @@ public class ScriptEngineTest {
 			}
 			
 			@Override
-			public boolean addBlockHeader(BlockHeader header) {
+			public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput, Sha256Hash previousBlock)
+					throws Exception {
 				// TODO Auto-generated method stub
 				return false;
 			}
 
 			@Override
-			public boolean addBlock(BlockMessage blockMessage) {
+			public TransactionManager getTransactionManager() {
 				// TODO Auto-generated method stub
-				return false;
+				return null;
 			}
 
 			@Override
-			public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput) {
+			public void addBlockHeader(BlockHeader header) throws Exception {
 				// TODO Auto-generated method stub
-				return false;
+				
 			}
-		}, new BlockMessage(null, null, null));
+
+			@Override
+			public void addBlock(BlockMessage blockMessage) throws Exception {
+				// TODO Auto-generated method stub
+				
+			}
+		}, new BlockMessage(new BlockHeader(0, Sha256Hash.ZERO_HASH, Sha256Hash.ZERO_HASH, 0, 0, 0, 1), null, null));
 
 		Assert.assertTrue(scriptEngine.isValid(transaction1.getTransaction()));
 		
