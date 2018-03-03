@@ -338,8 +338,10 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			}
 			
+			
 			BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, inverted);
 			
+			LOGGER.debug("Get header");
 			BitcoinHeadersMessage bitcoinHeaders = bitcoinPeer.sendGetHeaders(bitcoinGetHeadersMessage);
 			
 			receivedHeaders = bitcoinHeaders.getHeaders().size();
@@ -355,21 +357,22 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					LOGGER.info("Adding block header {}", b);
 					blockChain.addBlockHeader(b);
 				
+					LOGGER.debug("Dowloading block");
 					BlockMessage block = downloadBlocks(bitcoinPeer, org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed());
 					
 					LOGGER.info("Starting calculating merkle tree");
-					
 					Sha256Hash calculatedMerkleRoot = Utils.calculateMerkleRootTransaction(block.getTxns()).getReversed();
-					
-					LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
 					
 					if (!calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
 						throw new Exception("Calculated merkle root is different from the header! Skipping block");
 					}
 						
+					LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
+
 					// check all txs...
 					final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
 					
+					LOGGER.debug("Checking txs!");
 					for (Transaction tx : block.getTxns()) {
 						
 						if (!scriptEngine.isValid(tx)) {
@@ -380,7 +383,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						
 					}
 				
-					LOGGER.info("Calculated merkle root is the same as header. Adding to BC");
+					LOGGER.info("OK. Add block");
 					blockChain.addBlock(block);
 						
 					// do commit
