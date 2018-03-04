@@ -83,7 +83,7 @@ public class ScriptEngineTest {
 			}
 			
 			@Override
-			public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput, Sha256Hash previousBlock)
+			public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput)
 					throws Exception {
 				// TODO Auto-generated method stub
 				return false;
@@ -103,6 +103,12 @@ public class ScriptEngineTest {
 
 			@Override
 			public void addBlock(BlockMessage blockMessage) throws Exception {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void updateSpentTransactions(Sha256Hash previousBlock) throws Exception {
 				// TODO Auto-generated method stub
 				
 			}
