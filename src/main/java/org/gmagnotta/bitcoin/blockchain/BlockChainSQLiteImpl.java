@@ -751,29 +751,32 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 	
 	@Override
-	public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput, Sha256Hash previousBlock) throws Exception {
+	public boolean isTransactionInputAlreadySpent(TransactionInput transactionInput) throws Exception {
+		
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
+	
+		List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_ALREADY_SPENT, createListTransactionInputResultSetHandler(), transactionInput.getPreviousOutput().getHash(), transactionInput.getPreviousOutput().getIndex());
+		
+		return txInput.size() > 0;
+			
+	}
+	
+	@Override
+	public void updateSpentTransactions(Sha256Hash previousBlock) throws Exception {
 		
 		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 		
-		try {
-			// CREATE TEMP TABLE IF NOT EXISTS
-			PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement(TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE);
-			s.setString(1, previousBlock.toString());
-			s.executeUpdate();
-			
-			s.close();
-	
-			List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_ALREADY_SPENT, createListTransactionInputResultSetHandler(), transactionInput.getPreviousOutput().getHash(), transactionInput.getPreviousOutput().getIndex());
-			
-			return txInput.size() > 0;
-		} finally {
-			
-			PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS unspent;" );
-			s.executeUpdate();
-			
-			s.close();
-		}
-			
+		// DELETE IF EXISTS
+		PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS unspent;" );
+		s.executeUpdate();
+		s.close();
+		
+		// CREATE TEMP TABLE IF NOT EXISTS
+		s = queryRunner.getDataSource().getConnection().prepareStatement(TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE);
+		s.setString(1, previousBlock.toString());
+		s.executeUpdate();
+		s.close();
+		
 	}
 
 	@Override

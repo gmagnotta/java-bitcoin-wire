@@ -61,7 +61,7 @@ public class TransactionValidator {
 			
 			// 
 			LOGGER.debug("Check that input is not already spent in persisted BC");
-			if (blockChain.isTransactionInputAlreadySpent(txInput, blockMessage.getBlockHeader().getPrevBlock())) {
+			if (blockChain.isTransactionInputAlreadySpent(txInput)) {
 				
 				throw new Exception("Transaction input already spent!");
 				

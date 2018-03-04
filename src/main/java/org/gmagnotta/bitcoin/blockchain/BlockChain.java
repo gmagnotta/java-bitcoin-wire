@@ -75,7 +75,7 @@ public interface BlockChain {
 	 * @return
 	 * @throws Exception 
 	 */
-	boolean isTransactionInputAlreadySpent(TransactionInput transactionInput, Sha256Hash previousBlock) throws Exception;
+	boolean isTransactionInputAlreadySpent(TransactionInput transactionInput) throws Exception;
 	
 	/**
 	 * Return transaction manager
@@ -83,5 +83,11 @@ public interface BlockChain {
 	 */
 	public TransactionManager getTransactionManager();
 
-	
+	/**
+	 * Update  the spent transactions
+	 * @param previousBlock
+	 * @throws Exception
+	 */
+	void updateSpentTransactions(Sha256Hash previousBlock) throws Exception;
+
 }

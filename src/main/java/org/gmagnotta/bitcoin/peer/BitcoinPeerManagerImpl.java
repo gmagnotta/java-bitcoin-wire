@@ -352,6 +352,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 				blockChain.getTransactionManager().startTransaction();
 				
+				blockChain.updateSpentTransactions(b.getPrevBlock());
+				
 				try {
 					
 					LOGGER.info("Adding block header {}", b);
@@ -404,6 +406,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					return;
 					
 				}
+				
+				// DELETE TEMP TABLE
 				
 			}
 			
