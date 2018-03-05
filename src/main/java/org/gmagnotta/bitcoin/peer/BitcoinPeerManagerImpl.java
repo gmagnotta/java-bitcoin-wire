@@ -85,6 +85,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			long lastKnownIndex = 0;
 			
+			// take snapshot of bestchain
+			
 			// find last common block. This can go back to genesis block
 			for (Sha256Hash hash : hashList) {
 				
@@ -169,24 +171,56 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						
 					try {
 
-						LOGGER.info("Requesting block");
+						blockChain.getTransactionManager().startTransaction();
 						
-						BlockMessage block = downloadBlocks(bitcoinPeer, invMessage.getInventoryVectors().get(0).getHash().getReversed());
+						try {
 						
-						LOGGER.info("Starting calculating merkle tree");
+							LOGGER.debug("Dowloading block");
+							BlockMessage block = downloadBlocks(bitcoinPeer, invMessage.getInventoryVectors().get(0).getHash().getReversed());
+
+							LOGGER.info("Adding block header {}", block.getBlockHeader());
+							blockChain.addBlockHeader(block.getBlockHeader());
+							
+							LOGGER.info("Starting calculating merkle tree");
+							Sha256Hash calculatedMerkleRoot = Utils.calculateMerkleRootTransaction(block.getTxns()).getReversed();
+							
+							if (!calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
+								throw new Exception("Calculated merkle root is different from the header! Skipping block");
+							}
+								
+							LOGGER.info("Calculated {}", calculatedMerkleRoot);
+
+							// check all txs...
+							final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
+
+							if (block.getTxns().size() > 1) {
+								LOGGER.info("Updating spent txs");
+								blockChain.updateSpentTransactions(block.getBlockHeader().getPrevBlock());
+							}
+							
+							LOGGER.info("Validating txs");
+							for (Transaction tx : block.getTxns()) {
+								
+								if (!scriptEngine.isValid(tx)) {
+									
+									throw new Exception("tx is not valid: " + tx);
+									
+								}
+								
+							}
 						
-						Sha256Hash calculatedMerkleRoot = Utils.calculateMerkleRootTransaction(block.getTxns()).getReversed();
-						
-						LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
-						
-						if (calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
-						
-							LOGGER.info("Calculated merkle root is the same as header. Adding to BC");
+							LOGGER.info("OK, block valid!. Add block");
 							blockChain.addBlock(block);
+								
+							// do commit
+							blockChain.getTransactionManager().commitTransaction();
 							
-						} else {
+						} catch (Exception ex) {
 							
-							LOGGER.error("Calculated merkle root is different from the header! Skipping block");
+							LOGGER.error("Exception while adding block, rollback", ex);
+							blockChain.getTransactionManager().rollbackTransaction();
+							
+							throw ex;
 							
 						}
 					
@@ -352,8 +386,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 				blockChain.getTransactionManager().startTransaction();
 				
-				blockChain.updateSpentTransactions(b.getPrevBlock());
-				
 				try {
 					
 					LOGGER.info("Adding block header {}", b);
@@ -369,12 +401,17 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						throw new Exception("Calculated merkle root is different from the header! Skipping block");
 					}
 						
-					LOGGER.info("Calculated {}, from block {}", calculatedMerkleRoot, block.getBlockHeader().getMerkleRoot());
+					LOGGER.info("Calculated {}", calculatedMerkleRoot);
 
 					// check all txs...
 					final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
+
+					if (block.getTxns().size() > 1) {
+						LOGGER.info("Updating spent txs");
+						blockChain.updateSpentTransactions(b.getPrevBlock());
+					}
 					
-					LOGGER.debug("Checking txs!");
+					LOGGER.info("Validating txs");
 					for (Transaction tx : block.getTxns()) {
 						
 						if (!scriptEngine.isValid(tx)) {
@@ -385,7 +422,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						
 					}
 				
-					LOGGER.info("OK. Add block");
+					LOGGER.info("OK, block valid!. Add block");
 					blockChain.addBlock(block);
 						
 					// do commit
