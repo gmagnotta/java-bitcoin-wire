@@ -36,7 +36,7 @@ public class IntermediateReadDataState implements ScriptParserState {
 			
 			if (array.length == 1) {
 				
-				size = array[0];
+				size = array[0] & 0xFF;
 				
 			} else if (array.length == 2) {
 				
