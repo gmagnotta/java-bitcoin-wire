@@ -63,7 +63,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? order by idx asc";
 	
-	public static final String TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE = "CREATE TEMPORARY TABLE IF NOT EXISTS unspent AS select i.* from tx_in i where (i.tx, i.block) in (select t.hash, t.block from tx t where t.block in ( WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS 	( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount	from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT hash from header ) )";
+	public static final String TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE = "CREATE TEMPORARY TABLE IF NOT EXISTS unspent AS select i.* from tx_in i where (i.tx, i.block) in (select t.hash, t.block from tx t where t.block in ( WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS 	( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount	from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT hash from header ) ); CREATE INDEX temp.unspent_idx on unspent(prevTx, prevIdx);";
 	
 	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select i.* from unspent i where i.prevTx = ? and i.prevIdx = ?";
 	
@@ -80,6 +80,15 @@ public class BlockChainSQLiteImpl implements BlockChain {
 //	public static final String RECURSE_BLOCKCHAIN = "WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS ( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = ? UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT * from header";
 	
 //	public static final String RETRIEVE_LONGEST_HEADER = "select number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount from blockHeader where number = (select max(number) from blockHeader) order by timestamp asc limit 1";
+	
+	/*
+	 * CREATE INDEX `max_number` ON `blockHeader` (`number` )
+	 * CREATE INDEX `timestamp_asc` ON `blockHeader` (`timestamp` ASC)
+	 * CREATE INDEX `tx_hash_block` ON `tx` (`hash` ,`block` )
+	 * CREATE INDEX `tx_out_tx` ON `tx_out` (`tx` )
+	 * CREATE INDEX `tx_tx_tx_block` ON `tx_in` (`tx` ,`block` )
+	 * CREATE INDEX `txin_tx` ON `tx_in` (`tx` )
+	 */
 	
 	protected TransactionAwareBasicDataSource dataSource;
 
@@ -767,7 +776,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 		
 		// DELETE IF EXISTS
-		PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS unspent;" );
+		PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS unspent; DROP INDEX IF exists temp.unspent_idx;" );
 		s.executeUpdate();
 		s.close();
 		
