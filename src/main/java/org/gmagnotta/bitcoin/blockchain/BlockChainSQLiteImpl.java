@@ -63,9 +63,9 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? order by idx asc";
 	
-	public static final String TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE = "CREATE TEMPORARY TABLE IF NOT EXISTS unspent AS select i.* from tx_in i where (i.tx, i.block) in (select t.hash, t.block from tx t where t.block in ( WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS 	( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount	from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT hash from header ) ); CREATE INDEX temp.unspent_idx on unspent(prevTx, prevIdx);";
+	public static final String TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE = "CREATE TEMPORARY TABLE IF NOT EXISTS spent AS select i.* from tx_in i where (i.block) in ( WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS ( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount	from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT hash from header ) and i.prevTx <> 0 ; CREATE INDEX temp.spent_idx on spent(prevTx, prevIdx);";
 	
-	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select i.* from unspent i where i.prevTx = ? and i.prevIdx = ?";
+	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select i.* from spent i where i.prevTx = ? and i.prevIdx = ?";
 	
 	public static final String TRANSACTION_OUTPUT_RETRIEVE = "select * from tx_out o where o.tx = ? order by idx asc";
 	
@@ -776,7 +776,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 		
 		// DELETE IF EXISTS
-		PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS unspent; DROP INDEX IF exists temp.unspent_idx;" );
+		PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS spent; DROP INDEX IF exists temp.spent_idx;" );
 		s.executeUpdate();
 		s.close();
 		
