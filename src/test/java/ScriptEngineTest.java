@@ -7,6 +7,7 @@ import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
+import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.script.TransactionValidator;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 import org.gmagnotta.bitcoin.wire.serializer.impl.TransactionDeserializedWrapper;
@@ -38,13 +39,13 @@ public class ScriptEngineTest {
 		final TransactionValidator scriptEngine = new TransactionValidator(new BlockChain() {
 			
 			@Override
-			public Transaction getTransaction(String hash) {
+			public Transaction getTransaction(String txHash) {
 				
-				if ("be70f27d6f9b2819cb7fce390e0e719e27db4878ff7a24059e46e67191f0fb52".equals(hash)) {
+				if ("be70f27d6f9b2819cb7fce390e0e719e27db4878ff7a24059e46e67191f0fb52".equals(txHash)) {
 					return transaction0.getTransaction();
-				} else if ("da404f36d44fcc7ebd433fdd4e45e058ef4448a951c9d4b2b83fa370f41e2b7b".equals(hash)) {
+				} else if ("da404f36d44fcc7ebd433fdd4e45e058ef4448a951c9d4b2b83fa370f41e2b7b".equals(txHash)) {
 					return transaction_2_input_source_0.getTransaction();
-				} else if ("bfe1f6564eaee55706ca3205c5c9f94ab24ca1ea15964ae15ca1ded297313a49".equals(hash)) {
+				} else if ("bfe1f6564eaee55706ca3205c5c9f94ab24ca1ea15964ae15ca1ded297313a49".equals(txHash)) {
 					return transaction_2_input_source_1.getTransaction();
 				}
 				
@@ -108,10 +109,25 @@ public class ScriptEngineTest {
 			}
 
 			@Override
-			public void updateSpentTransactions(Sha256Hash previousBlock) throws Exception {
+			public void createAuxiliaryTables(Sha256Hash previousBlock) throws Exception {
 				// TODO Auto-generated method stub
 				
 			}
+
+			@Override
+			public TransactionOutput getTransactionOutput(String txHash, long idx) {
+				
+				if ("be70f27d6f9b2819cb7fce390e0e719e27db4878ff7a24059e46e67191f0fb52".equals(txHash)) {
+					return transaction0.getTransaction().getTransactionOutput().get((int) idx);
+				} else if ("da404f36d44fcc7ebd433fdd4e45e058ef4448a951c9d4b2b83fa370f41e2b7b".equals(txHash)) {
+					return transaction_2_input_source_0.getTransaction().getTransactionOutput().get((int) idx);
+				} else if ("bfe1f6564eaee55706ca3205c5c9f94ab24ca1ea15964ae15ca1ded297313a49".equals(txHash)) {
+					return transaction_2_input_source_1.getTransaction().getTransactionOutput().get((int) idx);
+				}
+				
+				return null;
+			}
+
 		}, new BlockMessage(new BlockHeader(0, Sha256Hash.ZERO_HASH, Sha256Hash.ZERO_HASH, 0, 0, 0, 1), null, null));
 
 		Assert.assertTrue(scriptEngine.isValid(transaction1.getTransaction()));

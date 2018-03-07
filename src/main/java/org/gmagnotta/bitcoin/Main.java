@@ -101,8 +101,12 @@ public class Main {
 
 				try {
 					
-					System.out.println("Stop sync");
-					bitcoinPeerManager.stop();
+					try {
+						System.out.println("Stop sync");
+						bitcoinPeerManager.stop();
+					} catch (Exception ex) {
+						//
+					}
 					
 					// tell the library to shutdown and close all opened resources
 					System.out.println("Closing datasource");

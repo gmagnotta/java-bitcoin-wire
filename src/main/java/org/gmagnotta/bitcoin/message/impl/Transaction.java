@@ -32,7 +32,6 @@ public class Transaction {
 		return transactionOutput;
 	}
 	
-	
 	public void setTransactionOutput(List<TransactionOutput> transactionOutputs) {
 		this.transactionOutput = transactionOutputs;
 	}

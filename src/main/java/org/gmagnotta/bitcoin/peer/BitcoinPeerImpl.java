@@ -125,13 +125,27 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 	@Override
 	public void disconnect() throws Exception {
+		
+		try {
+		
+			if (!socket.isClosed()) {
+				socket.close();
+			}
+		
+		} catch (IOException ex) {
+			//
+		}
 
 		if (writer.isAlive()) {
 			LOGGER.info("Writer is alive. Interrupting");
 			
 			writer.interrupt();
 			
-			writer.join();
+			try {
+				writer.join();
+			} catch (InterruptedException ex) {
+				
+			}
 			LOGGER.info("Writer terminated");
 		}
 		
@@ -140,14 +154,14 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 			
 			receiver.interrupt();
 			
-			receiver.join();
+			try {
+				receiver.join();
+			} catch (InterruptedException ex) {
+				
+			}
 			LOGGER.info("Receiver terminated");
 		}
 		
-		
-		if (!socket.isClosed()) {
-			socket.close();
-		}
 		
 		LOGGER.info("Peer disconnected");
 

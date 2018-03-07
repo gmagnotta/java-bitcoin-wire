@@ -6,6 +6,7 @@ import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.message.impl.TransactionInput;
+import org.gmagnotta.bitcoin.message.impl.TransactionOutput;
 import org.gmagnotta.bitcoin.utils.Sha256Hash;
 
 /**
@@ -67,7 +68,14 @@ public interface BlockChain {
 	 * @param hash
 	 * @return
 	 */
-	public Transaction getTransaction(String hash);
+	public Transaction getTransaction(String txHash);
+	
+	/**
+	 * 
+	 * @param hash
+	 * @return
+	 */
+	public TransactionOutput getTransactionOutput(String txHash, long idx);
 
 	/**
 	 * Check if a TransactionInput is already spent
@@ -84,10 +92,10 @@ public interface BlockChain {
 	public TransactionManager getTransactionManager();
 
 	/**
-	 * Update  the spent transactions
+	 * Creates auxiliary tables to speed lookup
 	 * @param previousBlock
 	 * @throws Exception
 	 */
-	void updateSpentTransactions(Sha256Hash previousBlock) throws Exception;
+	void createAuxiliaryTables(Sha256Hash previousBlock) throws Exception;
 
 }

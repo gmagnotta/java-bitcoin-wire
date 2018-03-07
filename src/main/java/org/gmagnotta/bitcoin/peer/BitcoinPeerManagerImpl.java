@@ -197,7 +197,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 
 							if (block.getTxns().size() > 1) {
 								LOGGER.info("Updating spent txs");
-								blockChain.updateSpentTransactions(block.getBlockHeader().getPrevBlock());
+								blockChain.createAuxiliaryTables(block.getBlockHeader().getPrevBlock());
 							}
 							
 							LOGGER.info("Validating txs");
@@ -405,13 +405,11 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						
 					LOGGER.info("Calculated {}", calculatedMerkleRoot);
 
+					LOGGER.info("Creating aux tables");
+					blockChain.createAuxiliaryTables(b.getPrevBlock());
+
 					// check all txs...
 					final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
-
-					if (block.getTxns().size() > 1) {
-						LOGGER.info("Updating spent txs");
-						blockChain.updateSpentTransactions(b.getPrevBlock());
-					}
 					
 					LOGGER.info("Validating txs");
 					for (Transaction tx : block.getTxns()) {
@@ -668,7 +666,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			@Override
 			public void run() {
 
-				if (!((peers.size() > 1) && (peers.size() < maxConnectedPeers))) {
+				if ( !((peers.size() > 0) && (peers.size() <= maxConnectedPeers)) ) {
 					
 					LOGGER.info("Manager need other peers");
 				
@@ -692,7 +690,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			}
 			
-		}, 0, 60000);
+		}, 0, 15000);
 		
 	}
 

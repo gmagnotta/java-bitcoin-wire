@@ -59,15 +59,19 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String TRANSACTION_INPUT_INSERT = "insert into tx_in(prevTx, prevIdx, idx, scriptSig, sequence, tx, block) values (?, ?, ?, ?, ?, ?, ?);";
 	
-	public static final String TRANSACTION_RETRIEVE = "select * from tx t where t.hash = ?";
+	public static final String TRANSACTION_RETRIEVE_RECURSIVE = "SELECT t.* from recursiveChain h inner join tx t on t.block = h.hash and t.hash = ?";
 	
-	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? order by idx asc";
+	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? and i.block = ? order by idx asc";
 	
-	public static final String TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE = "CREATE TEMPORARY TABLE IF NOT EXISTS spent AS select i.* from tx_in i where (i.block) in ( WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS ( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount	from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT hash from header ) and i.prevTx <> 0 ; CREATE INDEX temp.spent_idx on spent(prevTx, prevIdx);";
+	public static final String RECURSIVE_CHAIN = "CREATE TEMPORARY TABLE IF NOT EXISTS recursiveChain AS WITH RECURSIVE header(number, hash, version, prevBlock, merkleRoot, timeStamp, bits, nonce, txnCount) AS ( SELECT b.number, b.hash, b.version, b.prevBlock, b.merkleRoot, b.timeStamp, b.bits, b.nonce, b.txnCount FROM blockHeader b WHERE b.hash = (?) UNION ALL SELECT cte_count.number, cte_count.hash, cte_count.version, cte_count.prevBlock, cte_count.merkleRoot, cte_count.timeStamp, cte_count.bits, cte_count.nonce, cte_count.txnCount from blockHeader cte_count, header where cte_count.hash = header.prevBlock ) SELECT h.* from header h; CREATE INDEX temp.recursiveChainIdx on recursiveChain(number, hash);";
+//	public static final String TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE = "CREATE TEMPORARY TABLE IF NOT EXISTS spent AS select i.* from tx_in i where (i.block) in (select r.hash from recursiveChain r) and i.prevTx <> 0 ; CREATE INDEX temp.spent_idx on spent(prevTx, prevIdx);";
+	public static final String TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE = "CREATE TEMPORARY TABLE IF NOT EXISTS spent AS SELECT i.* from recursiveChain h join tx_in i on i.block = h.hash and i.prevTx <> 0; CREATE INDEX temp.spent_idx on spent(prevTx, prevIdx);";
 	
 	public static final String TRANSACTION_INPUT_ALREADY_SPENT = "select i.* from spent i where i.prevTx = ? and i.prevIdx = ?";
 	
-	public static final String TRANSACTION_OUTPUT_RETRIEVE = "select * from tx_out o where o.tx = ? order by idx asc";
+	public static final String TRANSACTION_OUTPUT_RETRIEVE = "select * from tx_out o where o.tx = ? and o.block = ? order by idx asc";
+	
+	public static final String TRANSACTION_OUTPUT_RETRIEVE_RECURSIVE = "SELECT o.* from recursiveChain r inner join tx_out o on o.block = r.hash and o.tx = ? and o.idx = ?";
 	
 //	public static final String INDEX_FROM_HASH = "select number from bestChain where hash = ?;";
 	
@@ -185,12 +189,12 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
-	private ResultSetHandler<Transaction> createTransactionResultSetHandler() {
+	private ResultSetHandler<ValidatedTransaction> createTransactionResultSetHandler() {
 
-		return new ResultSetHandler<Transaction>() {
+		return new ResultSetHandler<ValidatedTransaction>() {
 
 			@Override
-			public Transaction handle(ResultSet rs) throws SQLException {
+			public ValidatedTransaction handle(ResultSet rs) throws SQLException {
 
 				if (rs.next()) {
 
@@ -338,15 +342,15 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
-	private Transaction transactionFromResultSet(ResultSet rs) throws SQLException {
+	private ValidatedTransaction transactionFromResultSet(ResultSet rs) throws SQLException {
 
 //		Sha256Hash prevBlock = Sha256Hash.wrap(rs.getString("hash"));
 //		long idx = rs.getLong("idx");
 		long version = rs.getLong("version");
 		long lockTime = rs.getLong("lockTime");
-//		Sha256Hash block = Sha256Hash.wrap(rs.getString("block"));
+		String block = rs.getString("block");
 
-		return new Transaction(version, null, null, lockTime);
+		return new ValidatedTransaction(version, null, null, lockTime, block);
 
 	}
 
@@ -728,21 +732,21 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 	
 	@Override
-	public Transaction getTransaction(String hash) {
+	public Transaction getTransaction(String txHash) {
 		
-		ResultSetHandler<Transaction> handler = createTransactionResultSetHandler();
+		ResultSetHandler<ValidatedTransaction> handler = createTransactionResultSetHandler();
 
 		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
 		try {
 			
-			List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_RETRIEVE, createListTransactionInputResultSetHandler(), hash);
-			
-			List<TransactionOutput> txOutput = queryRunner.query(TRANSACTION_OUTPUT_RETRIEVE, createListTransactionOutputResultSetHandler(), hash);
-			
-			Transaction tx = queryRunner.query(TRANSACTION_RETRIEVE, handler, hash);
-			
+			ValidatedTransaction tx = queryRunner.query(TRANSACTION_RETRIEVE_RECURSIVE, handler, txHash);
+
 			if (tx == null) return null;
+
+			List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_RETRIEVE, createListTransactionInputResultSetHandler(), txHash, tx.getBlock());
+			
+			List<TransactionOutput> txOutput = queryRunner.query(TRANSACTION_OUTPUT_RETRIEVE, createListTransactionOutputResultSetHandler(), txHash, tx.getBlock());
 			
 			tx.setTransactionOutput(txOutput);
 			
@@ -756,7 +760,35 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 			return null;
 		}
+	}
+	
+	@Override
+	public TransactionOutput getTransactionOutput(String txHash, long idx) {
 		
+		ResultSetHandler<List<TransactionOutput>> handler = createListTransactionOutputResultSetHandler();
+
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
+
+		try {
+			
+			List<TransactionOutput> result = queryRunner.query(TRANSACTION_OUTPUT_RETRIEVE_RECURSIVE, handler, txHash, idx);
+			
+			if (result.size() > 0) {
+				
+				return result.get(0);
+				
+			} else {
+				
+				return null;
+				
+			}
+
+		} catch (SQLException e) {
+
+			LOGGER.error("Exception!", e);
+
+			return null;
+		}
 	}
 	
 	@Override
@@ -771,18 +803,28 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	}
 	
 	@Override
-	public void updateSpentTransactions(Sha256Hash previousBlock) throws Exception {
+	public void createAuxiliaryTables(Sha256Hash previousBlock) throws Exception {
 		
 		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 		
 		// DELETE IF EXISTS
-		PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS spent; DROP INDEX IF exists temp.spent_idx;" );
+		PreparedStatement s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS recursiveChain; DROP INDEX IF exists temp.recursiveChainIdx;" );
+		s.executeUpdate();
+		s.close();
+
+		// DELETE IF EXISTS
+		s = queryRunner.getDataSource().getConnection().prepareStatement("DROP TABLE IF EXISTS spent; DROP INDEX IF exists temp.spent_idx;" );
+		s.executeUpdate();
+		s.close();
+		
+		// CREATE TEMP TABLE IF NOT EXISTS
+		s = queryRunner.getDataSource().getConnection().prepareStatement(RECURSIVE_CHAIN);
+		s.setString(1, previousBlock.toString());
 		s.executeUpdate();
 		s.close();
 		
 		// CREATE TEMP TABLE IF NOT EXISTS
 		s = queryRunner.getDataSource().getConnection().prepareStatement(TRANSACTION_INPUT_ALREADY_SPENT_TEMPORARY_TABLE);
-		s.setString(1, previousBlock.toString());
 		s.executeUpdate();
 		s.close();
 		
@@ -792,7 +834,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	public TransactionManager getTransactionManager() {
 		return dataSource;
 	}
-	
+
 //	@Override
 //	public void manageForks() {
 //		

@@ -67,20 +67,25 @@ public class TransactionValidator {
 				
 			}
 			
+			// if there is another tx with same input in the block throw exception
+			
 			// Check that input is not already spent in persisted BC in receiving block
 			
 			LOGGER.debug("Fetch input transaction");
-			Transaction txPrev = blockChain.getTransaction(txInput.getPreviousOutput().getHash().toString());
+			TransactionOutput previousOut = blockChain.getTransactionOutput(txInput.getPreviousOutput().getHash().toString(), txInput.getPreviousOutput().getIndex());
 			
-			if (txPrev == null) {
+			if (previousOut == null) {
 				
 				// search transaction in block
-				txPrev = blockMessage.getIndexedTxns().get(txInput.getPreviousOutput().getHash().getReversed());
+				Transaction txPrev = blockMessage.getIndexedTxns().get(txInput.getPreviousOutput().getHash().getReversed());
 				
 				if (txPrev == null) throw new Exception("cannot find " + txInput.getPreviousOutput().getHash().toString());
+				
+				previousOut = txPrev.getTransactionOutput().get((int) txInput.getPreviousOutput().getIndex());
+				
 			}
 			
-			final TransactionOutput previousOut = txPrev.getTransactionOutput().get((int) txInput.getPreviousOutput().getIndex());
+			final TransactionOutput tmp = previousOut;
 			
 			// Sum partial input
 			totalInputs = totalInputs.add(previousOut.getValue());
@@ -97,7 +102,7 @@ public class TransactionValidator {
 				
 				@Override
 				public TransactionOutput getTransactionOutput() {
-					return previousOut;
+					return tmp;
 				}
 				
 				@Override
