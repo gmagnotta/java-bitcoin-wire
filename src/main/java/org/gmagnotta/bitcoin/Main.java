@@ -4,14 +4,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.BlockChainSQLiteImpl;
-import org.gmagnotta.bitcoin.peer.BitcoinPeer;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManager;
 import org.gmagnotta.bitcoin.peer.BitcoinPeerManagerImpl;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
@@ -94,47 +89,9 @@ public class Main {
 		
 		BlockChain blockChain = new BlockChainSQLiteImpl(magicVersion.getBlockChainParameters(), dataSource);
 		
-		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(magicVersion, blockChain);
+		final BitcoinPeerManager bitcoinPeerManager = new BitcoinPeerManagerImpl(magicVersion, blockChain, 1);
 		
-//		for (String seed : magicVersion.getBlockChainParameters().getSeeds()) {
-//			
-//			LOGGER.info("Connecting to {}", seed);
-//			
-//			bitcoinPeerManager.connect(seed, magicVersion.getBlockChainParameters().getPort());
-//			
-//		}
-		
-		final Timer inputTimer = new Timer();
-		inputTimer.schedule(new TimerTask() {
-			
-			@Override
-			public void run() {
-
-				if (!(bitcoinPeerManager.getConnectedPeers().size() > 1)) {
-					
-					LOGGER.info("Manager need other peers");
-				
-					int randomElement = ThreadLocalRandom.current().nextInt(magicVersion.getBlockChainParameters().getSeeds().length);
-					
-						try {
-							
-							LOGGER.info("Connecting to a peer");
-							
-							String seed = magicVersion.getBlockChainParameters().getSeeds()[randomElement];
-							
-							bitcoinPeerManager.connect(seed, magicVersion.getBlockChainParameters().getPort());
-							
-						} catch (Exception e) {
-							
-							LOGGER.error("Exception connecting", e);
-							
-						}
-				
-				}
-				
-			}
-			
-		}, 0, 60000);
+		bitcoinPeerManager.start();
 		
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			
@@ -144,26 +101,9 @@ public class Main {
 
 				try {
 					
-					System.out.println("Cancelling timer");
-					inputTimer.cancel();
-					
-					List<BitcoinPeer> connected = bitcoinPeerManager.getConnectedPeers();
-					
-					for (BitcoinPeer peer : connected) {
-						
-						System.out.println("Disconnecting from " + peer);
-						bitcoinPeerManager.disconnect(peer);
-						
-					}
-					
 					System.out.println("Stop sync");
-					bitcoinPeerManager.stopSync();
+					bitcoinPeerManager.stop();
 					
-					
-					while (bitcoinPeerManager.isSyncing()) {
-						Thread.sleep(1000);
-					}
-
 					// tell the library to shutdown and close all opened resources
 					System.out.println("Closing datasource");
 					dataSource.close();

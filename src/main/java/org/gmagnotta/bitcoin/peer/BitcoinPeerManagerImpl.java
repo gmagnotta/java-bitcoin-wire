@@ -6,13 +6,13 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ThreadLocalRandom;
 
-import org.gmagnotta.bitcoin.utils.Sha256Hash;
-import org.gmagnotta.bitcoin.utils.Utils;
 import org.gmagnotta.bitcoin.blockchain.BlockChain;
 import org.gmagnotta.bitcoin.blockchain.ValidatedBlockHeader;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
@@ -28,6 +28,8 @@ import org.gmagnotta.bitcoin.message.impl.InventoryVector;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector.Type;
 import org.gmagnotta.bitcoin.message.impl.Transaction;
 import org.gmagnotta.bitcoin.script.TransactionValidator;
+import org.gmagnotta.bitcoin.utils.Sha256Hash;
+import org.gmagnotta.bitcoin.utils.Utils;
 import org.gmagnotta.bitcoin.wire.BitcoinCommand;
 import org.gmagnotta.bitcoin.wire.MagicVersion;
 import org.slf4j.Logger;
@@ -38,22 +40,22 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BitcoinPeerManagerImpl.class);
 	
-	private static final int MAX_PEERS_CONNECTED =  4;
-	
 	private MagicVersion magicVersion;
 	private List<BitcoinPeer> peers;
 	private BlockChain blockChain;
 	private final Object syncObj;
 	private boolean isSyncing;
-	private SecureRandom secureRandom;
+	private final Timer inputTimer;
+	private final int maxConnectedPeers;
 	
-	public BitcoinPeerManagerImpl(MagicVersion magicVersion, BlockChain blockChain) {
+	public BitcoinPeerManagerImpl(MagicVersion magicVersion, BlockChain blockChain, int maxConnectedPeers) {
 		this.magicVersion = magicVersion;
 		this.peers = new ArrayList<BitcoinPeer>();
 		this.blockChain = blockChain;
 		this.isSyncing = false;
-		this.secureRandom = new SecureRandom();
 		this.syncObj = new Object();
+		this.inputTimer = new Timer();
+		this.maxConnectedPeers = maxConnectedPeers;
 	}
 
 	@Override
@@ -468,17 +470,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 	}
 		
-	@Override
-	public List<BitcoinPeer> getConnectedPeers() {
-		
-		synchronized (syncObj) {
-			
-			return new ArrayList<BitcoinPeer>(peers);
-
-		}
-		
-	}
-	
 	private void addPeer(BitcoinPeer bitcoinPeer) {
 		
 		peers.add(bitcoinPeer);
@@ -499,7 +490,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 	}
 
-	@Override
 	public void disconnect(BitcoinPeer bitcoinPeer) {
 		
 		try {
@@ -555,16 +545,9 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 	}
 	
-	@Override
-	public void connect(String address, int port) throws Exception {
-
-		openConnection(address, port, this);
-
-	}
-	
-	private void openConnection(final String address, int port, final BitcoinPeerCallback callback) {
+	private void openConnection(final String address, int port) {
 		
-		if (!isConnected(address) && getConnectedPeers().size() < MAX_PEERS_CONNECTED) {
+		if (!isConnected(address)) {
 		
 			BitcoinPeerImpl bitcoinClient = null;
 			
@@ -573,10 +556,10 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				Socket socket = new Socket();
 				socket.connect(new InetSocketAddress(address, port), 10000);
 				
-				bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, callback, blockChain);
+				bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this, blockChain);
 				
 				// signal that connection is established
-				callback.onConnectionEstablished(bitcoinClient);
+				onConnectionEstablished(bitcoinClient);
 					
 			} catch (Exception e) {
 				
@@ -589,36 +572,34 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			LOGGER.warn("Already connected to {}", address);
 			
 		}
-				
+		
 	}
 	
 	private boolean isConnected(String address) {
 		
-		synchronized (syncObj) {
-			
-			String ip;
-			
-			try {
-				InetAddress resolvedAddr = InetAddress.getByName(address);
-				ip = resolvedAddr.getHostAddress();
-			} catch (UnknownHostException ex) {
+		String ip;
+		
+		try {
+			InetAddress resolvedAddr = InetAddress.getByName(address);
+			ip = resolvedAddr.getHostAddress();
+		} catch (UnknownHostException ex) {
+			return true;
+		}
+
+		for (BitcoinPeer peer : peers) {
+			if (peer.getInetAddress().getHostAddress().equals(ip)) {
 				return true;
 			}
-	
-			for (BitcoinPeer peer : peers) {
-				if (peer.getInetAddress().getHostAddress().equals(ip)) {
-					return true;
-				}
-			}
-			
-			return false;
-			
 		}
 		
+		return false;
+			
 	}
 
 	@Override
 	public void onConnectionEstablished(final BitcoinPeer bitcoinPeer) {
+		
+		LOGGER.info("Connected with {} ", bitcoinPeer);
 		
 		//
 		synchronized (syncObj) {
@@ -680,20 +661,53 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	}
 
 	@Override
-	public boolean isSyncing() {
-		
-		synchronized (syncObj) {
-			return isSyncing;
-		}
+	public void start() throws Exception {
+
+		inputTimer.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+
+				if (!((peers.size() > 1) && (peers.size() < maxConnectedPeers))) {
+					
+					LOGGER.info("Manager need other peers");
+				
+					int randomElement = ThreadLocalRandom.current().nextInt(magicVersion.getBlockChainParameters().getSeeds().length);
+					
+					try {
+						
+						LOGGER.info("Connecting to a peer");
+						
+						String seed = magicVersion.getBlockChainParameters().getSeeds()[randomElement];
+						
+						openConnection(seed, magicVersion.getBlockChainParameters().getPort());
+						
+					} catch (Exception e) {
+						
+						LOGGER.error("Exception connecting", e);
+						
+					}
+				
+				}
+				
+			}
+			
+		}, 0, 60000);
 		
 	}
 
 	@Override
-	public void stopSync() {
+	public void stop() throws Exception {
+
+		inputTimer.cancel();
 		
-//			if (syncThread != null) {
-//				syncThread.interrupt();
-//			}
+		// for each connected peer, disconnect
+		
+		for (BitcoinPeer peer : peers) {
+			
+			peer.disconnect();
+			
+		}
 		
 	}
 

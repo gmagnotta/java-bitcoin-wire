@@ -1,30 +1,13 @@
 package org.gmagnotta.bitcoin.peer;
 
-import java.util.List;
-
 public interface BitcoinPeerManager {
 	
 	/**
-	 * Start a connection to the peer specified by address and port
+	 * Start connection manager
 	 * 
-	 * @param address
-	 * @param port
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	public void connect(String address, int port) throws Exception;
-	
-	/**
-	 * Returns a list of all connected BitcoinPeer
-	 * @return
-	 */
-	public List<BitcoinPeer> getConnectedPeers();
-	
-	/**
-	 * Disconnect from the specified BitcoinPeer
-	 * 
-	 * @param bitcoinPeer
-	 */
-	public void disconnect(BitcoinPeer bitcoinPeer);
+	public void start() throws Exception;
 	
 	/**
 	 * Start listening for connections on the specified port. This method will block
@@ -35,13 +18,8 @@ public interface BitcoinPeerManager {
 	public void listen(int port) throws Exception;
 	
 	/**
-	 * 
+	 * Stop all connections
 	 */
-	public boolean isSyncing();
-	
-	/**
-	 * 
-	 */
-	public void stopSync();
+	public void stop() throws Exception;
 
 }

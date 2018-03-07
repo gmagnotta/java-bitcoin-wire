@@ -126,13 +126,30 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	@Override
 	public void disconnect() throws Exception {
 
-		if (receiver.isAlive()) {
-			receiver.interrupt();
+		if (writer.isAlive()) {
+			LOGGER.info("Writer is alive. Interrupting");
+			
+			writer.interrupt();
+			
+			writer.join();
+			LOGGER.info("Writer terminated");
 		}
+		
+		if (receiver.isAlive()) {
+			LOGGER.info("Receiver is alive. Interrupting");
+			
+			receiver.interrupt();
+			
+			receiver.join();
+			LOGGER.info("Receiver terminated");
+		}
+		
 		
 		if (!socket.isClosed()) {
 			socket.close();
 		}
+		
+		LOGGER.info("Peer disconnected");
 
 	}
 
@@ -316,9 +333,11 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 
 					LOGGER.error("BitcoinFrameBuilderException", ex);
 					
-				}
+				} 
 
 			}
+			
+			LOGGER.info("ReaderRunnable Exiting");
 			
 		}
 
@@ -379,7 +398,7 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 					
 				} catch (InterruptedException ex) {
 					
-					LOGGER.error("InterruptedException", ex);
+					LOGGER.error("WriterRunnable InterruptedException. Exiting", ex);
 					
 					break;
 					
@@ -414,6 +433,14 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 	public BlockMessage sendGetData(BitcoinGetDataMessage bitcoinGetDataMessage) throws Exception {
 
 		return (BlockMessage) sendRecvMessage(bitcoinGetDataMessage, BitcoinCommand.BLOCK, 60000*2);
+		
+	}
+	
+	@Override
+	public String toString() {
+		
+		return String.format("BitcoinPeer: %s %d %s", userAgent, startHeight, socket.getRemoteSocketAddress());
+		
 		
 	}
 
