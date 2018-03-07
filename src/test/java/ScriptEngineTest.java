@@ -97,12 +97,6 @@ public class ScriptEngineTest {
 			}
 
 			@Override
-			public void addBlockHeader(BlockHeader header) throws Exception {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
 			public void addBlock(BlockMessage blockMessage) throws Exception {
 				// TODO Auto-generated method stub
 				
@@ -126,6 +120,19 @@ public class ScriptEngineTest {
 				}
 				
 				return null;
+			}
+
+			@Override
+			public ValidatedBlockHeader getBlockHeaderFromAll(String hash) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public void insertHeader(BlockHeader blockHeader, String hash, ValidatedBlockHeader previous)
+					throws Exception {
+				// TODO Auto-generated method stub
+				
 			}
 
 		}, new BlockMessage(new BlockHeader(0, Sha256Hash.ZERO_HASH, Sha256Hash.ZERO_HASH, 0, 0, 0, 1), null, null));

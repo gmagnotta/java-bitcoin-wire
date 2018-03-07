@@ -19,7 +19,6 @@ import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinInvMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
@@ -147,7 +146,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			LOGGER.info("Received INV!");
 			
-			final BitcoinInvMessage invMessage = (BitcoinInvMessage) bitcoinMessage;
+			/*final BitcoinInvMessage invMessage = (BitcoinInvMessage) bitcoinMessage;
 			
 			Thread t = new Thread(new Runnable() {
 				
@@ -244,7 +243,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				}
 			});
 			
-			t.start();
+			t.start(); */
 			
 			/*if (org.gmagnotta.bitcoin.utils.Utils.isPeerNetworkNode(bitcoinPeer.getPeerServices())) {
 				
@@ -280,6 +279,8 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 	private void syncBC(BitcoinPeer bitcoinPeer) throws Exception {
 		
 		LOGGER.info("Start sync");
+		
+		// Calculate best chain
 		
 		List<Sha256Hash> inverted = new ArrayList<Sha256Hash>();
 		
@@ -374,7 +375,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				
 			}
 			
-			
 			BitcoinGetHeadersMessage bitcoinGetHeadersMessage = new BitcoinGetHeadersMessage(70012, inverted);
 			
 			LOGGER.debug("Get header");
@@ -384,17 +384,52 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			LOGGER.info("Peer {} returned {} headers!", bitcoinPeer, receivedHeaders);
 			
-			for (BlockHeader b : bitcoinHeaders.getHeaders()) {
+			for (BlockHeader receivedHeader : bitcoinHeaders.getHeaders()) {
 				
 				blockChain.getTransactionManager().startTransaction();
 				
 				try {
 					
-					LOGGER.info("Adding block header {}", b);
-					blockChain.addBlockHeader(b);
-				
+					LOGGER.info("Managing block header {}", receivedHeader);
+					
+					// compute hash of received header
+					Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(receivedHeader);
+
+					// Check if it is already present
+					if (blockChain.getBlockHeaderFromAll(receivedHeaderHash.toReversedString()) != null) {
+
+						throw new Exception("Blockchain already contains block " + receivedHeader);
+
+					} 
+					
+					// Retrieve previous header referenced
+					ValidatedBlockHeader previousHeader = blockChain.getBlockHeaderFromAll(receivedHeader.getPrevBlock().toString());
+					
+					if (previousHeader == null) {
+						
+						throw new Exception("BlockHeader " + receivedHeader + " references an unknown block " + receivedHeader.getPrevBlock().toString());
+						
+					}
+					
+					// we can now create auxiliary tables starting from previous block
+					LOGGER.info("Creating aux tables");
+					blockChain.createAuxiliaryTables(previousHeader.getHash());
+					
+					// Calculate 
+					int currentTarget = (int) Utils.getNextWorkRequired(previousHeader.getNumber(), blockChain, receivedHeader, magicVersion.getBlockChainParameters());
+					
+					if (!Utils.isShaMatchesTarget(receivedHeaderHash, currentTarget)) {
+
+						throw new Exception("Block Header " + receivedHeaderHash + " doesn't match expected target" + currentTarget);
+
+					}
+					
+					// ok
+					blockChain.insertHeader(receivedHeader, receivedHeaderHash.toReversedString(), previousHeader);
+					LOGGER.info("Inserted header {}", receivedHeader);
+					
 					LOGGER.debug("Dowloading block");
-					BlockMessage block = downloadBlocks(bitcoinPeer, org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed());
+					BlockMessage block = downloadBlocks(bitcoinPeer, receivedHeaderHash.getReversed());
 					
 					LOGGER.info("Starting calculating merkle tree");
 					Sha256Hash calculatedMerkleRoot = Utils.calculateMerkleRootTransaction(block.getTxns()).getReversed();
@@ -404,9 +439,6 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					}
 						
 					LOGGER.info("Calculated {}", calculatedMerkleRoot);
-
-					LOGGER.info("Creating aux tables");
-					blockChain.createAuxiliaryTables(b.getPrevBlock());
 
 					// check all txs...
 					final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
@@ -428,7 +460,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 					// do commit
 					blockChain.getTransactionManager().commitTransaction();
 					
-					lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(b).getReversed(); 
+					lastReceivedHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(receivedHeader).getReversed(); 
 
 					if (Thread.interrupted()) {
 						LOGGER.warn("Interrupted!");

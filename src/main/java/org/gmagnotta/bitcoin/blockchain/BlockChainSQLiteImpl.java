@@ -41,7 +41,9 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	public static final String RETRIEVE_BESTCHAIN_LEN = "select max(number) as lastIndex from bestChain;";
 	
-	public static final String RETRIEVE_BY_NUMBER = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where number = ?;";
+//	public static final String RETRIEVE_BY_NUMBER = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where number = ?;";
+	
+	public static final String RETRIEVE_BY_NUMBER = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from recursiveChain where number = ?;";
 	
 	public static final String RETRIEVE_BY_HASH = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where hash = ?;";
 	
@@ -98,16 +100,12 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	private BlockChainParameters blockChainParameters;
 	
-	private BlockCache blockCache;
-	
 	public BlockChainSQLiteImpl(BlockChainParameters blockChainParameters, TransactionAwareBasicDataSource dataSource) {
 
 		this.blockChainParameters = blockChainParameters;
 
 		this.dataSource = dataSource;
 		
-		this.blockCache = new BlockCache(blockChainParameters.getDifficultyAdjustmentInterval());
-
 	}
 	
 	public void close() throws Exception {
@@ -357,27 +355,13 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	@Override
 	public ValidatedBlockHeader getBlockHeader(int number) {
 		
-		ValidatedBlockHeader header = blockCache.getBlockHeader(number);
-		
-		if (header != null) {
-			return header;
-		}
-		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
 		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
 
 		try {
 			
-			header = queryRunner.query(RETRIEVE_BY_NUMBER, handler, number);
-			
-			if (header != null) {
-				
-				blockCache.putBlockHeader(number, header.getHash().toString(), header);
-			
-			}
-			
-			return header;
+			return queryRunner.query(RETRIEVE_BY_NUMBER, handler, number);
 			
 		} catch (SQLException e) {
 
@@ -391,11 +375,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	@Override
 	public ValidatedBlockHeader getBlockHeader(String hash) {
 		
-		ValidatedBlockHeader header = blockCache.getBlockHeader(hash);
-		
-		if (header != null) {
-			return header;
-		}
+		ValidatedBlockHeader header;
 		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
@@ -405,13 +385,6 @@ public class BlockChainSQLiteImpl implements BlockChain {
 			
 			header = queryRunner.query(RETRIEVE_BY_HASH, handler, hash);
 			
-			if (header != null) {
-			
-				blockCache.putBlockHeader((int) header.getNumber(), header.getHash().toString(), header);
-			
-				
-			}
-
 			return header;
 			
 		} catch (SQLException e) {
@@ -423,13 +396,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
-	private ValidatedBlockHeader getBlockHeaderFromAll(String hash) {
-		
-		ValidatedBlockHeader header = blockCache.getBlockHeader(hash);
-		
-		if (header != null) {
-			return header;
-		}
+	public ValidatedBlockHeader getBlockHeaderFromAll(String hash) {
 		
 		ResultSetHandler<ValidatedBlockHeader> handler = createBlockHeaderResultSetHandler();
 
@@ -437,15 +404,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 		try {
 			
-			header = queryRunner.query(RETRIEVE_BY_HASH_ALL, handler, hash);
-			
-			if (header != null) {
-				
-				blockCache.putBlockHeader((int) header.getNumber(), header.getHash().toString(), header);
-
-			}
-			
-			return header;
+			return queryRunner.query(RETRIEVE_BY_HASH_ALL, handler, hash);
 			
 		} catch (SQLException e) {
 
@@ -496,8 +455,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 
-	@Override
-	public void addBlockHeader(BlockHeader receivedHeader) throws Exception {
+	private void addBlockHeader(BlockHeader receivedHeader) throws Exception {
 		
 		// compute hash of received header
 		Sha256Hash receivedHeaderHash = org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(receivedHeader);
@@ -576,19 +534,19 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
-	private void insertHeader(BlockHeader blockHeader, String hash, ValidatedBlockHeader previous) throws Exception {
+	@Override
+	public void insertHeader(BlockHeader blockHeader, String hash, ValidatedBlockHeader previous) throws Exception {
 		
 		QueryRunner run = new TransactionAwareQueryRunner(dataSource);
 		
-			run.update(HEADER_INSERT, hash,
-					blockHeader.getVersion(), blockHeader.getPrevBlock().toString(), blockHeader.getMerkleRoot().toString(),
-					blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount(),
-					(previous.getNumber() + 1));
-			
-			ValidatedBlockHeader v = new ValidatedBlockHeader(blockHeader.getVersion(), blockHeader.getPrevBlock(), blockHeader.getMerkleRoot(),
-					blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount(), Sha256Hash.wrap(hash), previous.getNumber() + 1);
-			
-			blockCache.putBlockHeader((int) previous.getNumber() + 1, hash, v);
+		run.update(HEADER_INSERT, hash,
+				blockHeader.getVersion(), blockHeader.getPrevBlock().toString(), blockHeader.getMerkleRoot().toString(),
+				blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount(),
+				(previous.getNumber() + 1));
+		
+//		ValidatedBlockHeader v = new ValidatedBlockHeader(blockHeader.getVersion(), blockHeader.getPrevBlock(), blockHeader.getMerkleRoot(),
+//				blockHeader.getTimestamp(), blockHeader.getBits(), blockHeader.getNonce(), blockHeader.getTxnCount(), Sha256Hash.wrap(hash), previous.getNumber() + 1);
+//			
 			
 	}
 

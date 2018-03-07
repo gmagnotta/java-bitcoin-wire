@@ -37,6 +37,9 @@ public interface BlockChain {
 	 */
 	public ValidatedBlockHeader getBlockHeader(String hash);
 	
+	
+	public ValidatedBlockHeader getBlockHeaderFromAll(String hash);
+	
 	/**
 	 * Return a list of block headers
 	 * @return
@@ -49,12 +52,6 @@ public interface BlockChain {
 	 */
 	public List<Sha256Hash> getHashList(long index, long len);
 	
-	
-	/**
-	 * Add the blockheader to the blockchain or throw Exception in case the block can't be connected
-	 * @param header
-	 */
-	public void addBlockHeader(BlockHeader header) throws Exception;
 	
 	/**
 	 * Add the complete block to the blockChain
@@ -97,5 +94,7 @@ public interface BlockChain {
 	 * @throws Exception
 	 */
 	void createAuxiliaryTables(Sha256Hash previousBlock) throws Exception;
+
+	void insertHeader(BlockHeader blockHeader, String hash, ValidatedBlockHeader previous) throws Exception;
 
 }
