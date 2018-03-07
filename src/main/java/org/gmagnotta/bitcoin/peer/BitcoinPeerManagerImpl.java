@@ -19,6 +19,7 @@ import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetDataMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinGetHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinInvMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
@@ -146,7 +147,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			
 			LOGGER.info("Received INV!");
 			
-			/*final BitcoinInvMessage invMessage = (BitcoinInvMessage) bitcoinMessage;
+			final BitcoinInvMessage invMessage = (BitcoinInvMessage) bitcoinMessage;
 			
 			Thread t = new Thread(new Runnable() {
 				
@@ -172,58 +173,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						
 					try {
 
-						blockChain.getTransactionManager().startTransaction();
-						
-						try {
-						
-							LOGGER.debug("Dowloading block");
-							BlockMessage block = downloadBlocks(bitcoinPeer, invMessage.getInventoryVectors().get(0).getHash().getReversed());
-
-							LOGGER.info("Adding block header {}", block.getBlockHeader());
-							blockChain.addBlockHeader(block.getBlockHeader());
-							
-							LOGGER.info("Starting calculating merkle tree");
-							Sha256Hash calculatedMerkleRoot = Utils.calculateMerkleRootTransaction(block.getTxns()).getReversed();
-							
-							if (!calculatedMerkleRoot.equals(block.getBlockHeader().getMerkleRoot())) {
-								throw new Exception("Calculated merkle root is different from the header! Skipping block");
-							}
-								
-							LOGGER.info("Calculated {}", calculatedMerkleRoot);
-
-							// check all txs...
-							final TransactionValidator scriptEngine = new TransactionValidator(blockChain, block);
-
-							if (block.getTxns().size() > 1) {
-								LOGGER.info("Updating spent txs");
-								blockChain.createAuxiliaryTables(block.getBlockHeader().getPrevBlock());
-							}
-							
-							LOGGER.info("Validating txs");
-							for (Transaction tx : block.getTxns()) {
-								
-								if (!scriptEngine.isValid(tx)) {
-									
-									throw new Exception("tx is not valid: " + tx);
-									
-								}
-								
-							}
-						
-							LOGGER.info("OK, block valid!. Add block");
-							blockChain.addBlock(block);
-								
-							// do commit
-							blockChain.getTransactionManager().commitTransaction();
-							
-						} catch (Exception ex) {
-							
-							LOGGER.error("Exception while adding block, rollback", ex);
-							blockChain.getTransactionManager().rollbackTransaction();
-							
-							throw ex;
-							
-						}
+						syncBC(bitcoinPeer);
 					
 					} catch (Exception ex) {
 						
@@ -243,7 +193,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				}
 			});
 			
-			t.start(); */
+			t.start();
 			
 			/*if (org.gmagnotta.bitcoin.utils.Utils.isPeerNetworkNode(bitcoinPeer.getPeerServices())) {
 				
@@ -290,7 +240,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 		if (lastKnownIndex == 0) {
 			
-			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
+			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(magicVersion.getBlockChainParameters().getGenesis()));
 			
 		} else if (lastKnownIndex < 20) {
 			
@@ -305,7 +255,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			// Reverse list!!!!
 			Collections.reverse(inverted);
 			
-			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(blockChain.getBlockHeader(0)));
+			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(magicVersion.getBlockChainParameters().getGenesis()));
 
 		} else {
 			
@@ -665,14 +615,19 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 						syncBC(bitcoinPeer);
 						
 					}
+					
+					if (blockChain.getBestChainLenght() < bitcoinPeer.getBlockStartHeight()) {
+						
+						throw new Exception("We need still to update!");
+						
+					}
+					
 
 				} catch (Exception ex) {
 					
 					LOGGER.error("Exception while sync", ex);
 					
 					onConnectionClosed(bitcoinPeer);
-					
-					System.exit(-1);
 					
 				} finally {
 					

@@ -92,6 +92,8 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	 * CREATE INDEX `timestamp_asc` ON `blockHeader` (`timestamp` ASC)
 	 * CREATE INDEX `tx_hash_block` ON `tx` (`hash` ,`block` )
 	 * CREATE INDEX `tx_out_tx` ON `tx_out` (`tx` )
+	 * CREATE INDEX `tx_out_tx_block` ON `tx_out` (`tx` ,`block` )
+	 * CREATE INDEX `tx_out_tx_idx` ON `tx_out` (`idx` ,`tx` )
 	 * CREATE INDEX `tx_tx_tx_block` ON `tx_in` (`tx` ,`block` )
 	 * CREATE INDEX `txin_tx` ON `tx_in` (`tx` )
 	 */
