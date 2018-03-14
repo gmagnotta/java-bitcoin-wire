@@ -534,6 +534,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			try {
 				
 				Socket socket = new Socket();
+				socket.setKeepAlive(true);
 				socket.connect(new InetSocketAddress(address, port), 10000);
 				
 				bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this, blockChain);
