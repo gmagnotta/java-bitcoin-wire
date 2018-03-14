@@ -22,6 +22,7 @@ import org.gmagnotta.bitcoin.message.impl.BitcoinHeadersMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinInvMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
+import org.gmagnotta.bitcoin.message.impl.BitcoinRejectMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockHeader;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
 import org.gmagnotta.bitcoin.message.impl.InventoryVector;
@@ -222,6 +223,17 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 				LOGGER.info("Peer doesn't allow to download!");
 				
 			}*/
+			
+		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.GETDATA)) {
+			
+			try {
+			
+				bitcoinPeer.sendReject(new BitcoinRejectMessage("Error", (byte)0x10, "Not implemented", new byte[]{ }));
+			
+			} catch (Exception ex) {
+				
+				LOGGER.error("Exception", ex);
+			}
 			
 		}
 	}
@@ -491,11 +503,21 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 		while (true) {
 			
-			Socket socket = serverSocket.accept();
+			try {
 			
-			BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this, blockChain);
+				Socket socket = serverSocket.accept();
+				
+				LOGGER.info("Received connection!");
+				
+				BitcoinPeerImpl bitcoinClient = new BitcoinPeerImpl(magicVersion, socket, this, blockChain);
+				
+				peers.add(bitcoinClient);
 			
-			peers.add(bitcoinClient);
+			} catch (Exception ex) {
+				
+				LOGGER.error("Exception", ex);
+				
+			}
 		
 		}
 		

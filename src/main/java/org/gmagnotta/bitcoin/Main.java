@@ -129,6 +129,8 @@ public class Main {
 			}
 		});
 		
+		bitcoinPeerManager.listen(magicVersion.getBlockChainParameters().getPort());
+		
 	}
 	
 	protected static void initDb(Connection connection) throws Exception {

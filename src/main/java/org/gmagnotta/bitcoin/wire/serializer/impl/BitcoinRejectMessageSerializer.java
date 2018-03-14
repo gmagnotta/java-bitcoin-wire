@@ -1,15 +1,10 @@
 package org.gmagnotta.bitcoin.wire.serializer.impl;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import org.bitcoinj.core.VarInt;
 import org.gmagnotta.bitcoin.message.BitcoinMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinRejectMessage;
-import org.gmagnotta.bitcoin.message.impl.BitcoinVersionMessage;
-import org.gmagnotta.bitcoin.message.impl.NetworkAddress;
-import org.gmagnotta.bitcoin.wire.Utils;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializer;
 import org.gmagnotta.bitcoin.wire.serializer.BitcoinMessageSerializerException;
 
@@ -19,55 +14,14 @@ public class BitcoinRejectMessageSerializer implements BitcoinMessageSerializer 
 	public BitcoinMessage deserialize(byte[] payload, int offset, int lenght) throws BitcoinMessageSerializerException {
 		
 		try {
-			// version
-			long version = Utils.readUint32LE(payload, 0);
-	
-			// services
-			BigInteger services = Utils.readUint64LE(payload, 4);
-	
-			// timestamp
-			BigInteger timestamp = Utils.readUint64LE(payload, 12);
+			// read varint
+			VarInt varint = new VarInt(payload, offset + 0);
 			
-			NetworkAddressSerializer networkAddressSerializer = new NetworkAddressSerializer(false);
-	
-			// addre_recv
-			NetworkAddress addressReceiving = networkAddressSerializer.deserialize(payload, offset + 20, 20 + 26);
-	
-			// addre_from
-			NetworkAddress addressEmitting = networkAddressSerializer.deserialize(payload, offset + 46, 46 + 26);
-	
-			// nonce
-			BigInteger nonce = Utils.readUint64LE(payload, 72);
-	
-			// user agent
-			byte len = payload[80];
-			String userAgent = null;
-			if (len > 0) {
-	
-				userAgent = new String(Arrays.copyOfRange(payload, 81, 81 + len));
-	
-			}
-	
-			// start height
-			long startHeight = Utils.readUint32LE(payload, 81 + len);
-	
-			boolean relay = false;
-	
-			if (version >= 70001) {
-	
-				byte b = payload[81 + len + 4];
-	
-				if (b == 0) {
-					relay = false;
-				} else {
-					relay = true;
-				}
-	
-			}
-	
-			// return assembled message
-			return new BitcoinVersionMessage((int) version, services, timestamp, addressReceiving, addressEmitting, nonce,
-					userAgent, startHeight, relay);
+			String message = new String(payload, varint.getSizeInBytes(), (int)varint.value);
+			
+			byte code = payload[(int)varint.value];
+			
+			return new BitcoinRejectMessage(message, code, "", new byte[]{});
 			
 		} catch (Exception ex) {
 			throw new BitcoinMessageSerializerException("Exception", ex);

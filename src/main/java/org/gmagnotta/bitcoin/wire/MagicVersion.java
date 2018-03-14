@@ -1,7 +1,6 @@
 package org.gmagnotta.bitcoin.wire;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import org.gmagnotta.bitcoin.blockchain.BlockChainParameters;
