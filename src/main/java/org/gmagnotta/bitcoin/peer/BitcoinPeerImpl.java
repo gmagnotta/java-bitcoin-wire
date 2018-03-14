@@ -308,6 +308,17 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 								processed = true;
 								break;
 								
+							} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.REJECT)) {
+								
+								// remove element from list
+								iterator.remove();
+								
+								// tell request to manage timeout
+								outputRequest.receiveResponse(bitcoinMessage);
+								
+								processed = true;
+								break;
+								
 							}
 							
 						}

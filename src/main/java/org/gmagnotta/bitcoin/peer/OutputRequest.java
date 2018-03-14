@@ -26,7 +26,7 @@ public class OutputRequest {
 		this.timeout = timeout;
 	}
 	
-	public BitcoinMessage getResponse() throws InterruptedException, TimeoutException {
+	public BitcoinMessage getResponse() throws InterruptedException, TimeoutException, Exception {
 		
 		synchronized (syncObject) {
 
@@ -35,6 +35,8 @@ public class OutputRequest {
 			if (response == null) {
 				expired = true;
 				throw new TimeoutException();
+			} else if (response.getCommand().equals(BitcoinCommand.REJECT)) {
+				throw new Exception("Message rejected!");
 			}
 			
 			return response;
