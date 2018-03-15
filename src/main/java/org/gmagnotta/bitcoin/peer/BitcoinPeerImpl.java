@@ -477,4 +477,10 @@ public class BitcoinPeerImpl implements BitcoinPeer {
 		
 	}
 
+	@Override
+	public void sendBlock(BlockMessage blockMessage) throws Exception {
+
+		sendMessage(blockMessage);
+	}
+
 }

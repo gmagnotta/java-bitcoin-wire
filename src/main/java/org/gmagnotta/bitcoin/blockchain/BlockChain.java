@@ -52,13 +52,21 @@ public interface BlockChain {
 	 */
 	public List<Sha256Hash> getHashList(long index, long len);
 	
-	
 	/**
 	 * Add the complete block to the blockChain
 	 * @param blockMessage
 	 * @return
 	 */
 	public void addBlock(BlockMessage blockMessage) throws Exception;
+	
+	/**
+	 * Returns the block data with the specified hash
+	 * 
+	 * @param hash
+	 * @return
+	 * @throws Exception
+	 */
+	public BlockMessage getBlock(String hash) throws Exception;
 	
 	/**
 	 * 

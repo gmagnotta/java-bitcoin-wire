@@ -227,8 +227,24 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		} else if (bitcoinMessage.getCommand().equals(BitcoinCommand.GETDATA)) {
 			
 			try {
-			
-				bitcoinPeer.sendReject(new BitcoinRejectMessage("Error", (byte)0x10, "Not implemented", new byte[]{ }));
+				
+				BitcoinGetDataMessage getData = (BitcoinGetDataMessage) bitcoinMessage;
+				
+				for (InventoryVector i : getData.getInventoryVectors()) {
+					
+					if (i.getType().equals(InventoryVector.Type.MSG_BLOCK)) {
+						
+						BlockMessage block = blockChain.getBlock(i.getHash().toString());
+						
+						bitcoinPeer.sendBlock(block);
+						
+					} else {
+						
+						bitcoinPeer.sendReject(new BitcoinRejectMessage("Error", (byte)0x10, "Not implemented", new byte[]{ }));
+
+					}
+					
+				}
 			
 			} catch (Exception ex) {
 				
@@ -252,7 +268,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 		
 		if (lastKnownIndex == 0) {
 			
-			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(magicVersion.getBlockChainParameters().getGenesis()));
+			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(magicVersion.getBlockChainParameters().getGenesis()).getReversed());
 			
 		} else if (lastKnownIndex < 20) {
 			
@@ -267,7 +283,7 @@ public class BitcoinPeerManagerImpl implements BitcoinPeerCallback, BitcoinPeerM
 			// Reverse list!!!!
 			Collections.reverse(inverted);
 			
-			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(magicVersion.getBlockChainParameters().getGenesis()));
+			inverted.add(org.gmagnotta.bitcoin.utils.Utils.computeBlockHeaderHash(magicVersion.getBlockChainParameters().getGenesis()).getReversed());
 
 		} else {
 			

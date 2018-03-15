@@ -47,7 +47,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	public static final String RETRIEVE_BY_HASH = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where hash = ?;";
 	
-	public static final String RETRIEVE_BY_HASH_ALL = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from blockHeader where hash = ?;";
+	public static final String RETRIEVE_BY_HASH_ALL = "select number, hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, (select count(*) from tx t where t.block = ? ) as txncount from blockHeader where hash = ?;";
 	
 //	public static final String RETRIEVE_BY_PREV_BLOCK = "select hash, version, prevBlock, merkleRoot, timestamp, bits, nonce, txncount from bestChain where prevBlock = ?;";
 	
@@ -62,6 +62,8 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	public static final String TRANSACTION_INPUT_INSERT = "insert into tx_in(prevTx, prevIdx, idx, scriptSig, sequence, tx, block) values (?, ?, ?, ?, ?, ?, ?);";
 	
 	public static final String TRANSACTION_RETRIEVE_RECURSIVE = "SELECT t.* from recursiveChain h inner join tx t on t.block = h.hash and t.hash = ?";
+	
+	public static final String TRANSACTIONS_RETRIEVE_FROM_BLOCK = "select t.* from tx t where t.block = ? order by idx asc";
 	
 	public static final String TRANSACTION_INPUT_RETRIEVE = "select * from tx_in i where i.tx = ? and i.block = ? order by idx asc";
 	
@@ -208,6 +210,29 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 	}
 	
+	private ResultSetHandler<List<ValidatedTransaction>> createListTransactionResultSetHandler() {
+
+		return new ResultSetHandler<List<ValidatedTransaction>>() {
+
+			@Override
+			public List<ValidatedTransaction> handle(ResultSet rs) throws SQLException {
+
+				List<ValidatedTransaction> list = new ArrayList<ValidatedTransaction>();
+				
+				while (rs.next()) {
+
+					ValidatedTransaction transaction = transactionFromResultSet(rs);
+					
+					list.add(transaction);
+
+				}
+
+				return list;
+			}
+		};
+
+	}
+	
 	private ResultSetHandler<List<TransactionInput>> createListTransactionInputResultSetHandler() {
 
 		return new ResultSetHandler<List<TransactionInput>>() {
@@ -344,13 +369,12 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	
 	private ValidatedTransaction transactionFromResultSet(ResultSet rs) throws SQLException {
 
-//		Sha256Hash prevBlock = Sha256Hash.wrap(rs.getString("hash"));
-//		long idx = rs.getLong("idx");
+		Sha256Hash hash = Sha256Hash.wrap(rs.getString("hash"));
 		long version = rs.getLong("version");
 		long lockTime = rs.getLong("lockTime");
 		String block = rs.getString("block");
 
-		return new ValidatedTransaction(version, null, null, lockTime, block);
+		return new ValidatedTransaction(version, null, null, lockTime, block, hash);
 
 	}
 
@@ -406,7 +430,7 @@ public class BlockChainSQLiteImpl implements BlockChain {
 
 		try {
 			
-			return queryRunner.query(RETRIEVE_BY_HASH_ALL, handler, hash);
+			return queryRunner.query(RETRIEVE_BY_HASH_ALL, handler, hash, hash);
 			
 		} catch (SQLException e) {
 
@@ -793,6 +817,45 @@ public class BlockChainSQLiteImpl implements BlockChain {
 	@Override
 	public TransactionManager getTransactionManager() {
 		return dataSource;
+	}
+
+	@Override
+	public BlockMessage getBlock(String hash) throws Exception {
+		
+		ValidatedBlockHeader header = getBlockHeaderFromAll(hash);
+
+		if (header == null) {
+			
+			throw new Exception("Blockchain doesn't contains block " + hash);
+
+		}
+		
+		QueryRunner queryRunner = new TransactionAwareQueryRunner(dataSource);
+
+		try {
+			
+			List<ValidatedTransaction> txs = queryRunner.query(TRANSACTIONS_RETRIEVE_FROM_BLOCK, createListTransactionResultSetHandler(), hash);
+
+			for (ValidatedTransaction tx : txs) {
+				
+				List<TransactionInput> txInput = queryRunner.query(TRANSACTION_INPUT_RETRIEVE, createListTransactionInputResultSetHandler(), tx.getHash().toString(), tx.getBlock());
+				
+				List<TransactionOutput> txOutput = queryRunner.query(TRANSACTION_OUTPUT_RETRIEVE, createListTransactionOutputResultSetHandler(), tx.getHash().toString(), tx.getBlock());
+				
+				tx.setTransactionInput(txInput);
+				tx.setTransactionOutput(txOutput);
+				
+			}
+			
+			return new BlockMessage(header, new ArrayList<Transaction>(txs), null);
+			
+		} catch (SQLException e) {
+
+			LOGGER.error("Exception!", e);
+
+			return null;
+		}
+		
 	}
 
 //	@Override

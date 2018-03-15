@@ -135,6 +135,12 @@ public class ScriptEngineTest {
 				
 			}
 
+			@Override
+			public BlockMessage getBlock(String hash) throws Exception {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
 		}, new BlockMessage(new BlockHeader(0, Sha256Hash.ZERO_HASH, Sha256Hash.ZERO_HASH, 0, 0, 0, 1), null, null));
 
 		Assert.assertTrue(scriptEngine.isValid(transaction1.getTransaction()));

@@ -12,6 +12,7 @@ import org.gmagnotta.bitcoin.message.impl.BitcoinPingMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinPongMessage;
 import org.gmagnotta.bitcoin.message.impl.BitcoinRejectMessage;
 import org.gmagnotta.bitcoin.message.impl.BlockMessage;
+import org.gmagnotta.bitcoin.wire.serializer.impl.BitcoinBlockMessageSerializer;
 
 public interface BitcoinPeer {
 	
@@ -99,5 +100,7 @@ public interface BitcoinPeer {
 	public void disconnect() throws Exception;
 
 	public void sendReject(BitcoinRejectMessage bitcoinRejectMessage) throws Exception;
+	
+	public void sendBlock(BlockMessage blockMessage) throws Exception;
 	
 }
